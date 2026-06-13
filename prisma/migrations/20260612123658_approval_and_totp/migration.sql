@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN "approvedAt" DATETIME;
+ALTER TABLE "User" ADD COLUMN "totpEnabledAt" DATETIME;
+ALTER TABLE "User" ADD COLUMN "totpLastStep" INTEGER;
+ALTER TABLE "User" ADD COLUMN "totpSecret" TEXT;

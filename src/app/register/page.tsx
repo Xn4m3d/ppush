@@ -1,0 +1,26 @@
+import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
+import { currentUser } from "@/lib/auth";
+import { config } from "@/lib/config";
+import { AuthForm } from "@/components/auth-form";
+import { RegisterAside } from "@/components/register-aside";
+import { Logo } from "@/components/header";
+import { BackHome } from "@/components/back-home";
+
+export async function generateMetadata() {
+  return { title: (await getTranslations("meta"))("register") };
+}
+
+export default async function RegisterPage() {
+  if (await currentUser()) redirect("/");
+  return (
+    <main className="relative flex min-h-screen flex-col items-center justify-center gap-8 px-4 py-12">
+      <BackHome className="absolute left-4 top-4 sm:left-6 sm:top-6" />
+      <Logo />
+      <div className="flex w-full max-w-4xl flex-col items-center gap-8 lg:flex-row lg:items-start lg:justify-center">
+        <RegisterAside />
+        <AuthForm mode="register" turnstileSiteKey={config.turnstileSiteKey} />
+      </div>
+    </main>
+  );
+}

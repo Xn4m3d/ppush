@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  passwordHash String?   // null = account without a password (passkey only)
+  role         String    @default("USER") // USER | ADMIN
+  active       Boolean   @default(true)
+  approvedAt   DateTime? // null + !active = account awaiting approval
+  createdAt    DateTime  @default(now())
+  lastLoginAt  DateTime?
+
+  // 2FA TOTP (RFC 6238)
+  totpSecret    String? // base32 — active only if totpEnabledAt is non-null
+  totpEnabledAt DateTime?
+  totpLastStep  Int?    // anti-replay: last accepted time step
+
+  // Default preferences for new pushes
+  defaultDays              Int     @default(7)
+  defaultViews             Int     @default(5)
+  defaultRetrievalStep     Boolean @default(true)
+  defaultDeletableByViewer Boolean @default(true)
+
+  sessions    Session[]
+  pushes      Push[]
+  apiTokens   ApiToken[]
+  credentials Credential[]
+}
+
+// Passkey (WebAuthn / FIDO2)
+model Credential {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credentialId String    @unique // base64url
+  publicKey    Bytes // COSE public key
+  counter      Int       @default(0)
+  transports   String? // JSON: ["internal","hybrid",…]
+  name         String? // label given by the user
+  createdAt    DateTime  @default(now())
+  lastUsedAt   DateTime?
+
+  @@index([userId])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  ip        String?
+  userAgent String?
+
+  @@index([userId])
+}
+
+model ApiToken {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  tokenHash  String    @unique
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+
+  @@index([userId])
+}
+
+model Push {
+  id     String @id @default(cuid())
+  slug   String  @unique
+  kind   String // PASSWORD | TEXT | FILE | URL
+  userId String? // null = anonymous push (created without an account)
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Client-side encrypted payload (AES-256-GCM, key never sent to the server).
+  // Small payloads in the DB; files on disk (blobPath).
+  ciphertext     Bytes?
+  blobPath       String?
+  fileSize       Int?
+  payloadDeleted Boolean @default(false)
+
+  passphraseHash String?
+
+  expireAfterViews   Int
+  expireAfterMinutes Int
+  views              Int     @default(0)
+  retrievalStep     Boolean @default(true)
+  deletableByViewer Boolean @default(true)
+
+  // Creator's private note (internal reference, never shown to the recipient)
+  note String?
+
+  createdAt    DateTime  @default(now())
+  expiresAt    DateTime
+  expiredAt    DateTime?
+  expireReason String? // VIEWS | TIME | OWNER | VIEWER
+
+  events AuditEvent[]
+
+  @@index([userId, createdAt])
+  @@index([expiresAt])
+}
+
+model AuditEvent {
+  id        String   @id @default(cuid())
+  pushId    String
+  push      Push     @relation(fields: [pushId], references: [id], onDelete: Cascade)
+  kind      String // CREATED | VIEW | FAILED_PASSPHRASE | EXPIRED | OWNER_DELETE | VIEWER_DELETE
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([pushId, createdAt])
+}

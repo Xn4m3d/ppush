@@ -1,0 +1,38 @@
+services:
+  ppush:
+    build: .
+    container_name: ppush
+    restart: unless-stopped
+    ports:
+      # exposé uniquement en local : le reverse proxy (NPM/Caddy/cloudflared) fait le TLS
+      - "127.0.0.1:8086:3000"
+    environment:
+      BASE_URL: ${BASE_URL:-https://ppush.online}
+      # vide = inscription publique (défaut) ; ex. "exemple.com" pour restreindre par domaine — coupe-circuit anti-abus
+      ALLOWED_EMAIL_DOMAINS: ${ALLOWED_EMAIL_DOMAINS:-}
+      # "true" = nouveaux comptes soumis à approbation admin (défaut : public, sans approbation)
+      REQUIRE_APPROVAL: ${REQUIRE_APPROVAL:-false}
+      # Cloudflare Turnstile (anti-bot à l'inscription) — vide = désactivé
+      TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY:-}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
+      # ⚠️ derrière Cloudflare Free, la limite de corps de requête est 100 Mo :
+      # garder ≤ ~90 pour que les uploads chiffrés ne soient pas rejetés à l'edge.
+      MAX_FILE_SIZE_MB: ${MAX_FILE_SIZE_MB:-90}
+      # quota applicatif global sur les blobs en Go (0 = seul l'espace disque borne)
+      STORAGE_QUOTA_GB: ${STORAGE_QUOTA_GB:-0}
+      # quota de fichiers actifs par compte en Go (0 = pas de quota par compte)
+      USER_STORAGE_QUOTA_GB: ${USER_STORAGE_QUOTA_GB:-3}
+      MAX_TEXT_SIZE_KB: ${MAX_TEXT_SIZE_KB:-1024}
+      USER_MAX_DAYS: ${USER_MAX_DAYS:-30}
+      USER_MAX_VIEWS: ${USER_MAX_VIEWS:-50}
+      SESSION_DAYS: ${SESSION_DAYS:-14}
+      LOG_IPS: ${LOG_IPS:-true}
+    volumes:
+      - ./data:/app/data
+    healthcheck:
+      # 127.0.0.1 (et pas localhost) : Next n'écoute qu'en IPv4, localhost résout sur ::1 → faux unhealthy
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/login"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s

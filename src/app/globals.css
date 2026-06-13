@@ -1,0 +1,212 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0b0d12;
+  --color-bg-soft: #101319;
+  --color-panel: #141823;
+  --color-panel-soft: #1a1f2e;
+  --color-line: #232a3b;
+  --color-line-soft: #2d3650;
+
+  --color-ink: #eef1f8;
+  --color-ink-dim: #9aa3b8;
+  --color-ink-faint: #5d6578;
+
+  --color-accent: #7c6cff;
+  --color-accent-soft: #9d92ff;
+  --color-accent-deep: #5b4ce0;
+
+  --color-ok: #34d399;
+  --color-warn: #fbbf24;
+  --color-danger: #f87171;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* root background: stops the <body> background from propagating to the canvas —
+   otherwise the halo is positioned relative to the viewport, not the document
+   (misplaced on long / non-home pages) */
+html { background: var(--color-bg); }
+
+/* discreet halo behind the footer (anchored to the bottom of the document,
+   stable regardless of page length) */
+.bg-glow {
+  background:
+    radial-gradient(60rem 24rem at 50% calc(100% + 8rem), rgba(124, 108, 255, 0.13), transparent 70%),
+    var(--color-bg);
+  background-repeat: no-repeat;
+}
+
+::selection {
+  background: rgba(124, 108, 255, 0.35);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-soft) transparent;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* ---- mascot (src/components/cat.tsx) ---- */
+
+@keyframes paw-pulse {
+  0%, 60%, 100% { opacity: 0.25; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-2px); }
+}
+.animate-paw {
+  display: inline-flex;
+  animation: paw-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes cat-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+@keyframes cat-blink {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(0.06); }
+}
+@keyframes cat-zz {
+  0% { opacity: 0; transform: translate(0, 0); }
+  30% { opacity: 0.9; }
+  100% { opacity: 0; transform: translate(12px, -18px); }
+}
+
+/* guardian head (reveal page) */
+.gc-cat { position: relative; width: 86px; height: 74px; animation: cat-float 4s ease-in-out infinite; }
+.gc-head { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 78px; height: 62px; background: var(--color-panel-soft);
+  border: 3px solid var(--color-line-soft); border-radius: 48% 48% 45% 45%; }
+.gc-ear { position: absolute; top: -2px; width: 0; height: 0; z-index: 0;
+  border-left: 13px solid transparent; border-right: 13px solid transparent;
+  border-bottom: 21px solid var(--color-line-soft); }
+.gc-ear::after { content: ""; position: absolute; left: -9px; top: 5px; width: 0; height: 0;
+  border-left: 9px solid transparent; border-right: 9px solid transparent;
+  border-bottom: 14px solid var(--color-panel-soft); }
+.gc-ear.l { left: 7px; transform: rotate(-12deg); }
+.gc-ear.r { right: 7px; transform: rotate(12deg); }
+.gc-eye { position: absolute; top: 20px; width: 17px; height: 17px; background: var(--color-ink);
+  border-radius: 50%; overflow: hidden; }
+.gc-eye.l { left: 14px; }
+.gc-eye.r { right: 14px; }
+.gc-pupil { position: absolute; top: 50%; left: 50%; width: 8px; height: 8px;
+  margin: -4px 0 0 -4px; background: var(--color-bg); border-radius: 50%;
+  transition: transform 0.08s linear; }
+.gc-blink { animation: cat-blink 0.18s linear; }
+.gc-closed { height: 3px; top: 28px; border-radius: 2px; background: var(--color-ink-faint); }
+.gc-closed .gc-pupil { display: none; }
+/* happy eyes (upward arc) — secret well received */
+.gc-eye.gc-happy { height: 8px; top: 24px; background: transparent; border: none;
+  border-top: 3px solid var(--color-ink); border-radius: 14px 14px 0 0; }
+.gc-eye.gc-happy .gc-pupil { display: none; }
+.gc-bounce { animation: gc-bounce 1.3s ease-in-out infinite; }
+@keyframes gc-bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+.gc-nose { position: absolute; top: 35px; left: 50%; transform: translateX(-50%);
+  width: 7px; height: 5px; background: var(--color-accent-soft); border-radius: 40% 40% 60% 60%; }
+.gc-mouth { position: absolute; top: 40px; left: 50%; transform: translateX(-50%);
+  width: 17px; height: 7px; border-bottom: 2px solid var(--color-ink-faint);
+  border-radius: 0 0 50% 50%; }
+.gc-zzz { position: absolute; top: -6px; right: 2px; font-size: 13px;
+  color: var(--color-ink-faint); opacity: 0; animation: cat-zz 3s ease-in-out infinite; }
+.gc-zzz:nth-of-type(2) { animation-delay: 1s; }
+
+/* sleeping cat (empty states) */
+.sc-cat { position: relative; width: 110px; height: 78px; }
+.sc-body { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 86px; height: 46px; background: var(--color-panel-soft);
+  border: 3px solid var(--color-line-soft); border-bottom: none; border-radius: 44px 44px 0 0; }
+.sc-head { position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%);
+  width: 60px; height: 46px; background: var(--color-panel-soft);
+  border: 3px solid var(--color-line-soft); border-radius: 48% 48% 45% 45%; z-index: 2; }
+.sc-ear { position: absolute; top: -11px; width: 0; height: 0;
+  border-left: 10px solid transparent; border-right: 10px solid transparent;
+  border-bottom: 17px solid var(--color-line-soft); }
+.sc-ear.l { left: 3px; transform: rotate(-12deg); }
+.sc-ear.r { right: 3px; transform: rotate(12deg); }
+.sc-eye { position: absolute; top: 20px; width: 13px; height: 3px;
+  background: var(--color-ink-faint); border-radius: 2px; }
+.sc-eye.l { left: 9px; }
+.sc-eye.r { right: 9px; }
+.sc-nose { position: absolute; top: 27px; left: 50%; transform: translateX(-50%);
+  width: 6px; height: 4px; background: var(--color-accent-soft); border-radius: 40% 40% 60% 60%; }
+.sc-tail { position: absolute; bottom: 2px; right: -16px; width: 40px; height: 12px;
+  border: 3px solid var(--color-line-soft); border-left: none; border-radius: 0 10px 10px 0;
+  background: var(--color-panel-soft); transform-origin: left center;
+  animation: sc-wag 3.2s ease-in-out infinite; }
+@keyframes sc-wag {
+  0%, 100% { transform: rotate(-8deg); }
+  50% { transform: rotate(14deg); }
+}
+.sc-zzz { position: absolute; top: -8px; right: 14px; font-size: 14px;
+  color: var(--color-ink-faint); opacity: 0; animation: cat-zz 3s ease-in-out infinite; }
+.sc-zzz:nth-of-type(2) { animation-delay: 1s; }
+
+
+/* ── Home mascot: the 404 cat, eyes that follow the cursor (src/components/mascot-cat.tsx) ── */
+.mc-cat { position: relative; width: 170px; height: 140px; }
+.mc-body { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 120px; height: 75px; background: var(--color-panel-soft);
+  border: 3px solid var(--color-line-soft); border-bottom: none; border-radius: 60px 60px 0 0; }
+.mc-head { position: absolute; bottom: 52px; left: 50%; transform: translateX(-50%);
+  width: 95px; height: 78px; background: var(--color-panel-soft);
+  border: 3px solid var(--color-line-soft); border-radius: 48% 48% 45% 45%; z-index: 2; }
+.mc-ear { position: absolute; top: -16px; width: 0; height: 0;
+  border-left: 16px solid transparent; border-right: 16px solid transparent;
+  border-bottom: 26px solid var(--color-line-soft); }
+.mc-ear::after { content: ""; position: absolute; left: -12px; top: 5px; width: 0; height: 0;
+  border-left: 12px solid transparent; border-right: 12px solid transparent;
+  border-bottom: 19px solid var(--color-panel-soft); }
+.mc-ear.l { left: 6px; transform: rotate(-12deg); }
+.mc-ear.r { right: 6px; transform: rotate(12deg); }
+.mc-eye { position: absolute; top: 28px; width: 22px; height: 22px; background: var(--color-ink);
+  border-radius: 50%; overflow: hidden; }
+.mc-eye.l { left: 17px; }
+.mc-eye.r { right: 17px; }
+.mc-pupil { position: absolute; top: 50%; left: 50%; width: 10px; height: 10px;
+  margin: -5px 0 0 -5px; background: var(--color-bg); border-radius: 50%;
+  transition: transform 0.08s linear; }
+.mc-eye.mc-blink { animation: mc-blink 0.18s linear; }
+@keyframes mc-blink { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(0.06); } }
+.mc-nose { position: absolute; top: 47px; left: 50%; transform: translateX(-50%);
+  width: 9px; height: 6px; background: var(--color-accent-soft); border-radius: 40% 40% 60% 60%; }
+.mc-mouth { position: absolute; top: 53px; left: 50%; transform: translateX(-50%);
+  width: 22px; height: 9px; border-bottom: 2.5px solid var(--color-ink-faint); border-radius: 0 0 50% 50%; }
+.mc-whisker { position: absolute; width: 26px; height: 1.5px; background: var(--color-ink-faint); top: 50px; }
+.mc-w1 { left: -22px; transform: rotate(8deg); }
+.mc-w2 { left: -22px; top: 57px; transform: rotate(-4deg); }
+.mc-w3 { right: -22px; transform: rotate(-8deg); }
+.mc-w4 { right: -22px; top: 57px; transform: rotate(4deg); }
+.mc-tail { position: absolute; bottom: 4px; right: -28px; width: 56px; height: 16px;
+  border: 3px solid var(--color-line-soft); border-left: none; border-radius: 0 14px 14px 0;
+  background: var(--color-panel-soft); transform-origin: left center; animation: mc-wag 2.2s ease-in-out infinite; }
+@keyframes mc-wag { 0%, 100% { transform: rotate(-12deg); } 50% { transform: rotate(22deg); } }
+.mc-paw { position: absolute; bottom: 0; width: 22px; height: 10px;
+  background: var(--color-line-soft); border-radius: 8px 8px 0 0; }
+.mc-paw.l { left: 32px; }
+.mc-paw.r { right: 32px; }
