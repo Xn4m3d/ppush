@@ -1,5 +1,4 @@
 import { getTranslations } from "next-intl/server";
-import { cls } from "./ui";
 
 const REPO = "https://github.com/Xn4m3d/ppush";
 
@@ -16,8 +15,9 @@ function GithubMark({ className }: { className?: string }) {
  * Link to the source code (transparency) + version currently LIVE.
  * APP_VERSION / APP_SHA are injected at build time by CI (see Dockerfile);
  * in a local build the version is "dev" and links to the repository.
+ * SERVER component: no client import (e.g. cls) — direct string concatenation.
  */
-export async function SourceLink({ className }: { className?: string }) {
+export async function SourceLink({ className = "" }: { className?: string }) {
   const t = await getTranslations("footer");
   const version = process.env.APP_VERSION || "dev";
   const sha = process.env.APP_SHA || "";
@@ -26,10 +26,7 @@ export async function SourceLink({ className }: { className?: string }) {
 
   return (
     <span
-      className={cls(
-        "inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs text-ink-faint",
-        className
-      )}
+      className={`inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs text-ink-faint ${className}`}
     >
       <a
         href={REPO}
