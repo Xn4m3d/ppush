@@ -8,7 +8,8 @@ import { Logo } from "@/components/header";
 import { BackHome } from "@/components/back-home";
 
 export async function generateMetadata() {
-  return { title: (await getTranslations("meta"))("register") };
+  const t = await getTranslations("meta");
+  return { title: t("register"), description: t("registerDescription") };
 }
 
 export default async function RegisterPage() {

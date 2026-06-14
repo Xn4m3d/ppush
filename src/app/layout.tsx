@@ -6,6 +6,7 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { PawPrint } from "@/components/cat";
 import { FlagFr } from "@/components/flag-fr";
 import { SourceLink } from "@/components/source-link";
+import { StructuredData } from "@/components/structured-data";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -24,7 +25,6 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase: new URL(process.env.BASE_URL ?? "https://ppush.online"),
     title: { default: t("title"), template: t("titleTemplate") },
     description: t("description"),
-    robots: { index: false, follow: false },
     openGraph: {
       title: t("title"),
       description: t("description"),
@@ -56,6 +56,7 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-glow">
+        <StructuredData />
         <NextIntlClientProvider>
           {children}
           <footer className="border-t border-line/40 py-5 text-center text-xs text-ink-faint">

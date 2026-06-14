@@ -13,7 +13,14 @@
     "about": "À propos",
     "apiDocs": "Documentation API",
     "legal": "Mentions légales",
-    "privacy": "Politique de confidentialité"
+    "privacy": "Politique de confidentialité",
+    "homeDescription": "Partagez un mot de passe, un texte ou un fichier via un lien chiffré de bout en bout qui s'autodétruit. Zéro-knowledge : le serveur ne voit jamais votre secret.",
+    "aboutDescription": "Le fonctionnement de ppush : chiffrement zéro-knowledge dans le navigateur, liens autodestructibles, limites de vues et suivi. Données hébergées en France via Cloudflare.",
+    "apiDocsDescription": "API REST de ppush : créez et gérez par programmation des liens secrets chiffrés de bout en bout et autodestructibles à l'aide de jetons d'accès personnels.",
+    "legalDescription": "Mentions légales de ppush : éditeur, hébergement, conformité RGPD et LCEN, durées de conservation et contact du service de partage sécurisé de secrets.",
+    "privacyDescription": "Politique de confidentialité de ppush : données traitées, bases légales, durées de conservation et vos droits. Secrets chiffrés de bout en bout, illisibles par le serveur.",
+    "loginDescription": "Connectez-vous à ppush pour accéder à l'historique de vos secrets, au suivi des consultations et aux fichiers plus volumineux. Connexion sans mot de passe par passkey.",
+    "registerDescription": "Créez un compte ppush gratuit pour savoir qui ouvre vos secrets, garder l'historique de vos liens, partager des fichiers plus gros et profiter d'une rétention plus longue."
   },
   "common": {
     "copy": "Copier",

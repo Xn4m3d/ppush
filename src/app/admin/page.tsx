@@ -5,7 +5,10 @@ import { Header } from "@/components/header";
 import { AdminPanel } from "@/components/admin-panel";
 
 export async function generateMetadata() {
-  return { title: (await getTranslations("meta"))("admin") };
+  return {
+    title: (await getTranslations("meta"))("admin"),
+    robots: { index: false, follow: false },
+  };
 }
 
 export default async function AdminPage() {

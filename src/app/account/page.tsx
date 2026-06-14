@@ -12,7 +12,10 @@ import { PasskeysPanel } from "@/components/passkeys-panel";
 import { TotpPanel } from "@/components/totp-panel";
 
 export async function generateMetadata() {
-  return { title: (await getTranslations("meta"))("account") };
+  return {
+    title: (await getTranslations("meta"))("account"),
+    robots: { index: false, follow: false },
+  };
 }
 
 export default async function AccountPage() {

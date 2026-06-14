@@ -5,7 +5,10 @@ import { Header } from "@/components/header";
 import { PushDetail } from "@/components/push-detail";
 
 export async function generateMetadata() {
-  return { title: (await getTranslations("meta"))("pushDetail") };
+  return {
+    title: (await getTranslations("meta"))("pushDetail"),
+    robots: { index: false, follow: false },
+  };
 }
 
 export default async function PushDetailPage({

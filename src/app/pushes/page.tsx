@@ -5,7 +5,10 @@ import { Header } from "@/components/header";
 import { PushList } from "@/components/push-list";
 
 export async function generateMetadata() {
-  return { title: (await getTranslations("meta"))("history") };
+  return {
+    title: (await getTranslations("meta"))("history"),
+    robots: { index: false, follow: false },
+  };
 }
 
 export default async function PushesPage() {

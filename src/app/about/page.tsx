@@ -20,7 +20,7 @@ export async function generateMetadata() {
   const t = await getTranslations("meta");
   return {
     title: t("about"),
-    description: t("description"),
+    description: t("aboutDescription"),
   };
 }
 

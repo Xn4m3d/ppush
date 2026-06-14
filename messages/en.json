@@ -13,7 +13,14 @@
     "about": "About",
     "apiDocs": "API documentation",
     "legal": "Legal notice",
-    "privacy": "Privacy policy"
+    "privacy": "Privacy policy",
+    "homeDescription": "Share a password, text or file as an end-to-end encrypted, self-destructing link. Zero-knowledge: the server never sees your secret, no account required.",
+    "aboutDescription": "How ppush works: zero-knowledge encryption in your browser, self-destructing links, view limits and tracking. Data hosted in France, delivered via Cloudflare.",
+    "apiDocsDescription": "ppush REST API: create and manage end-to-end encrypted, self-destructing secret links programmatically using personal access tokens.",
+    "legalDescription": "Legal notice for ppush: publisher, hosting, GDPR and LCEN compliance, data retention and contact for the secure secret-sharing service.",
+    "privacyDescription": "ppush privacy policy: data processed, legal bases, retention periods and your rights. Secrets are end-to-end encrypted and never readable by the server.",
+    "loginDescription": "Sign in to ppush to access your secret history, view tracking and larger file uploads. Passwordless sign-in with a passkey is supported.",
+    "registerDescription": "Create a free ppush account to see who opened your secrets, keep a history of your links, share larger files and enjoy longer retention."
   },
   "common": {
     "copy": "Copy",

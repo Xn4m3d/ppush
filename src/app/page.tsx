@@ -7,6 +7,10 @@ import { Header } from "@/components/header";
 import { PushForm } from "@/components/push-form";
 import { MascotCat } from "@/components/mascot-cat";
 
+export async function generateMetadata() {
+  return { description: (await getTranslations("meta"))("homeDescription") };
+}
+
 export default async function HomePage() {
   const user = await currentUser();
   const t = await getTranslations("home");
