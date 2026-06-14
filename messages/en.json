@@ -41,7 +41,9 @@
     "api": "API",
     "tagline": "End-to-end encrypted, by you. Created and maintained by Alexandre.",
     "network": "Delivery via Cloudflare",
-    "hostedIn": "hosted in France"
+    "hostedIn": "hosted in France",
+    "source": "Source code",
+    "buildTooltip": "Version running in production"
   },
   "home": {
     "title": "Share a secret",

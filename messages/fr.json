@@ -41,7 +41,9 @@
     "api": "API",
     "tagline": "Chiffré de bout en bout, par vous. Créé et maintenu par Alexandre.",
     "network": "Diffusion via Cloudflare",
-    "hostedIn": "hébergé en France"
+    "hostedIn": "hébergé en France",
+    "source": "Code source",
+    "buildTooltip": "Version en ligne en production"
   },
   "home": {
     "title": "Partager un secret",

@@ -5,6 +5,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { PawPrint } from "@/components/cat";
 import { FlagFr } from "@/components/flag-fr";
+import { SourceLink } from "@/components/source-link";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -84,6 +85,9 @@ export default async function RootLayout({
               {t("network")} <span aria-hidden>·</span> {t("hostedIn")}{" "}
               <FlagFr className="h-2.5 w-auto rounded-[2px]" />
             </p>
+            <div className="mt-1.5">
+              <SourceLink />
+            </div>
           </footer>
         </NextIntlClientProvider>
       </body>
