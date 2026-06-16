@@ -200,7 +200,7 @@ export function SecretViewer({ slug }: { slug: string }) {
           <div className="mt-4 flex flex-wrap justify-center gap-2.5">
             <Link
               href="/"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white shadow-[0_4px_20px_-4px_rgba(124,108,255,0.45)] transition-all hover:bg-accent-soft"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white shadow-[0_4px_20px_-4px_var(--accent-glow)] transition-all hover:bg-accent-soft"
             >
               <Lock className="size-4" />
               {t("thanksCreate")}
@@ -376,7 +376,7 @@ export function SecretViewer({ slug }: { slug: string }) {
       <div className="mt-4 flex flex-wrap justify-center gap-2.5">
         <Link
           href="/"
-          className="inline-flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white shadow-[0_4px_20px_-4px_rgba(124,108,255,0.45)] transition-all hover:bg-accent-soft"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white shadow-[0_4px_20px_-4px_var(--accent-glow)] transition-all hover:bg-accent-soft"
         >
           <Lock className="size-4" />
           {t("thanksCreate")}

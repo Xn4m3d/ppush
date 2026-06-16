@@ -293,7 +293,7 @@ export function AboutContentEn({ showRegister }: { showRegister: boolean }) {
           <div className="flex flex-wrap gap-3">
             <Link
               href="/"
-              className="inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-white shadow-[0_4px_20px_-4px_rgba(124,108,255,0.45)] transition-all hover:bg-accent-soft"
+              className="inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-white shadow-[0_4px_20px_-4px_var(--accent-glow)] transition-all hover:bg-accent-soft"
             >
               <Lock className="size-4" />
               Create a push

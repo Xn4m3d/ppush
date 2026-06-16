@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
+import { currentUser } from "@/lib/auth";
+import { DEFAULT_THEME, THEME_COOKIE, isTheme } from "@/lib/themes";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 import { PawPrint } from "@/components/cat";
 import { FlagFr } from "@/components/flag-fr";
 import { SourceLink } from "@/components/source-link";
@@ -50,9 +54,14 @@ export default async function RootLayout({
   const locale = await getLocale();
   const t = await getTranslations("footer");
 
+  const themeCookie = (await cookies()).get(THEME_COOKIE)?.value;
+  const theme = isTheme(themeCookie) ? themeCookie : DEFAULT_THEME;
+  const user = await currentUser();
+
   return (
     <html
       lang={locale}
+      data-theme={theme}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-glow">
@@ -78,6 +87,12 @@ export default async function RootLayout({
               </a>
               <span aria-hidden>·</span>
               <LanguageSwitcher />
+              {user?.role === "ADMIN" && (
+                <>
+                  <span aria-hidden>·</span>
+                  <ThemeSwitcher current={theme} />
+                </>
+              )}
             </nav>
             <p className="mt-2 inline-flex items-center gap-1.5">
               {t("tagline")} <PawPrint className="size-3 text-accent-soft/70" />

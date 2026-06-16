@@ -227,7 +227,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
             className={cls(
               "flex flex-col items-center gap-1 rounded-xl px-2 py-3 text-xs font-medium transition-all sm:flex-row sm:justify-center sm:gap-2 sm:text-sm cursor-pointer",
               kind === k
-                ? "bg-accent/15 text-accent-soft shadow-[inset_0_0_0_1px_rgba(124,108,255,0.3)]"
+                ? "bg-accent/15 text-accent-soft shadow-[inset_0_0_0_1px_var(--accent-glow)]"
                 : "text-ink-faint hover:bg-panel-soft hover:text-ink-dim"
             )}
           >
@@ -435,7 +435,7 @@ function GeneratorOptions({
             max={64}
             value={length}
             onChange={(e) => onLength(parseInt(e.target.value, 10))}
-            className="mt-2 w-full accent-[#7c6cff] cursor-pointer"
+            className="mt-2 w-full accent-[var(--color-accent)] cursor-pointer"
           />
         </div>
         <Toggle
@@ -506,7 +506,7 @@ function RangeField({
         max={max}
         value={value}
         onChange={(e) => onChange(parseInt(e.target.value, 10))}
-        className="mt-3 w-full accent-[#7c6cff] cursor-pointer"
+        className="mt-3 w-full accent-[var(--color-accent)] cursor-pointer"
       />
     </div>
   );
@@ -547,7 +547,7 @@ function ExpiryField({
         step={1}
         value={idx}
         onChange={(e) => onChange(presets[parseInt(e.target.value, 10)])}
-        className="mt-3 w-full accent-[#7c6cff] cursor-pointer"
+        className="mt-3 w-full accent-[var(--color-accent)] cursor-pointer"
       />
     </div>
   );

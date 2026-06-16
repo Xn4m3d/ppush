@@ -55,6 +55,10 @@ export async function StructuredData() {
     <script
       type="application/ld+json"
       nonce={nonce}
+      // React strips `nonce` from the DOM on hydration (anti nonce-theft) → the
+      // server attribute differs from client, raising a harmless hydration
+      // warning. This is JSON-LD (data, not executed), so we silence the noise.
+      suppressHydrationWarning
       dangerouslySetInnerHTML={{ __html: json }}
     />
   );

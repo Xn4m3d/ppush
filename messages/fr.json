@@ -55,14 +55,15 @@
   "home": {
     "title": "Partager un secret",
     "subtitle": "Un lien chiffré de bout en bout, qui s'autodétruit. Rien ne transite ni n'est stocké en clair.",
-    "anonBadge": "Mode anonyme",
-    "anonLimits": "Limité à {days} jours · {views} vues · fichiers {fileMb} Mo · sans historique ni suivi 🙀",
+    "anonBadge": "Sans compte",
+    "anonLimits": "Limitations : dispo {days} jours max · {views} vues · fichier max {fileMb} Mo",
+    "anonNoTracking": "sans historique ni suivi des push 🙀",
     "anonUnlock": "Créez un compte gratuit pour débloquer :",
     "anonPerkStar": "Le plus aimé",
     "anonPerkTrackingTitle": "Sachez qui l'a ouvert",
-    "anonPerkTrackingDesc": "Voyez chaque consultation — date, heure, IP et navigateur. Sachez l'instant où votre secret est lu.",
-    "anonPerkHistoryTitle": "L'historique de vos liens",
-    "anonPerkHistoryDesc": "Retrouvez, gérez et expirez chaque lien créé, au même endroit.",
+    "anonPerkTrackingDesc": "Suivez vos push, obtenez date, heure, IP et navigateur des destinataires",
+    "anonPerkHistoryTitle": "Débloquez votre historique",
+    "anonPerkHistoryDesc": "Visualisez et gérez vos liens générés",
     "anonPerkMoreTitle": "Limites élargies",
     "anonPerkMoreDesc": "Fichiers jusqu'à {fileMb} Mo, liens jusqu'à {days} jours et {views} vues.",
     "anonCta": "Créer un compte gratuit",
@@ -490,5 +491,9 @@
       "Un secret dont vous n'avez plus besoin est un risque dont vous ne voulez plus — laissez-le expirer.",
       "Vérifiez la source avant de révéler : un lien d'un inconnu n'est pas forcément un cadeau."
     ]
+  },
+  "themes": {
+    "midnight": "Midnight",
+    "mecha": "Mecha"
   }
 }

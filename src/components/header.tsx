@@ -8,7 +8,7 @@ export async function Logo() {
   const t = await getTranslations("header");
   return (
     <Link href="/" className="flex items-center gap-2.5 group">
-      <span className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-accent to-accent-deep shadow-[0_4px_16px_-2px_rgba(124,108,255,0.5)] transition-transform group-hover:scale-105">
+      <span className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-accent to-accent-deep shadow-[0_4px_16px_-2px_var(--accent-glow)] transition-transform group-hover:scale-105">
         <CatMark className="size-6 text-white" />
       </span>
       <span className="text-lg font-semibold tracking-tight">

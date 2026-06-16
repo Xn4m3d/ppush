@@ -55,14 +55,15 @@
   "home": {
     "title": "Share a secret",
     "subtitle": "An end-to-end encrypted link that self-destructs. Nothing transits or is stored in cleartext.",
-    "anonBadge": "Anonymous mode",
-    "anonLimits": "Capped at {days} days · {views} views · {fileMb} MB files · no history, no tracking 🙀",
+    "anonBadge": "No account",
+    "anonLimits": "Limits: up to {days} days · {views} views · {fileMb} MB max per file",
+    "anonNoTracking": "no history, no push tracking 🙀",
     "anonUnlock": "Create a free account to unlock:",
     "anonPerkStar": "Most loved",
     "anonPerkTrackingTitle": "Know who opened it",
-    "anonPerkTrackingDesc": "See every view — date, time, IP and browser. Know the moment your secret is read.",
-    "anonPerkHistoryTitle": "Your link history",
-    "anonPerkHistoryDesc": "Find, manage and expire every link you've created, in one place.",
+    "anonPerkTrackingDesc": "Track your pushes — get date, time, IP and browser of recipients",
+    "anonPerkHistoryTitle": "Unlock your history",
+    "anonPerkHistoryDesc": "View and manage the links you've generated",
     "anonPerkMoreTitle": "Higher limits",
     "anonPerkMoreDesc": "Files up to {fileMb} MB, links up to {days} days and {views} views.",
     "anonCta": "Create a free account",
@@ -490,5 +491,9 @@
       "A secret you no longer need is a risk you no longer want — let it expire.",
       "Trust the source before you reveal: a link from a stranger may not be a gift."
     ]
+  },
+  "themes": {
+    "midnight": "Midnight",
+    "mecha": "Mecha"
   }
 }

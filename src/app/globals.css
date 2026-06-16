@@ -24,6 +24,57 @@
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
+/* Accent-derived effects (not Tailwind utilities), themeable.
+   Default = the "midnight" (violet) theme defined in @theme above. */
+:root {
+  --accent-glow: rgba(124, 108, 255, 0.45);
+
+  /* Mascot eyes: LIGHT sclera + DARK pupil in every theme. Do NOT reuse
+     --color-ink/--color-bg here — they invert under a light theme and break
+     the cursor-following gaze (light dot on a black eye). */
+  --mc-sclera: #eef1f8;
+  --mc-pupil: #0b0d12;
+}
+
+/* ── "mecha" theme: light mecha grey, high contrast + lava-red accent ──
+   Light theme (color-scheme: light), inverting the dark default. Tailwind
+   utilities reference var(--color-*), so redefining these here switches the
+   whole UI through the cascade. Add a theme = duplicate this block with
+   another data-theme. */
+html[data-theme="mecha"] {
+  color-scheme: light;
+
+  /* steel / concrete grey, slightly cool */
+  --color-bg: #e7e9ec;
+  --color-bg-soft: #dde0e4;
+  --color-panel: #f6f7f9;
+  --color-panel-soft: #eceef1;
+  --color-line: #cbd0d7;
+  --color-line-soft: #aab2bd;
+
+  /* near-black ink, high contrast */
+  --color-ink: #14171c;
+  --color-ink-dim: #454c57;
+  --color-ink-faint: #6f7783;
+
+  /* lava red (a real red, not orange) */
+  --color-accent: #d4231a;
+  --color-accent-soft: #ee3a2c;
+  --color-accent-deep: #a3140d;
+
+  /* darkened status colours so they stay legible on a light background */
+  --color-ok: #0f9d58;
+  --color-warn: #c2700a;
+  --color-danger: #c0271d;
+
+  --accent-glow: rgba(212, 35, 26, 0.40);
+
+  /* white sclera + near-black pupil: the dark pupil clearly reads as a gaze
+     following the cursor on the light face. */
+  --mc-sclera: #ffffff;
+  --mc-pupil: #14171c;
+}
+
 html {
   color-scheme: dark;
 }
@@ -44,13 +95,13 @@ html { background: var(--color-bg); }
    stable regardless of page length) */
 .bg-glow {
   background:
-    radial-gradient(60rem 24rem at 50% calc(100% + 8rem), rgba(124, 108, 255, 0.13), transparent 70%),
+    radial-gradient(60rem 24rem at 50% calc(100% + 8rem), color-mix(in srgb, var(--color-accent) 13%, transparent), transparent 70%),
     var(--color-bg);
   background-repeat: no-repeat;
 }
 
 ::selection {
-  background: rgba(124, 108, 255, 0.35);
+  background: color-mix(in srgb, var(--color-accent) 35%, transparent);
 }
 
 * {
@@ -111,12 +162,12 @@ html { background: var(--color-bg); }
   border-bottom: 14px solid var(--color-panel-soft); }
 .gc-ear.l { left: 7px; transform: rotate(-12deg); }
 .gc-ear.r { right: 7px; transform: rotate(12deg); }
-.gc-eye { position: absolute; top: 20px; width: 17px; height: 17px; background: var(--color-ink);
+.gc-eye { position: absolute; top: 20px; width: 17px; height: 17px; background: var(--mc-sclera);
   border-radius: 50%; overflow: hidden; }
 .gc-eye.l { left: 14px; }
 .gc-eye.r { right: 14px; }
 .gc-pupil { position: absolute; top: 50%; left: 50%; width: 8px; height: 8px;
-  margin: -4px 0 0 -4px; background: var(--color-bg); border-radius: 50%;
+  margin: -4px 0 0 -4px; background: var(--mc-pupil); border-radius: 50%;
   transition: transform 0.08s linear; }
 .gc-blink { animation: cat-blink 0.18s linear; }
 .gc-closed { height: 3px; top: 28px; border-radius: 2px; background: var(--color-ink-faint); }
@@ -184,12 +235,12 @@ html { background: var(--color-bg); }
   border-bottom: 19px solid var(--color-panel-soft); }
 .mc-ear.l { left: 6px; transform: rotate(-12deg); }
 .mc-ear.r { right: 6px; transform: rotate(12deg); }
-.mc-eye { position: absolute; top: 28px; width: 22px; height: 22px; background: var(--color-ink);
+.mc-eye { position: absolute; top: 28px; width: 22px; height: 22px; background: var(--mc-sclera);
   border-radius: 50%; overflow: hidden; }
 .mc-eye.l { left: 17px; }
 .mc-eye.r { right: 17px; }
 .mc-pupil { position: absolute; top: 50%; left: 50%; width: 10px; height: 10px;
-  margin: -5px 0 0 -5px; background: var(--color-bg); border-radius: 50%;
+  margin: -5px 0 0 -5px; background: var(--mc-pupil); border-radius: 50%;
   transition: transform 0.08s linear; }
 .mc-eye.mc-blink { animation: mc-blink 0.18s linear; }
 @keyframes mc-blink { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(0.06); } }

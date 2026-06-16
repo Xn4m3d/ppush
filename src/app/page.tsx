@@ -55,49 +55,51 @@ export default async function HomePage() {
         </div>
 
         {!user && (
-          <div className="mb-7 overflow-hidden rounded-2xl border border-accent/30 bg-gradient-to-b from-accent/[0.10] to-accent/[0.02] animate-fade-up">
-            <div className="px-5 py-4 sm:px-6 sm:py-5">
-              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent-soft">
-                  <Sparkles className="size-3.5" /> {t("anonBadge")}
-                </span>
-                <p className="text-sm text-ink-dim">
-                  {t("anonLimits", { days: a.maxDays, views: a.maxViews, fileMb: a.maxFileMb })}
-                </p>
-              </div>
+          <div className="relative mb-6 rounded-2xl border border-accent/30 bg-gradient-to-b from-accent/[0.10] to-accent/[0.02] animate-fade-up">
+            {/* title badge: straddling the top-left border of the zone */}
+            <span className="absolute -top-3 left-4 inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-bg px-2.5 py-1 text-xs font-medium text-accent-soft shadow-sm">
+              <Sparkles className="size-3.5" /> {t("anonBadge")}
+            </span>
+            <div className="px-4 pt-5 pb-3.5 sm:px-5 sm:pt-5 sm:pb-4">
+              <p className="text-center text-sm text-ink-dim">
+                {t("anonLimits", { days: a.maxDays, views: a.maxViews, fileMb: a.maxFileMb })}
+              </p>
+              <p className="mt-0.5 text-center text-sm text-ink-dim">{t("anonNoTracking")}</p>
 
-              <p className="mt-3.5 text-sm font-semibold text-ink">{t("anonUnlock")}</p>
+              <p className="mt-3 text-center text-xs font-semibold uppercase tracking-wide text-ink-dim">
+                {t("anonUnlock")}
+              </p>
 
-              <div className="mt-2.5 grid gap-2.5 sm:grid-cols-2">
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
                 {/* View tracking: the flagship argument → full width, highlighted */}
-                <div className="flex items-start gap-3 rounded-xl border border-accent/40 bg-accent/[0.09] px-4 py-3 sm:col-span-2">
-                  <span className="mt-0.5 grid size-9 shrink-0 place-items-center rounded-lg border border-accent/30 bg-accent/15">
-                    <Eye className="size-5 text-accent-soft" />
-                  </span>
-                  <div>
-                    <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-ink">
+                <div className="flex flex-col items-center gap-1 text-center rounded-xl border border-accent/40 bg-accent/[0.09] px-3 py-2.5 sm:col-span-2">
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    <span className="grid size-7 shrink-0 place-items-center rounded-lg border border-accent/30 bg-accent/15">
+                      <Eye className="size-4 text-accent-soft" />
+                    </span>
+                    <span className="text-sm font-semibold text-ink">
                       {t("anonPerkTrackingTitle")}
-                      <span className="rounded-full bg-accent/20 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-accent-soft">
-                        {t("anonPerkStar")}
-                      </span>
-                    </p>
-                    <p className="mt-0.5 text-xs text-ink-dim">{t("anonPerkTrackingDesc")}</p>
+                    </span>
+                    <span className="rounded-full bg-accent/20 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-accent-soft">
+                      {t("anonPerkStar")}
+                    </span>
                   </div>
+                  <p className="text-xs text-ink-dim">{t("anonPerkTrackingDesc")}</p>
                 </div>
 
-                <div className="flex items-start gap-3 rounded-xl border border-line/60 bg-bg-soft/40 px-4 py-3">
-                  <History className="mt-0.5 size-4 shrink-0 text-accent-soft" />
-                  <div>
+                <div className="flex flex-col items-center gap-1.5 text-center rounded-xl border border-line/60 bg-bg-soft/40 px-3 py-2.5">
+                  <History className="size-4 shrink-0 text-accent-soft" />
+                  <div className="min-w-0">
                     <p className="text-sm font-medium text-ink">{t("anonPerkHistoryTitle")}</p>
-                    <p className="mt-0.5 text-xs text-ink-dim">{t("anonPerkHistoryDesc")}</p>
+                    <p className="text-xs text-ink-dim">{t("anonPerkHistoryDesc")}</p>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3 rounded-xl border border-line/60 bg-bg-soft/40 px-4 py-3">
-                  <FileUp className="mt-0.5 size-4 shrink-0 text-accent-soft" />
-                  <div>
+                <div className="flex flex-col items-center gap-1.5 text-center rounded-xl border border-line/60 bg-bg-soft/40 px-3 py-2.5">
+                  <FileUp className="size-4 shrink-0 text-accent-soft" />
+                  <div className="min-w-0">
                     <p className="text-sm font-medium text-ink">{t("anonPerkMoreTitle")}</p>
-                    <p className="mt-0.5 text-xs text-ink-dim">
+                    <p className="text-xs text-ink-dim">
                       {t("anonPerkMoreDesc", {
                         fileMb: u.maxFileMb,
                         days: u.maxDays,
@@ -108,10 +110,10 @@ export default async function HomePage() {
                 </div>
               </div>
 
-              <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5">
                 <Link
                   href="/register"
-                  className="inline-flex items-center gap-2 rounded-xl border border-accent/40 bg-accent/15 px-5 py-2.5 text-sm font-semibold text-accent-soft transition-all hover:-translate-y-0.5 hover:border-accent/60 hover:bg-accent/25"
+                  className="inline-flex items-center gap-2 rounded-xl border border-accent/40 bg-accent/15 px-4 py-2 text-sm font-semibold text-accent-soft transition-all hover:-translate-y-0.5 hover:border-accent/60 hover:bg-accent/25"
                 >
                   <Sparkles className="size-4" /> {t("anonCta")}
                 </Link>

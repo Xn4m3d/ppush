@@ -11,10 +11,20 @@ export function middleware(request: NextRequest) {
   const bytes = crypto.getRandomValues(new Uint8Array(16));
   const nonce = btoa(String.fromCharCode(...bytes));
 
+  // In dev, Turbopack / React Fast Refresh evaluate modules via eval() and
+  // inject inline scripts: without 'unsafe-eval'/'unsafe-inline' the CSP breaks
+  // client-side hydration (client components stay inert — e.g. the mascot eyes
+  // no longer follow the cursor). We loosen this in DEV ONLY; production keeps
+  // the strict nonce-based CSP (security invariant).
+  const dev = process.env.NODE_ENV !== "production";
+  const scriptSrc = dev
+    ? "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://challenges.cloudflare.com"
+    : `script-src 'self' 'nonce-${nonce}' https://challenges.cloudflare.com`;
+
   const csp = [
     "default-src 'self'",
     // challenges.cloudflare.com: Turnstile widget (anti-bot at registration)
-    `script-src 'self' 'nonce-${nonce}' https://challenges.cloudflare.com`,
+    scriptSrc,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self'",
