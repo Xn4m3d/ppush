@@ -34,14 +34,14 @@ import { CopyButton } from "./copy-button";
 
 type Kind = "PASSWORD" | "TEXT" | "FILE" | "URL";
 
-// Expiry presets (in minutes): fixed sub-day steps + days up to the tier's
-// cap. The slider moves step by step (non-linear).
+// Paliers d'expiration (en minutes) : infra-journaliers fixes + jours jusqu'au
+// tier ceiling. The gauge moves tier by tier (non-linear).
 const SUBDAY_PRESETS = [5, 15, 30, 60, 120, 360, 720]; // 5m 15m 30m 1h 2h 6h 12h
 const DAY_STEPS = [1, 2, 3, 5, 7, 14, 21, 30, 60, 90];
 
 function expiryPresets(maxDays: number): number[] {
   const days = DAY_STEPS.filter((d) => d <= maxDays);
-  if (!days.includes(maxDays)) days.push(maxDays); // always able to reach the cap
+  if (!days.includes(maxDays)) days.push(maxDays); // always able to reach the ceiling
   days.sort((a, b) => a - b);
   return [...SUBDAY_PRESETS, ...days.map((d) => d * 1440)];
 }
@@ -116,6 +116,15 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
     setProgress(null);
   }, []);
 
+  // The logo and the header "New" button emit `ppush:reset` to start over
+  // from a blank form even when already on the home page (a same-route
+  // Link doesn't remount the component → the "success" screen would stay).
+  useEffect(() => {
+    const onReset = () => reset();
+    window.addEventListener("ppush:reset", onReset);
+    return () => window.removeEventListener("ppush:reset", onReset);
+  }, [reset]);
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -188,7 +197,8 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
         expireAfterViews: views,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("errorGeneric"));
+      const msg = err instanceof Error ? err.message : "";
+      setError(msg === "INSECURE_CONTEXT" ? t("errorInsecureContext") : msg || t("errorGeneric"));
     } finally {
       setBusy(false);
       setProgress(null);
@@ -217,7 +227,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
             onClick={() => {
               setKind(k);
               setError("");
-              // files have their own duration cap → re-clamp to a valid preset
+              // files have their own duration ceiling → re-clamp to a valid tier
               setMinutes((m) => {
                 const md = k === "FILE" ? defaults.maxFileDays : defaults.maxDays;
                 const p = expiryPresets(md);
@@ -408,7 +418,7 @@ function GeneratorOptions({
   const enabledCount = classKeys.filter((k) => opts[k]).length;
 
   function setClass(key: (typeof classKeys)[number], v: boolean) {
-    // always keep at least one active character class
+    // always keep at least one character class enabled
     if (!v && enabledCount === 1 && opts[key]) return;
     onOpts({ ...opts, [key]: v });
   }
@@ -512,7 +522,7 @@ function RangeField({
   );
 }
 
-/** Stepped expiry slider (5 min → tier cap) — non-linear. */
+/** Tiered expiry gauge (5 min → tier ceiling) — non-linear. */
 function ExpiryField({
   icon,
   label,
@@ -566,8 +576,8 @@ function FileDrop({
   const locale = useLocale() as Locale;
   const inputRef = useRef<HTMLInputElement>(null);
   const [drag, setDrag] = useState(false);
-  // transparent fair-use: actually available space server-side
-  // (+ personal active-files quota if signed in)
+  // transparent fair-use: space actually available server-side
+  // (+ personal quota of active files if signed in)
   const [storage, setStorage] = useState<{
     availableBytes: number;
     user?: { usedBytes: number; availableBytes: number; quotaBytes: number };
@@ -679,7 +689,7 @@ function SuccessScreen({
   const [qr, setQr] = useState<string>("");
 
   const delay = formatDelay(created.expireAfterMinutes * 60_000, locale);
-  // Ready-to-copy text, to send to the recipient with the link.
+  // Ready-to-copy text, to share with the recipient alongside the link.
   const recipientNotice = t("recipientNotice", {
     delay,
     views: created.expireAfterViews,
@@ -716,7 +726,7 @@ function SuccessScreen({
         </Button>
       </div>
 
-      {/* Ready-to-copy terms for the recipient */}
+      {/* Ready-to-copy details for the recipient */}
       <div className="mt-5 text-left">
         <div className="flex items-center justify-between gap-2">
           <label htmlFor="recipient-notice" className="text-xs font-medium text-ink-dim">

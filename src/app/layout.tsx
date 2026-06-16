@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
 import { currentUser } from "@/lib/auth";
-import { DEFAULT_THEME, THEME_COOKIE, isTheme } from "@/lib/themes";
+import { DAY_START, DAY_END, THEME_COOKIE, isThemeChoice, resolveTheme } from "@/lib/themes";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { PawPrint } from "@/components/cat";
@@ -55,16 +55,34 @@ export default async function RootLayout({
   const t = await getTranslations("footer");
 
   const themeCookie = (await cookies()).get(THEME_COOKIE)?.value;
-  const theme = isTheme(themeCookie) ? themeCookie : DEFAULT_THEME;
   const user = await currentUser();
+  const ut = user?.theme ?? null;
+  // priority: explicit cookie > account preference > "auto" (day/night)
+  const choice = isThemeChoice(themeCookie) ? themeCookie : isThemeChoice(ut) ? ut : "auto";
+  // SSR / no-JS: "auto" rendered as the DAY theme (mecha, h=12); the inline script
+  // corrects it from the visitor's LOCAL hour before first paint (zero flash).
+  const theme = resolveTheme(choice, 12);
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   return (
     <html
       lang={locale}
       data-theme={theme}
+      // The anti-flash script rewrites data-theme from the LOCAL hour before
+      // hydration: the attribute is deliberately driven client-side, so we
+      // don't warn about the mismatch on this node (see next-themes).
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-glow">
+        {/* Anti-flash script: applies the theme (auto → day/night based on the
+            LOCAL hour) BEFORE first paint. Priority cookie > account preference > auto. */}
+        <script
+          nonce={nonce}
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var m=document.cookie.match(/(?:^|; )theme=([^;]+)/);var c=m?decodeURIComponent(m[1]):"";var u=${JSON.stringify(ut ?? "")};var re=/^(midnight|mecha|auto)$/;var p=re.test(c)?c:re.test(u)?u:"auto";var h=new Date().getHours();var t=(p==="midnight"||p==="mecha")?p:((h>=${DAY_START}&&h<${DAY_END})?"mecha":"midnight");document.documentElement.dataset.theme=t;}catch(e){}})();`,
+          }}
+        />
         <StructuredData />
         <NextIntlClientProvider>
           {children}
@@ -87,12 +105,8 @@ export default async function RootLayout({
               </a>
               <span aria-hidden>·</span>
               <LanguageSwitcher />
-              {user?.role === "ADMIN" && (
-                <>
-                  <span aria-hidden>·</span>
-                  <ThemeSwitcher current={theme} />
-                </>
-              )}
+              <span aria-hidden>·</span>
+              <ThemeSwitcher current={choice} persist={!!user} />
             </nav>
             <p className="mt-2 inline-flex items-center gap-1.5">
               {t("tagline")} <PawPrint className="size-3 text-accent-soft/70" />

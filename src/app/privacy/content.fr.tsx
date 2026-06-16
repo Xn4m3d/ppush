@@ -46,7 +46,10 @@ export function PrivacyContentFr() {
             <strong className="text-ink">Pour chaque push</strong> : métadonnées
             (type, dates, compteur de vues) et journal d’audit (adresses IP et
             navigateurs des consultations) — à des fins de traçabilité de
-            sécurité et de fonctionnement du service.
+            sécurité et de fonctionnement du service. L’IP montrée à
+            l’<em>expéditeur</em> est{" "}
+            <strong className="text-ink">anonymisée</strong> (dernier octet
+            retiré) ; l’IP complète n’est accessible qu’à l’administrateur.
           </li>
           <li>
             <strong className="text-ink">Contenus des secrets</strong> : chiffrés

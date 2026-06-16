@@ -22,8 +22,12 @@ export async function GET(req: Request) {
       withPasskey,
       pushesTotal,
       pushesActive,
+      pushesAnon,
+      pushesAnonActive,
       files,
+      views,
       storage,
+      recoveryPending,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { active: true } }),
@@ -34,8 +38,12 @@ export async function GET(req: Request) {
       prisma.user.count({ where: { credentials: { some: {} } } }),
       prisma.push.count(),
       prisma.push.count({ where: { payloadDeleted: false, expiresAt: { gt: now } } }),
+      prisma.push.count({ where: { userId: null } }),
+      prisma.push.count({ where: { userId: null, payloadDeleted: false, expiresAt: { gt: now } } }),
       prisma.push.count({ where: { kind: "FILE", payloadDeleted: false } }),
+      prisma.auditEvent.count({ where: { kind: "VIEW" } }),
       storageStatus(),
+      prisma.recoveryRequest.count({ where: { status: "PENDING" } }),
     ]);
 
     return json({
@@ -48,8 +56,17 @@ export async function GET(req: Request) {
         with2fa,
         withPasskey,
       },
-      pushes: { total: pushesTotal, active: pushesActive, expired: pushesTotal - pushesActive, files },
+      pushes: {
+        total: pushesTotal,
+        active: pushesActive,
+        expired: pushesTotal - pushesActive,
+        files,
+        anon: pushesAnon,
+        anonActive: pushesAnonActive,
+        views,
+      },
       storage: { usedBytes: storage.usedBytes, availableBytes: storage.availableBytes },
+      recovery: { pending: recoveryPending },
     });
   } catch (err) {
     return handleError(err, req);

@@ -10,6 +10,7 @@ const schema = z.object({
   defaultViews: z.number().int().min(1),
   defaultRetrievalStep: z.boolean(),
   defaultDeletableByViewer: z.boolean(),
+  autoOpenUrls: z.boolean(),
 });
 
 export async function PUT(req: Request) {

@@ -6,6 +6,7 @@ import { apiT } from "@/lib/i18n-api";
 import { audit, isExpired, withLazyExpiry, expirePush } from "@/lib/pushes";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
 import { issueViewToken } from "@/lib/viewtokens";
+import { bumpDailyStat } from "@/lib/stats";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -13,8 +14,8 @@ const schema = z.object({ passphrase: z.string().max(256).optional() });
 
 /**
  * Reveals the encrypted payload: checks the optional passphrase, counts a view,
- * logs, and returns the ciphertext (which only the holder of the key — in the
- * URL fragment — can decrypt).
+ * logs it, and returns the ciphertext (which only the key holder — in the URL
+ * fragment — can decrypt).
  */
 export async function POST(req: Request, { params }: Params) {
   const t = await apiT(req);
@@ -46,9 +47,10 @@ export async function POST(req: Request, { params }: Params) {
       }
     }
 
-    // ATOMIC view claim (anti-race): the conditional UPDATE only increments if
-    // the quota is not already reached, so two concurrent reveals on a "1 view"
-    // secret can't both serve the cleartext — one claims the view, the other 410s.
+    // ATOMIC reservation of a view (anti-race): the conditional UPDATE
+    // only increments if the quota isn't already reached. Two concurrent
+    // reveals on a "1 view" secret therefore cannot both serve the clear text
+    // — only one reserves the view, the other gets 410.
     const claim = await prisma.push.updateMany({
       where: {
         id: push.id,
@@ -60,6 +62,7 @@ export async function POST(req: Request, { params }: Params) {
     });
     if (claim.count === 0) return apiError(t("secretExpired"), 410);
     await audit(push.id, "VIEW", { ip, userAgent });
+    await bumpDailyStat("views");
 
     const response = {
       kind: push.kind,
@@ -68,9 +71,9 @@ export async function POST(req: Request, { params }: Params) {
       viewToken: push.kind === "FILE" ? issueViewToken(slug) : undefined,
     };
 
-    // Quota reached → purge immediately AFTER reading the ciphertext (not for
-    // FILE: the blob is purged when the download finishes, and since the view was
-    // just claimed, no more tokens are issued than there are remaining views).
+    // Quota reached → immediate purge AFTER reading the ciphertext (not for FILE:
+    // the blob is purged at the end of the download, and since the view was just
+    // reserved, we don't issue more tokens than remaining views).
     const updated = await prisma.push.findUnique({ where: { id: push.id } });
     if (updated && updated.views >= updated.expireAfterViews && push.kind !== "FILE") {
       await expirePush(updated, "VIEWS");

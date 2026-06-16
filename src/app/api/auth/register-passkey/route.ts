@@ -6,6 +6,7 @@ import { json, apiError, badOrigin, handleError } from "@/lib/api";
 import { apiT, type ApiTranslator } from "@/lib/i18n-api";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
 import { verifyTurnstile } from "@/lib/turnstile";
+import { bumpDailyStat } from "@/lib/stats";
 import { config } from "@/lib/config";
 import { randomToken } from "@/lib/tokens";
 import { EMAIL_RE } from "@/lib/validation";
@@ -27,7 +28,7 @@ const startSchema = (t: ApiTranslator) =>
     turnstileToken: z.string().max(4096).optional(),
   });
 
-/** Passwordless registration — step 1: validate + return passkey options. */
+/** Passwordless sign-up — step 1: validates + returns the passkey options. */
 export async function POST(req: Request) {
   const t = await apiT(req);
   try {
@@ -74,7 +75,7 @@ const verifySchema = z.object({
   response: z.unknown(),
 });
 
-/** Passwordless registration — step 2: create the account (no password) + the passkey. */
+/** Passwordless sign-up — step 2: creates the account (no password) + the passkey. */
 export async function PUT(req: Request) {
   const t = await apiT(req);
   try {
@@ -110,7 +111,7 @@ export async function PUT(req: Request) {
         id: ticket.userId,
         email: ticket.email,
         name: ticket.name,
-        passwordHash: null, // compte passwordless
+        passwordHash: null, // passwordless account
         role: isFirst ? "ADMIN" : "USER",
         active: !pending,
         approvedAt: pending ? null : new Date(),
@@ -126,6 +127,7 @@ export async function PUT(req: Request) {
         },
       },
     });
+    await bumpDailyStat("signups");
 
     if (pending) return json({ ok: true, pending: true }, 201);
 

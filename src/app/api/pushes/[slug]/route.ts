@@ -4,6 +4,7 @@ import { json, apiError, badOrigin, handleError } from "@/lib/api";
 import { apiT } from "@/lib/i18n-api";
 import { expirePush, ownerPushView, withLazyExpiry, audit } from "@/lib/pushes";
 import { clientIp } from "@/lib/ratelimit";
+import { maskIp } from "@/lib/ip";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -27,7 +28,9 @@ export async function GET(req: Request, { params }: Params) {
       ...ownerPushView(fresh),
       events: push.events.map((e) => ({
         kind: e.kind,
-        ip: e.ip,
+        // A recipient's IP = third-party data → masked /24 for the
+        // creator (minimization). The admin keeps the full IP (legal basis).
+        ip: user.role === "ADMIN" ? e.ip : maskIp(e.ip),
         userAgent: e.userAgent,
         createdAt: e.createdAt,
       })),

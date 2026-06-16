@@ -4,8 +4,8 @@
  * - AES-256 key generated client-side, carried in the URL fragment (#...)
  *   → never sent to the server (fragments never leave the browser).
  * - AES-256-GCM (WebCrypto), random 96-bit IV per encryption.
- * - Small payloads: single blob  [v1][IV(12)][ciphertext+tag].
- * - Files: 8 MiB chunks          [len(4 BE)][IV(12)][ciphertext+tag]…
+ * - Petits payloads : blob unique  [v1][IV(12)][ciphertext+tag].
+ * - Files: 8 MiB chunks     [len(4 BE)][IV(12)][ciphertext+tag]…
  *   AAD = "ppush:v1:<index>:<last?1:0>" → prevents reordering and truncation.
  */
 
@@ -15,7 +15,19 @@ const VERSION = 1;
 const te = new TextEncoder();
 const td = new TextDecoder();
 
-// --- base64url encoding ------------------------------------------------------
+/**
+ * WebCrypto `subtle` — available ONLY in a secure context (HTTPS or
+ * localhost). Over HTTP on a remote IP/host, `crypto.subtle` is `undefined`
+ * → zero-knowledge encryption is impossible. We throw an explicit error
+ * (code `INSECURE_CONTEXT`) instead of the cryptic "reading 'importKey'".
+ */
+function subtle(): SubtleCrypto {
+  const s = globalThis.crypto?.subtle;
+  if (!s) throw new Error("INSECURE_CONTEXT");
+  return s;
+}
+
+// --- encodage base64url -----------------------------------------------------
 
 export function toB64Url(bytes: Uint8Array): string {
   let bin = "";
@@ -46,13 +58,13 @@ export async function importKey(keyB64: string): Promise<CryptoKey> {
 }
 
 async function importKeyRaw(raw: Uint8Array): Promise<CryptoKey> {
-  return crypto.subtle.importKey("raw", raw as BufferSource, "AES-GCM", false, [
+  return subtle().importKey("raw", raw as BufferSource, "AES-GCM", false, [
     "encrypt",
     "decrypt",
   ]);
 }
 
-// --- simple payloads (password, text, URL, file metadata) --------------------
+// --- simple payloads (password, text, URL, file metadata) --------
 
 export type SecretPayload = {
   /** PASSWORD | TEXT | URL | FILE (metadata) */
@@ -70,7 +82,7 @@ export async function encryptPayload(
 ): Promise<Uint8Array> {
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const ct = new Uint8Array(
-    await crypto.subtle.encrypt(
+    await subtle().encrypt(
       { name: "AES-GCM", iv: iv as BufferSource, additionalData: te.encode("ppush:v1:meta") as BufferSource },
       key,
       te.encode(JSON.stringify(payload)) as BufferSource
@@ -87,10 +99,10 @@ export async function decryptPayload(
   key: CryptoKey,
   blob: Uint8Array
 ): Promise<SecretPayload> {
-  if (blob[0] !== VERSION) throw new Error("Unknown encryption version");
+  if (blob[0] !== VERSION) throw new Error("Version de chiffrement inconnue");
   const iv = blob.slice(1, 13);
   const ct = blob.slice(13);
-  const pt = await crypto.subtle.decrypt(
+  const pt = await subtle().decrypt(
     { name: "AES-GCM", iv: iv as BufferSource, additionalData: te.encode("ppush:v1:meta") as BufferSource },
     key,
     ct as BufferSource
@@ -98,7 +110,7 @@ export async function decryptPayload(
   return JSON.parse(td.decode(pt)) as SecretPayload;
 }
 
-// --- files (chunks) -----------------------------------------------------------
+// --- files (chunks) --------------------------------------------------------
 
 function chunkAad(index: number, last: boolean): Uint8Array {
   return te.encode(`ppush:v1:${index}:${last ? 1 : 0}`);
@@ -117,7 +129,7 @@ export async function encryptFile(
     const data = new Uint8Array(await slice.arrayBuffer());
     const iv = crypto.getRandomValues(new Uint8Array(12));
     const ct = new Uint8Array(
-      await crypto.subtle.encrypt(
+      await subtle().encrypt(
         {
           name: "AES-GCM",
           iv: iv as BufferSource,
@@ -137,7 +149,7 @@ export async function encryptFile(
   return new Blob(parts, { type: "application/octet-stream" });
 }
 
-/** Decrypts a stream of framed chunks. Returns the cleartext Blob. */
+/** Decrypts a stream of framed chunks. Returns the clear-text Blob. */
 export async function decryptFileStream(
   key: CryptoKey,
   stream: ReadableStream<Uint8Array>,
@@ -176,11 +188,11 @@ export async function decryptFileStream(
     const ct = buffer.slice(16, 4 + frameLen);
     buffer = buffer.slice(4 + frameLen);
 
-    // last chunk if nothing remains after it
+    // last chunk if nothing follows
     while (buffer.length === 0 && !streamEnded) await pump();
     const isLast = streamEnded && buffer.length === 0;
 
-    const pt = await crypto.subtle.decrypt(
+    const pt = await subtle().decrypt(
       {
         name: "AES-GCM",
         iv: iv as BufferSource,
@@ -198,7 +210,7 @@ export async function decryptFileStream(
   return new Blob(parts, { type: mime || "application/octet-stream" });
 }
 
-// --- misc ----------------------------------------------------------------------
+// --- divers -------------------------------------------------------------------
 
 /** Strong password generator, client-side. */
 export type PasswordOptions = {
@@ -250,8 +262,8 @@ export function generatePassword(length = 20, opts: PasswordOptions = {}): strin
   const classes = passwordClasses(opts);
   const alphabet = classes.join("");
   const len = Math.min(Math.max(Math.trunc(length) || 20, 4), 128);
-  // reject draws where an enabled class is missing: uniform over valid
-  // passwords, and guarantees e.g. at least one digit/symbol
+  // reject draws where an enabled class is missing: uniform over the
+  // valid passwords, and guarantees e.g. at least one digit/symbol
   for (;;) {
     const pwd = randomChars(alphabet, len);
     if (classes.every((c) => [...pwd].some((ch) => c.includes(ch)))) return pwd;

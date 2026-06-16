@@ -28,11 +28,18 @@ model User {
   defaultViews             Int     @default(5)
   defaultRetrievalStep     Boolean @default(true)
   defaultDeletableByViewer Boolean @default(true)
+  // Auto-redirect of EXTERNAL URL pushes (opt-in; off by default, security).
+  // Same-origin URLs (e.g. /reset-password) always open automatically.
+  autoOpenUrls             Boolean @default(false)
+  // Preferred theme: "auto" (day mecha / night midnight) | "midnight" | "mecha"
+  // | null (= follows the cookie / auto default).
+  theme                    String?
 
-  sessions    Session[]
-  pushes      Push[]
-  apiTokens   ApiToken[]
-  credentials Credential[]
+  sessions       Session[]
+  pushes         Push[]
+  apiTokens      ApiToken[]
+  credentials    Credential[]
+  passwordResets PasswordReset[]
 }
 
 // Passkey (WebAuthn / FIDO2)
@@ -104,7 +111,7 @@ model Push {
   createdAt    DateTime  @default(now())
   expiresAt    DateTime
   expiredAt    DateTime?
-  expireReason String? // VIEWS | TIME | OWNER | VIEWER
+  expireReason String? // VIEWS | TIME | OWNER | VIEWER | ADMIN
 
   events AuditEvent[]
 
@@ -122,4 +129,84 @@ model AuditEvent {
   createdAt DateTime @default(now())
 
   @@index([pushId, createdAt])
+}
+
+// Single-use password reset, initiated by an admin (no recovery email). The
+// clear-text token only exists long enough to be relayed through a ppush push
+// (E2E-encrypted); the database stores only its SHA-256 hash. Single-use
+// (`usedAt`) + short expiry.
+model PasswordReset {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash   String    @unique
+  createdById String? // initiating admin (denormalized via AdminAudit for the duration)
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+  usedAt      DateTime?
+
+  @@index([userId])
+}
+
+// Administration action log (traceability / GDPR accountability: admins access
+// personal metadata). Actor + email denormalized to survive deletion of the
+// admin account. Subject to the same retention as the other logs (anonymization
+// / purge by the sweeper).
+model AdminAudit {
+  id          String   @id @default(cuid())
+  actorId     String? // admin id (null if the account was deleted since)
+  actorEmail  String // denormalized (durable)
+  action      String // USER_DISABLE | USER_ENABLE | USER_ROLE | USER_EDIT | USER_RESET_PW | USER_RESET_2FA | USER_LOGOUT | USER_DELETE | PUSH_TAKEDOWN | RECOVERY_HANDLE | RECOVERY_REJECT
+  targetType  String // USER | PUSH
+  targetId    String?
+  targetLabel String? // email / slug (denormalized)
+  details     String? // optional JSON
+  ip          String?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+// Access-recovery request (no automatic reset email). The locked-out user
+// describes their proof of identity; an admin verifies it, then generates a
+// reset link (delivered out-of-band). Shown in the admin area (Requests tab).
+model RecoveryRequest {
+  id        String    @id @default(cuid())
+  email     String
+  message   String // what the user describes (proof, context)
+  contact   String? // alternative contact channel (optional)
+  status    String    @default("PENDING") // PENDING | HANDLED | REJECTED
+  ip        String?
+  userAgent String?
+  adminNote String?
+  createdAt DateTime  @default(now())
+  handledAt DateTime?
+  handledBy String? // email of the admin who handled it
+
+  @@index([status, createdAt])
+}
+
+// Security tips shown on the site (sign-up panel), editable from the admin.
+// Bilingual (en + fr). Seeded on first access from the bundled defaults
+// (messages/*.json → tips.list). `sortOrder` = display order.
+model Tip {
+  id        String   @id @default(cuid())
+  en        String
+  fr        String
+  active    Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([active, sortOrder])
+}
+
+// ANONYMOUS daily aggregates (counters only, no personal data) — incremented on
+// the fly. Survive the purge of raw data (~12 months) → reliable multi-year,
+// GDPR-compliant history. Key = UTC day "YYYY-MM-DD".
+model DailyStat {
+  date       String @id
+  pushes     Int    @default(0)
+  pushesAnon Int    @default(0)
+  views      Int    @default(0)
+  signups    Int    @default(0)
 }

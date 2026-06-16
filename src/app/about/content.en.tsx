@@ -218,14 +218,52 @@ export function AboutContentEn({ showRegister }: { showRegister: boolean }) {
               <Link href="/account" className="text-accent-soft hover:underline">My account</Link>.
             </p>
           </Faq>
+          <Faq q="I forgot my password / I can't sign in. Do you email a reset link?">
+            <p>
+              <strong>No — and that&apos;s on purpose.</strong> ppush never sends
+              password-reset emails. Your account isn&apos;t tied to a recoverable
+              inbox, which removes a whole class of account-takeover attacks
+              (intercepted or phished reset links). The trade-off is that recovery
+              isn&apos;t instant: it&apos;s <strong>verified by a human</strong>.
+            </p>
+            <p>
+              If you&apos;re locked out, open{" "}
+              <Link href="/recover" className="text-accent-soft hover:underline">
+                account recovery
+              </Link>{" "}
+              and describe your proof of identity. An administrator verifies it,
+              then sends you a one-time reset link. The surest way to{" "}
+              <strong>never</strong> get locked out is to add a{" "}
+              <strong>passkey</strong> — a passkey holder can always sign back in
+              without a password.
+            </p>
+          </Faq>
+          <Faq q="What if recovery doesn't succeed?">
+            <p>
+              Recovery isn&apos;t guaranteed. If your identity can&apos;t be
+              established with enough confidence, the request may be declined —
+              and we won&apos;t necessarily detail why, since saying too much would
+              only help an impersonator.
+            </p>
+            <p>
+              Little is at stake by design: an account only holds your link
+              history and preferences. Your secrets are end-to-end encrypted and
+              ephemeral — nothing is ever held hostage, and no data is locked
+              inside an account. In the worst case you simply create a new one;
+              all you lose is past history and settings. That&apos;s exactly what
+              lets us keep verification strict without leaving anyone stranded
+              with inaccessible data.
+            </p>
+          </Faq>
           <Faq q="What if I lose my 2FA app?">
             <p>
-              Contact{" "}
-              <a href="mailto:contact@ppush.online" className="text-accent-soft hover:underline">
-                contact@ppush.online
-              </a>
-              : an administrator can reset your two-factor authentication
-              after verification.
+              Open{" "}
+              <Link href="/recover" className="text-accent-soft hover:underline">
+                account recovery
+              </Link>
+              : an administrator can reset your two-factor authentication after
+              verifying your identity. A registered passkey also lets you sign in
+              without the 2FA code.
             </p>
           </Faq>
           <Faq q="Can the service stop, or a link disappear?">

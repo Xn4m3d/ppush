@@ -16,6 +16,7 @@
     "@simplewebauthn/server": "^13.3.1",
     "better-sqlite3": "^12.10.0",
     "lucide-react": "^1.17.0",
+    "maxmind": "^5.0.6",
     "next": "16.2.9",
     "next-intl": "^4.13.0",
     "prisma": "7.8.0",

@@ -11,6 +11,7 @@ import { apiT } from "@/lib/i18n-api";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { config } from "@/lib/config";
+import { bumpDailyStat } from "@/lib/stats";
 
 import type { ApiTranslator } from "@/lib/i18n-api";
 import { EMAIL_RE } from "@/lib/validation";
@@ -63,12 +64,13 @@ export async function POST(req: Request) {
         email: normalizedEmail,
         name: name.trim(),
         passwordHash: await hashPassword(password),
-        role: isFirst ? "ADMIN" : "USER", // premier compte = admin
+        role: isFirst ? "ADMIN" : "USER", // first account = admin
         active: !pending,
         approvedAt: pending ? null : new Date(),
         lastLoginAt: pending ? null : new Date(),
       },
     });
+    await bumpDailyStat("signups");
 
     if (pending) {
       return json({ ok: true, pending: true }, 201);

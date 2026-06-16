@@ -222,14 +222,54 @@ export function AboutContentFr({ showRegister }: { showRegister: boolean }) {
               depuis <Link href="/account" className="text-accent-soft hover:underline">Mon compte</Link>.
             </p>
           </Faq>
+          <Faq q="J'ai oublié mon mot de passe / je n'arrive plus à me connecter. Envoyez-vous un lien par email ?">
+            <p>
+              <strong>Non — et c&apos;est volontaire.</strong> ppush n&apos;envoie
+              jamais d&apos;email de réinitialisation. Votre compte n&apos;est pas
+              lié à une boîte mail récupérable, ce qui supprime toute une famille
+              d&apos;attaques par prise de contrôle (liens de reset interceptés ou
+              hameçonnés). La contrepartie : la récupération n&apos;est pas
+              instantanée, elle est <strong>vérifiée par un humain</strong>.
+            </p>
+            <p>
+              Si vous êtes bloqué, ouvrez la{" "}
+              <Link href="/recover" className="text-accent-soft hover:underline">
+                récupération d&apos;accès
+              </Link>{" "}
+              et décrivez vos preuves d&apos;identité. Un administrateur les
+              vérifie, puis vous transmet un lien de réinitialisation à usage
+              unique. Le moyen le plus sûr de ne <strong>jamais</strong> être
+              bloqué : ajouter une <strong>passkey</strong> — son détenteur peut
+              toujours se reconnecter sans mot de passe.
+            </p>
+          </Faq>
+          <Faq q="Et si la récupération n'aboutit pas ?">
+            <p>
+              La récupération n&apos;est pas garantie. Si votre identité ne peut
+              pas être établie avec assez de certitude, la demande peut être
+              refusée — sans que nous en détaillions forcément la raison, car trop
+              en dire aiderait un usurpateur.
+            </p>
+            <p>
+              L&apos;enjeu reste volontairement faible : un compte ne contient que
+              l&apos;historique de vos liens et vos préférences. Vos secrets sont
+              chiffrés de bout en bout et éphémères — rien n&apos;est jamais retenu
+              en otage, et aucune donnée n&apos;est verrouillée dans un compte. Au
+              pire, vous recréez un compte : vous ne perdez que l&apos;historique et
+              les réglages passés. C&apos;est précisément ce qui nous permet de
+              rester stricts sur la vérification sans laisser quiconque avec des
+              données inaccessibles.
+            </p>
+          </Faq>
           <Faq q="Et si je perds mon application 2FA ?">
             <p>
-              Contactez{" "}
-              <a href="mailto:contact@ppush.online" className="text-accent-soft hover:underline">
-                contact@ppush.online
-              </a>{" "}
-              : un administrateur peut réinitialiser votre double
-              authentification après vérification.
+              Ouvrez la{" "}
+              <Link href="/recover" className="text-accent-soft hover:underline">
+                récupération d&apos;accès
+              </Link>{" "}
+              : un administrateur peut réinitialiser votre double authentification
+              après vérification de votre identité. Une passkey enregistrée permet
+              aussi de vous connecter sans le code 2FA.
             </p>
           </Faq>
           <Faq q="Le service peut-il s'arrêter, ou un lien disparaître ?">

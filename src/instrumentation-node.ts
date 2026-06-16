@@ -1,24 +1,27 @@
 /**
  * Background tasks (Node runtime only):
- *  - sweep expired pushes (purge payloads)
- *  - clean up expired sessions and orphan blobs
+ *  - sweep of expired pushes (payload purge)
+ *  - cleanup of expired sessions and orphan blobs
  */
 import fsp from "node:fs/promises";
 import path from "node:path";
 import { sweepExpired } from "@/lib/pushes";
 import { prisma } from "@/lib/db";
 import { blobDir, config } from "@/lib/config";
+import { releaseGeoIfIdle } from "@/lib/geo";
+import { backfillDailyStats } from "@/lib/stats";
 
 export async function startBackgroundTasks() {
   const sweep = async () => {
     try {
+      releaseGeoIfIdle(); // release the geo database (~125 MB) if idle
       await sweepExpired();
       await prisma.session.deleteMany({
         where: { expiresAt: { lt: new Date() } },
       });
 
-      // GDPR retention: anonymize audit-log IP/UA beyond the stated duration
-      // (keeps the event, removes the personal data).
+      // GDPR retention: anonymize the audit log's IPs/UAs beyond the
+      // announced period (keeps the event, removes personal data).
       const cutoff = new Date(Date.now() - config.dataRetentionDays * 86_400_000);
       await prisma.auditEvent.updateMany({
         where: {
@@ -27,13 +30,18 @@ export async function startBackgroundTasks() {
         },
         data: { ip: null, userAgent: null },
       });
+      // Same for the admin action log (same connection data).
+      await prisma.adminAudit.updateMany({
+        where: { createdAt: { lt: cutoff }, ip: { not: null } },
+        data: { ip: null },
+      });
 
-      // Permanently purge ownerless shells outside the legal window (expired
-      // anonymous pushes or ones detached from a deleted account). At this
-      // point their audit IP was just anonymized above → no personal data and
-      // no retention obligation left: we delete them.
+      // Permanent purge of ownerless shells outside the legal window
+      // (expired anonymous pushes or detached from a deleted account). At this point
+      // their log's IP was just anonymized above → no personal data or
+      // retention obligation left: we erase them.
       // Pushes still attached to an account (non-null userId) are preserved
-      // (owner history); only their IPs > 12 months are anonymized.
+      // (owner history); only their IPs older than 12 months are anonymized.
       await prisma.auditEvent.deleteMany({
         where: { push: { userId: null, createdAt: { lt: cutoff } } },
       });
@@ -57,6 +65,7 @@ export async function startBackgroundTasks() {
     }
   };
 
+  await backfillDailyStats().catch(() => {}); // historique initial (idempotent)
   await sweep();
   setInterval(sweep, 10 * 60_000).unref?.();
 }

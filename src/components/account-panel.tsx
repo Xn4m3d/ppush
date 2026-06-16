@@ -13,6 +13,7 @@ type Defaults = {
   defaultViews: number;
   defaultRetrievalStep: boolean;
   defaultDeletableByViewer: boolean;
+  autoOpenUrls: boolean;
 };
 
 export function DefaultsPanel({ initial }: { initial: Defaults }) {
@@ -74,6 +75,12 @@ export function DefaultsPanel({ initial }: { initial: Defaults }) {
         checked={values.defaultDeletableByViewer}
         onChange={(v) => setValues({ ...values, defaultDeletableByViewer: v })}
         label={t("defaultDeletable")}
+      />
+      <Toggle
+        checked={values.autoOpenUrls}
+        onChange={(v) => setValues({ ...values, autoOpenUrls: v })}
+        label={t("autoOpenUrls")}
+        hint={t("autoOpenUrlsHint")}
       />
       <ErrorText>{error}</ErrorText>
       <Button onClick={save} loading={busy}>

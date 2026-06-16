@@ -43,7 +43,7 @@ export function AuthForm({
     }
   }
 
-  /** Passwordless sign-in via passkey. */
+  /** Connexion passwordless par passkey. */
   async function passkeyLogin() {
     setError("");
     setPkLoading(true);
@@ -74,7 +74,7 @@ export function AuthForm({
     }
   }
 
-  /** Passwordless registration: creates the account with a passkey, no password. */
+  /** Passwordless sign-up: creates the account with a passkey, no password. */
   async function passkeyRegister() {
     setError("");
     setPkLoading(true);
@@ -236,7 +236,7 @@ export function AuthForm({
         {mode === "login" ? t("loginSubtitle") : t("registerSubtitle")}
       </p>
 
-      {/* Fields required for registration (passkey OR password) */}
+      {/* Fields required for sign-up (passkey OR password) */}
       {mode === "register" && (
         <div className="mt-6 space-y-4">
           <Field label={t("name")}>
@@ -341,6 +341,17 @@ export function AuthForm({
             {mode === "login" ? t("login") : t("createWithPassword")}
           </Button>
         </form>
+      )}
+
+      {mode === "login" && (
+        <div className="mt-5 text-center">
+          <Link
+            href="/recover"
+            className="text-xs text-ink-faint underline-offset-2 transition-colors hover:text-ink-dim hover:underline"
+          >
+            {t("troubleSignIn")}
+          </Link>
+        </div>
       )}
 
       {mode === "login" ? (

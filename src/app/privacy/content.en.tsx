@@ -45,7 +45,10 @@ export function PrivacyContentEn() {
           <li>
             <strong className="text-ink">For each push</strong>: metadata (type,
             dates, view counter) and audit log (IP addresses and browsers of
-            views) — for security traceability and service operation.
+            views) — for security traceability and service operation. The IP
+            shown to the <em>sender</em> is{" "}
+            <strong className="text-ink">anonymized</strong> (last octet removed);
+            the full IP is only accessible to the administrator.
           </li>
           <li>
             <strong className="text-ink">Secret content</strong>: end-to-end

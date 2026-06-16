@@ -3,10 +3,10 @@ import { deleteBlob } from "./files";
 import { config } from "./config";
 import type { Push } from "@/generated/prisma/client";
 
-export type ExpireReason = "VIEWS" | "TIME" | "OWNER" | "VIEWER";
+export type ExpireReason = "VIEWS" | "TIME" | "OWNER" | "VIEWER" | "ADMIN";
 
 /**
- * Expires a push: permanently purges the payload (ciphertext + blob),
+ * Expires a push: permanent purge of the payload (ciphertext + blob),
  * keeps the metadata and the audit log.
  */
 export async function expirePush(push: Push, reason: ExpireReason): Promise<void> {

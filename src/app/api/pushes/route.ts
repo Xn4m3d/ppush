@@ -8,12 +8,13 @@ import { config, pushLimits } from "@/lib/config";
 import { audit, ownerPushView } from "@/lib/pushes";
 import { blobSize } from "@/lib/files";
 import { clientIp, rateLimit } from "@/lib/ratelimit";
+import { bumpDailyStat } from "@/lib/stats";
 
 const createSchema = z.object({
   kind: z.enum(["PASSWORD", "TEXT", "FILE", "URL"]),
   /** Client-side encrypted payload, base64. For FILE: encrypted metadata. */
   ciphertext: z.string().min(1),
-  /** For FILE: blob identifier returned by POST /api/blobs. */
+  /** For FILE: id of the blob returned by POST /api/blobs. */
   blobPath: z
     .string()
     .regex(/^[A-Za-z0-9]{32}\.bin$/)
@@ -21,7 +22,7 @@ const createSchema = z.object({
   passphrase: z.string().min(1).max(256).optional(),
   /** Validity duration, in minutes (5 min .. 365 d). */
   expireAfterMinutes: z.number().int().min(5).max(525_600).optional(),
-  /** API backward-compat: duration in days (converted to minutes if provided). */
+  /** API back-compat: duration in days (converted to minutes if provided). */
   expireAfterDays: z.number().int().min(1).max(365).optional(),
   expireAfterViews: z.number().int().min(1),
   retrievalStep: z.boolean().default(true),
@@ -37,13 +38,13 @@ export async function POST(req: Request) {
     const user = await requireUser(req);
     const tier = user ? "user" : "anon";
 
-    // Anti-abuse: anonymous creation is capped per IP (accounts are tracked
-    // and get wider limits).
+    // Anti-abuse: anonymous creation is capped per IP (accounts, on the other hand,
+    // are tracked and get wider limits).
     if (!user && !rateLimit(`push:${ip}`, 10, 60 * 60_000)) {
       return apiError(t("pushAnonLimit"), 429);
     }
-    // Wide per-account limit (also covers API tokens): a free account must
-    // not be able to flood the database.
+    // Wide per-account limit (also covers API tokens): a free account
+    // must not be able to flood the database.
     if (user && !rateLimit(`push:user:${user.id}`, 120, 60 * 60_000)) {
       return apiError(t("pushUserLimit"), 429);
     }
@@ -52,7 +53,7 @@ export async function POST(req: Request) {
     const lim = pushLimits(tier, body.kind);
     const anon = String(!user); // drives the "no account" suffix of messages
 
-    // minutes = canonical source; days (API backward-compat) are converted
+    // minutes = canonical source; days (API back-compat) are converted
     const minutes =
       body.expireAfterMinutes ??
       (body.expireAfterDays != null ? body.expireAfterDays * 1440 : null);
@@ -82,7 +83,7 @@ export async function POST(req: Request) {
       } catch {
         return apiError(t("blobMissing"), 400);
       }
-      // 2 MiB margin for the encryption overhead (IV + tags per chunk)
+      // 2 MiB margin for encryption overhead (IV + tags per chunk)
       if (fileSize > lim.maxFileMb * 1024 * 1024 + 2 * 1024 * 1024) {
         return apiError(t("fileTooBigMax", { mb: lim.maxFileMb, anon }), 413);
       }
@@ -105,7 +106,7 @@ export async function POST(req: Request) {
         expireAfterViews: body.expireAfterViews,
         retrievalStep: body.retrievalStep,
         deletableByViewer: body.deletableByViewer,
-        note: user ? body.note?.trim() || null : null, // no anonymous history → note useless
+        note: user ? body.note?.trim() || null : null, // no anonymous history → note pointless
         expiresAt: new Date(Date.now() + minutes * 60_000),
       },
     });
@@ -114,6 +115,8 @@ export async function POST(req: Request) {
       ip,
       userAgent: req.headers.get("user-agent") ?? undefined,
     });
+    await bumpDailyStat("pushes");
+    if (!user) await bumpDailyStat("pushesAnon");
 
     return json(ownerPushView(push), 201);
   } catch (err) {
@@ -130,7 +133,7 @@ export async function GET(req: Request) {
     const url = new URL(req.url);
     const page = Math.max(1, parseInt(url.searchParams.get("page") ?? "1", 10) || 1);
     const perPage = 20;
-    const filter = url.searchParams.get("filter"); // active | expired | null (none)
+    const filter = url.searchParams.get("filter"); // active | expired | null
 
     const where = {
       userId: user.id,

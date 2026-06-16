@@ -11,8 +11,8 @@ const PERKS = [
   { icon: Fingerprint, key: "perk4" },
 ] as const;
 
-/** Registration welcome panel: account perks + a random tip. */
-export function RegisterAside() {
+/** Sign-up welcome panel: account perks + a random tip. */
+export function RegisterAside({ tips }: { tips: string[] }) {
   const t = useTranslations("auth");
   return (
     <aside className="w-full max-w-md space-y-5">
@@ -30,20 +30,20 @@ export function RegisterAside() {
         </ul>
         <p className="mt-3 text-xs text-ink-faint">{t("perksFree")}</p>
       </div>
-      <TipCard />
+      <TipCard list={tips} />
     </aside>
   );
 }
 
-/** ppush / security tip, picked at random then refreshed every 8 s. */
-function TipCard() {
+/** ppush / security tip, picked at random then refreshed every 8s. */
+function TipCard({ list }: { list: string[] }) {
   const t = useTranslations("tips");
-  const list = t.raw("list") as string[];
   const [i, setI] = useState<number | null>(null);
 
   useEffect(() => {
-    // draws in async callbacks: no hydration mismatch nor synchronous setState
-    // in the effect (lint react-hooks/set-state-in-effect).
+    if (list.length === 0) return;
+    // tirages dans des callbacks asynchrones : pas de mismatch d'hydratation ni
+    // de setState synchrone dans l'effet (lint react-hooks/set-state-in-effect).
     const pick = () =>
       setI((prev) => {
         let n = Math.floor(Math.random() * list.length);

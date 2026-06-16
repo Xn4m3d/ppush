@@ -48,7 +48,7 @@ type Stage =
   | "burned"
   | "error";
 
-export function SecretViewer({ slug }: { slug: string }) {
+export function SecretViewer({ slug, autoOpen = false }: { slug: string; autoOpen?: boolean }) {
   const t = useTranslations("viewer");
   const [meta, setMeta] = useState<Meta | null>(null);
   const [stage, setStage] = useState<Stage>("loading");
@@ -121,7 +121,7 @@ export function SecretViewer({ slug }: { slug: string }) {
         } catch {
           return setStage("no-key");
         }
-        // no retrieval step nor passphrase → direct reveal
+        // no retrieval step or passphrase → direct reveal
         if (!m.retrievalStep && !m.hasPassphrase) {
           reveal(m, hash);
         } else {
@@ -152,7 +152,7 @@ export function SecretViewer({ slug }: { slug: string }) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = payload.name ?? "file";
+      a.download = payload.name ?? "fichier";
       a.click();
       URL.revokeObjectURL(url);
       setDlProgress(100);
@@ -168,7 +168,7 @@ export function SecretViewer({ slug }: { slug: string }) {
     if (res.ok) setStage("burned");
   }
 
-  // ---- render by state ----
+  // ---- renders by state ----
 
   if (stage === "loading") {
     return (
@@ -260,7 +260,7 @@ export function SecretViewer({ slug }: { slug: string }) {
 
         {meta?.expiresAt && <Countdown expiresAt={meta.expiresAt} onExpire={expire} />}
 
-        {/* Safety preamble: helps the recipient decide whether to open */}
+        {/* Security preamble: helps the recipient decide whether to open */}
         <div className="mt-5 rounded-xl border border-warn/25 bg-warn/[0.06] p-4 text-left">
           <p className="flex items-center gap-1.5 text-xs font-semibold text-warn">
             <ShieldAlert className="size-3.5 shrink-0" />
@@ -303,7 +303,7 @@ export function SecretViewer({ slug }: { slug: string }) {
     );
   }
 
-  // revealed: the guardian is happy — the secret made it through
+  // revealed: the keeper is happy — the secret arrived safely
   return (
     <div className="animate-fade-up">
       <div className="-mb-3 flex justify-center">
@@ -322,7 +322,7 @@ export function SecretViewer({ slug }: { slug: string }) {
 
       <div className="mt-6">
         {payload?.t === "URL" ? (
-          <UrlReveal url={payload.d} />
+          <UrlReveal url={payload.d} autoOpen={autoOpen} />
         ) : payload?.t === "FILE" ? (
           <div className="rounded-xl border border-line bg-bg-soft p-5 text-center">
             <p className="font-medium text-ink break-all">{payload.name}</p>
@@ -476,23 +476,43 @@ function SecretText({ value, mono }: { value: string; mono: boolean }) {
   );
 }
 
-function UrlReveal({ url }: { url: string }) {
+function UrlReveal({ url, autoOpen }: { url: string; autoOpen: boolean }) {
   const t = useTranslations("viewer");
-  const [count, setCount] = useState(5);
 
+  // Same origin (ppush itself, e.g. /reset-password) → safe → auto-redirect
+  // always. EXTERNAL URL → auto only if the recipient opted in (account).
+  const sameOrigin =
+    typeof window !== "undefined" &&
+    (() => {
+      try {
+        return new URL(url, window.location.href).origin === window.location.origin;
+      } catch {
+        return false;
+      }
+    })();
+  const auto = sameOrigin || autoOpen;
+
+  const [count, setCount] = useState(5);
   useEffect(() => {
+    if (!auto) return; // no auto-redirect by default (anti-phishing)
     if (count <= 0) {
       window.location.href = url;
       return;
     }
-    const t = setTimeout(() => setCount((c) => c - 1), 1000);
-    return () => clearTimeout(t);
-  }, [count, url]);
+    const timer = setTimeout(() => setCount((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [auto, count, url]);
 
   return (
     <div className="rounded-xl border border-line bg-bg-soft p-5 text-center">
       <p className="break-all font-mono text-sm text-accent-soft">{url}</p>
-      <p className="mt-3 text-xs text-ink-faint">{t("redirect", { s: count })}</p>
+      {auto ? (
+        <p className="mt-3 text-xs text-ink-faint">{t("redirect", { s: count })}</p>
+      ) : (
+        <p className="mt-3 inline-flex items-center justify-center gap-1.5 text-xs text-warn">
+          <AlertTriangle className="size-3.5" /> {t("urlCheckBeforeOpen")}
+        </p>
+      )}
       <div className="mt-4 flex flex-wrap justify-center gap-3">
         <Button onClick={() => (window.location.href = url)}>
           <ExternalLink className="size-4" />

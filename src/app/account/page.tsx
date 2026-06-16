@@ -1,7 +1,11 @@
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import { currentUser, primaryAdminId } from "@/lib/auth";
+import { THEME_COOKIE, effectiveChoice } from "@/lib/themes";
 import { Header } from "@/components/header";
+import { Card } from "@/components/ui";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 import {
   DefaultsPanel,
   PasswordPanel,
@@ -23,6 +27,9 @@ export default async function AccountPage() {
   const user = await currentUser();
   if (!user) redirect("/login");
 
+  const themeCookie = (await cookies()).get(THEME_COOKIE)?.value;
+  const themeChoice = effectiveChoice(themeCookie, user.theme);
+
   return (
     <>
       <Header />
@@ -40,8 +47,14 @@ export default async function AccountPage() {
             defaultViews: user.defaultViews,
             defaultRetrievalStep: user.defaultRetrievalStep,
             defaultDeletableByViewer: user.defaultDeletableByViewer,
+            autoOpenUrls: user.autoOpenUrls,
           }}
         />
+        <Card className="space-y-3 p-6">
+          <h2 className="font-semibold">{t("themeTitle")}</h2>
+          <p className="text-sm text-ink-dim">{t("themeHint")}</p>
+          <ThemeSwitcher current={themeChoice} persist />
+        </Card>
         <PasskeysPanel />
         <PasswordPanel hasPassword={!!user.passwordHash} />
         <TotpPanel initialEnabled={!!user.totpEnabledAt} hasPassword={!!user.passwordHash} />
