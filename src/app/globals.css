@@ -77,6 +77,10 @@ html[data-theme="mecha"] {
 
 html {
   color-scheme: dark;
+  /* always reserve the scrollbar gutter: prevents the centered content from
+     shifting horizontally between a scrolling page and a too-short one (e.g.
+     account tabs: long Pushes/Security vs short Account) */
+  scrollbar-gutter: stable;
 }
 
 body {

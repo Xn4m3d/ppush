@@ -60,6 +60,7 @@ export default async function AccountPage() {
           has2fa={!!user.totpEnabledAt}
           canDelete={canDelete}
           email={user.email}
+          name={user.name}
         />
       </main>
     </>

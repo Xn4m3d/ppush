@@ -296,7 +296,13 @@
     "shareTypeFile": "File",
     "shareTypeUrl": "URL",
     "sharePlaceholders": "Leave empty to use the default. Optional placeholders: [link], [delay], [views].",
-    "shareCustomized": "Customized"
+    "shareCustomized": "Customized",
+    "profileTitle": "Profile",
+    "profileName": "Name",
+    "profileEmail": "Email",
+    "invalidEmail": "Enter a valid email address.",
+    "emailReauthHint": "Required to change your email — it's your sign-in identifier.",
+    "emailReauthPasskey": "Changing your email will ask for a passkey confirmation."
   },
   "tokens": {
     "title": "API tokens",
@@ -549,7 +555,11 @@
     "promoteTotp": "Your 2FA code",
     "confirm": "Confirm",
     "cancel": "Cancel",
-    "onlyPrimaryPromoteHint": "Only the primary admin can promote (with 2FA)."
+    "onlyPrimaryPromoteHint": "Only the primary admin can promote (with 2FA).",
+    "chartPushesHint": "Links created over the period (you + anonymous).",
+    "chartViewsHint": "Secrets revealed by recipients — not site visits or page loads.",
+    "chartSignupsHint": "New accounts created.",
+    "mapCredit": "IP geolocation by DB-IP"
   },
   "auth": {
     "loginTitle": "Sign in",

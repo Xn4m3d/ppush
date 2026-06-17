@@ -7,6 +7,7 @@ import { ThemeSwitcher } from "./theme-switcher";
 import {
   DefaultsPanel,
   ShareMessagesPanel,
+  ProfilePanel,
   PasswordPanel,
   TokensPanel,
   DeleteAccountPanel,
@@ -35,6 +36,7 @@ export function AccountTabs({
   has2fa,
   canDelete,
   email,
+  name,
 }: {
   defaults: Defaults;
   shareInitial: ShareMessages;
@@ -44,6 +46,7 @@ export function AccountTabs({
   has2fa: boolean;
   canDelete: boolean;
   email: string;
+  name: string;
 }) {
   const t = useTranslations("account");
   const [tab, setTab] = useState<Tab>("pushes");
@@ -81,6 +84,7 @@ export function AccountTabs({
 
       {tab === "account" && (
         <div className="space-y-6">
+          <ProfilePanel initialName={name} initialEmail={email} hasPassword={hasPassword} />
           <Card className="space-y-3 p-6">
             <h2 className="font-semibold">{t("themeTitle")}</h2>
             <p className="text-sm text-ink-dim">{t("themeHint")}</p>

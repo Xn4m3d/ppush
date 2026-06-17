@@ -77,10 +77,28 @@ export function OverviewTab({ refreshKey }: { refreshKey: number }) {
           </div>
         </div>
 
-        <div className="mt-4 grid gap-5 sm:grid-cols-3">
-          <BarChart data={series.map((d) => d.pushes)} label={t("chartPushes")} total={sum("pushes")} tone="accent" />
-          <BarChart data={series.map((d) => d.views)} label={t("chartViews")} total={sum("views")} tone="ok" />
-          <BarChart data={series.map((d) => d.signups)} label={t("chartSignups")} total={sum("signups")} tone="ink" />
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <BarChart
+            data={series.map((d) => d.pushes)}
+            label={t("chartPushes")}
+            hint={t("chartPushesHint")}
+            total={sum("pushes")}
+            tone="accent"
+          />
+          <BarChart
+            data={series.map((d) => d.views)}
+            label={t("chartViews")}
+            hint={t("chartViewsHint")}
+            total={sum("views")}
+            tone="ok"
+          />
+          <BarChart
+            data={series.map((d) => d.signups)}
+            label={t("chartSignups")}
+            hint={t("chartSignupsHint")}
+            total={sum("signups")}
+            tone="ink"
+          />
         </div>
 
         {series.length > 0 && (

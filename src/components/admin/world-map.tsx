@@ -72,6 +72,7 @@ export function WorldMap({
           {t("mapUnavailable")}
         </p>
       ) : (
+        <>
         <div className="mt-3 grid gap-4 lg:grid-cols-[1fr_240px]">
           <div className="relative overflow-hidden rounded-xl border border-line bg-bg-soft/30">
             <svg viewBox="0 0 360 180" className="block w-full" role="img" aria-label={t("mapTitle")}>
@@ -140,6 +141,18 @@ export function WorldMap({
             </p>
           </div>
         </div>
+        {/* Geo source credit (DB-IP Lite, CC-BY) — admin map only */}
+        <p className="mt-2 text-right text-[10px] text-ink-faint/70">
+          <a
+            href="https://db-ip.com"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:text-ink-faint hover:underline"
+          >
+            {t("mapCredit")}
+          </a>
+        </p>
+        </>
       )}
     </div>
   );

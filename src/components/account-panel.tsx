@@ -7,6 +7,7 @@ import { startAuthentication } from "@simplewebauthn/browser";
 import { KeyRound, FileText, FileUp, Link2, Plus, Trash2, Save, TriangleAlert } from "lucide-react";
 import { Button, Card, Field, Input, Textarea, Toggle, ErrorText, cls } from "./ui";
 import { CopyButton } from "./copy-button";
+import { isValidEmail } from "@/lib/validation";
 
 type Defaults = {
   defaultDays: number;
@@ -84,6 +85,114 @@ export function DefaultsPanel({ initial }: { initial: Defaults }) {
       />
       <ErrorText>{error}</ErrorText>
       <Button onClick={save} loading={busy}>
+        <Save className="size-4" />
+        {saved ? t("saved") : t("save")}
+      </Button>
+    </Card>
+  );
+}
+
+/** Editing of the account identity: name (free) + email (requires re-auth). */
+export function ProfilePanel({
+  initialName,
+  initialEmail,
+  hasPassword,
+}: {
+  initialName: string;
+  initialEmail: string;
+  hasPassword: boolean;
+}) {
+  const t = useTranslations("account");
+  const tc = useTranslations("common");
+  const router = useRouter();
+  const [name, setName] = useState(initialName);
+  const [email, setEmail] = useState(initialEmail);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
+
+  const nameChanged = name.trim().length > 0 && name.trim() !== initialName;
+  const emailChanged = email.trim().toLowerCase() !== initialEmail.toLowerCase();
+  const emailValid = isValidEmail(email.trim());
+  const ready =
+    (nameChanged || emailChanged) &&
+    (!emailChanged || (emailValid && (!hasPassword || currentPassword.length > 0)));
+
+  async function save() {
+    setError("");
+    setBusy(true);
+    try {
+      const body: Record<string, unknown> = {};
+      if (nameChanged) body.name = name.trim();
+      if (emailChanged) {
+        body.email = email.trim();
+        if (hasPassword) {
+          body.currentPassword = currentPassword;
+        } else {
+          // passwordless account → passkey re-assertion before changing the email
+          const optRes = await fetch("/api/account/profile", { method: "PUT" });
+          if (!optRes.ok) throw new Error((await optRes.json()).error ?? tc("error"));
+          const { options } = await optRes.json();
+          body.passkey = await startAuthentication({ optionsJSON: options });
+        }
+      }
+      const res = await fetch("/api/account/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        setError((await res.json()).error ?? tc("error"));
+        return;
+      }
+      setSaved(true);
+      setCurrentPassword("");
+      setTimeout(() => setSaved(false), 2000);
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error && e.message ? e.message : tc("error"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card className="space-y-4 p-6">
+      <h2 className="font-semibold">{t("profileTitle")}</h2>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label={t("profileName")}>
+          <Input value={name} onChange={(e) => setName(e.target.value)} maxLength={120} autoComplete="name" />
+        </Field>
+        <Field label={t("profileEmail")}>
+          <Input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            maxLength={255}
+            autoComplete="email"
+            aria-invalid={!!email && !emailValid}
+          />
+          {!!email && !emailValid && <span className="block text-xs text-danger">{t("invalidEmail")}</span>}
+        </Field>
+      </div>
+      {emailChanged &&
+        (hasPassword ? (
+          <Field label={t("currentPassword")} hint={t("emailReauthHint")}>
+            <Input
+              type="password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              autoComplete="current-password"
+            />
+          </Field>
+        ) : (
+          <p className="rounded-xl border border-line bg-bg-soft/40 px-3 py-2 text-xs text-ink-dim">
+            {t("emailReauthPasskey")}
+          </p>
+        ))}
+      <ErrorText>{error}</ErrorText>
+      <Button onClick={save} loading={busy} disabled={!ready}>
         <Save className="size-4" />
         {saved ? t("saved") : t("save")}
       </Button>
