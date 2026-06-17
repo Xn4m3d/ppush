@@ -152,10 +152,13 @@
     "qrHint": "Scannable directly from a phone",
     "warning": "⚠️ The decryption key lives in the link fragment (after the #): it was never sent to the server. Without the full link, the secret is unrecoverable — including by us.",
     "anonTip": "<strong>Tip:</strong> with a <link>free account</link>, you keep this link in your history and track who opened it, and when.",
-    "recipientLabel": "Message for the recipient",
-    "recipientHint": "Read-only — copy it and send it along with the link.",
-    "recipientNotice": "Heads-up: this link is valid for {delay} or until it has been opened {views, plural, one {# time} other {# times}} — whichever comes first. After that it self-destructs and the secret is permanently lost.",
-    "copyNotice": "Copy message"
+    "recipientLabel": "Note to send with the link",
+    "recipientHint": "Nothing is sent automatically — copy this and include it yourself when you share the link.",
+    "copyNotice": "Copy message",
+    "shareDefaultPassword": "'ppush.online' link info: the content shared with you is valid for [delay] or up to [views] views — whichever comes first. Always verify the origin of a message before clicking an internet link.",
+    "shareDefaultText": "'ppush.online' link info: the content shared with you is valid for [delay] or up to [views] views — whichever comes first. Always verify the origin of a message before clicking an internet link.",
+    "shareDefaultFile": "'ppush.online' link info: the content shared with you is valid for [delay] or up to [views] views — whichever comes first. Always verify the origin of a message before clicking an internet link.",
+    "shareDefaultUrl": "'ppush.online' link info: the content shared with you is valid for [delay] or up to [views] views — whichever comes first. Always verify the origin of a message before clicking an internet link."
   },
   "viewer": {
     "expiredTitle": "This secret is no longer available",
@@ -281,7 +284,19 @@
     "themeTitle": "Theme",
     "themeHint": "Auto follows the time of day (light by day, dark at night). Your choice is saved to your account and applies across your devices.",
     "autoOpenUrls": "Auto-open external URL links",
-    "autoOpenUrlsHint": "When you reveal a URL push, redirect automatically after a countdown. Off by default for safety — same-site links (e.g. password reset) always auto-open."
+    "autoOpenUrlsHint": "When you reveal a URL push, redirect automatically after a countdown. Off by default for safety — same-site links (e.g. password reset) always auto-open.",
+    "tabPushes": "Pushes",
+    "tabAccount": "Account",
+    "tabSecurity": "Security",
+    "shareTitle": "Message to send with your links",
+    "shareIntro": "An optional note, shown ready-to-copy after you create a push — one per push type.",
+    "shareNotSent": "Never sent to the recipient. ppush transmits nothing on its own — it's just a text you can copy to accompany the link yourself.",
+    "shareTypePassword": "Password",
+    "shareTypeText": "Text",
+    "shareTypeFile": "File",
+    "shareTypeUrl": "URL",
+    "sharePlaceholders": "Leave empty to use the default. Optional placeholders: [link], [delay], [views].",
+    "shareCustomized": "Customized"
   },
   "tokens": {
     "title": "API tokens",

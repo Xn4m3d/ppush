@@ -14,8 +14,17 @@ export async function generateMetadata() {
 export default async function HomePage() {
   const user = await currentUser();
   const t = await getTranslations("home");
+  const ts = await getTranslations("success");
   const u = config.limits.user;
   const a = config.limits.anon;
+
+  // "Note to send with the link" template per type: custom (account) or default.
+  const shareTemplates = {
+    PASSWORD: user?.shareMsgPassword || ts("shareDefaultPassword"),
+    TEXT: user?.shareMsgText || ts("shareDefaultText"),
+    FILE: user?.shareMsgFile || ts("shareDefaultFile"),
+    URL: user?.shareMsgUrl || ts("shareDefaultUrl"),
+  };
 
   const defaults = user
     ? {
@@ -29,6 +38,7 @@ export default async function HomePage() {
         maxViews: u.maxViews,
         maxFileSizeMb: u.maxFileMb,
         showNote: true,
+        shareTemplates,
       }
     : {
         tier: "anon" as const,
@@ -41,6 +51,7 @@ export default async function HomePage() {
         maxViews: a.maxViews,
         maxFileSizeMb: a.maxFileMb,
         showNote: false,
+        shareTemplates,
       };
 
   return (

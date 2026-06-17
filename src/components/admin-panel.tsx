@@ -112,7 +112,7 @@ export function AdminPanel({ selfId }: { selfId: string }) {
         </div>
       )}
 
-      <div className="flex gap-1 overflow-x-auto border-b border-line">
+      <div className="flex flex-wrap gap-1 border-b border-line">
         {tabs.map(([id, label, badge]) => (
           <button
             key={id}

@@ -4,16 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { currentUser, primaryAdminId } from "@/lib/auth";
 import { THEME_COOKIE, effectiveChoice } from "@/lib/themes";
 import { Header } from "@/components/header";
-import { Card } from "@/components/ui";
-import { ThemeSwitcher } from "@/components/theme-switcher";
-import {
-  DefaultsPanel,
-  PasswordPanel,
-  TokensPanel,
-  DeleteAccountPanel,
-} from "@/components/account-panel";
-import { PasskeysPanel } from "@/components/passkeys-panel";
-import { TotpPanel } from "@/components/totp-panel";
+import { AccountTabs } from "@/components/account-tabs";
 
 export async function generateMetadata() {
   return {
@@ -24,11 +15,13 @@ export async function generateMetadata() {
 
 export default async function AccountPage() {
   const t = await getTranslations("account");
+  const ts = await getTranslations("success");
   const user = await currentUser();
   if (!user) redirect("/login");
 
   const themeCookie = (await cookies()).get(THEME_COOKIE)?.value;
   const themeChoice = effectiveChoice(themeCookie, user.theme);
+  const canDelete = user.id !== (await primaryAdminId());
 
   return (
     <>
@@ -41,31 +34,33 @@ export default async function AccountPage() {
             {user.role === "ADMIN" && ` · ${t("administrator")}`}
           </p>
         </div>
-        <DefaultsPanel
-          initial={{
+
+        <AccountTabs
+          defaults={{
             defaultDays: user.defaultDays,
             defaultViews: user.defaultViews,
             defaultRetrievalStep: user.defaultRetrievalStep,
             defaultDeletableByViewer: user.defaultDeletableByViewer,
             autoOpenUrls: user.autoOpenUrls,
           }}
+          shareInitial={{
+            password: user.shareMsgPassword ?? "",
+            text: user.shareMsgText ?? "",
+            file: user.shareMsgFile ?? "",
+            url: user.shareMsgUrl ?? "",
+          }}
+          shareDefaults={{
+            password: ts("shareDefaultPassword"),
+            text: ts("shareDefaultText"),
+            file: ts("shareDefaultFile"),
+            url: ts("shareDefaultUrl"),
+          }}
+          themeChoice={themeChoice}
+          hasPassword={!!user.passwordHash}
+          has2fa={!!user.totpEnabledAt}
+          canDelete={canDelete}
+          email={user.email}
         />
-        <Card className="space-y-3 p-6">
-          <h2 className="font-semibold">{t("themeTitle")}</h2>
-          <p className="text-sm text-ink-dim">{t("themeHint")}</p>
-          <ThemeSwitcher current={themeChoice} persist />
-        </Card>
-        <PasskeysPanel />
-        <PasswordPanel hasPassword={!!user.passwordHash} />
-        <TotpPanel initialEnabled={!!user.totpEnabledAt} hasPassword={!!user.passwordHash} />
-        <TokensPanel />
-        {user.id !== (await primaryAdminId()) && (
-          <DeleteAccountPanel
-            email={user.email}
-            hasPassword={!!user.passwordHash}
-            has2fa={!!user.totpEnabledAt}
-          />
-        )}
       </main>
     </>
   );

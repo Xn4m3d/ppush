@@ -72,9 +72,11 @@ type Defaults = {
   maxViews: number;
   maxFileSizeMb: number;
   showNote: boolean;
+  // "Note to send with the link" template per push type (custom or default).
+  shareTemplates: Record<Kind, string>;
 };
 
-type Created = { url: string; expireAfterMinutes: number; expireAfterViews: number };
+type Created = { url: string; kind: Kind; expireAfterMinutes: number; expireAfterViews: number };
 
 export function PushForm({ defaults }: { defaults: Defaults }) {
   const t = useTranslations("form");
@@ -193,6 +195,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
 
       setCreated({
         url: `${data.url}#${keyB64}`,
+        kind,
         expireAfterMinutes: minutes,
         expireAfterViews: views,
       });
@@ -212,6 +215,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
         hasPassphrase={!!passphrase}
         onNew={reset}
         tier={defaults.tier}
+        shareTemplate={defaults.shareTemplates[created.kind]}
       />
     );
   }
@@ -678,22 +682,26 @@ function SuccessScreen({
   hasPassphrase,
   onNew,
   tier,
+  shareTemplate,
 }: {
   created: Created;
   hasPassphrase: boolean;
   onNew: () => void;
   tier: "anon" | "user";
+  shareTemplate: string;
 }) {
   const t = useTranslations("success");
   const locale = useLocale() as Locale;
   const [qr, setQr] = useState<string>("");
 
   const delay = formatDelay(created.expireAfterMinutes * 60_000, locale);
-  // Ready-to-copy text, to share with the recipient alongside the link.
-  const recipientNotice = t("recipientNotice", {
-    delay,
-    views: created.expireAfterViews,
-  });
+  // "Note to send with the link": ready-to-copy text the sender attaches to the
+  // link THEMSELVES (never sent automatically). Templates [link]/[delay]/[views]
+  // (square brackets, not braces: avoid next-intl's ICU parser).
+  const recipientNotice = shareTemplate
+    .replaceAll("[link]", created.url)
+    .replaceAll("[delay]", delay)
+    .replaceAll("[views]", String(created.expireAfterViews));
 
   useEffect(() => {
     QRCode.toDataURL(created.url, {
@@ -737,7 +745,7 @@ function SuccessScreen({
         <Textarea
           id="recipient-notice"
           readOnly
-          rows={3}
+          rows={4}
           value={recipientNotice}
           onFocus={(e) => e.currentTarget.select()}
           className="mt-2 resize-none text-xs leading-relaxed"

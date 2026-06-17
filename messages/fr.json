@@ -152,10 +152,13 @@
     "qrHint": "Scannable directement depuis un mobile",
     "warning": "⚠️ La clé de déchiffrement est dans le fragment du lien (après le #) : elle n'a jamais été transmise au serveur. Sans ce lien complet, le secret est irrécupérable — y compris par nous.",
     "anonTip": "<strong>Astuce :</strong> avec un <link>compte gratuit</link>, vous retrouvez ce lien dans votre historique et suivez ses consultations — qui l'a ouvert, et quand.",
-    "recipientLabel": "Message pour le destinataire",
-    "recipientHint": "En lecture seule — à copier et transmettre avec le lien.",
-    "recipientNotice": "À noter : ce lien n'est valable que {delay} ou jusqu'à {views, plural, one {# consultation} other {# consultations}} — au premier des deux atteint. Passé ce délai, il s'autodétruit et le secret est définitivement perdu.",
-    "copyNotice": "Copier le message"
+    "recipientLabel": "Note à envoyer avec le lien",
+    "recipientHint": "Rien n'est envoyé automatiquement — copiez ce texte et joignez-le vous-même quand vous partagez le lien.",
+    "copyNotice": "Copier le message",
+    "shareDefaultPassword": "Information lien 'ppush.online' : le contenu qui vous a été transmis n'est valable que [delay] ou jusqu'à [views] consultations — au premier des deux atteint. Vérifiez toujours l'origine du message avant de cliquer sur un lien internet.",
+    "shareDefaultText": "Information lien 'ppush.online' : le contenu qui vous a été transmis n'est valable que [delay] ou jusqu'à [views] consultations — au premier des deux atteint. Vérifiez toujours l'origine du message avant de cliquer sur un lien internet.",
+    "shareDefaultFile": "Information lien 'ppush.online' : le contenu qui vous a été transmis n'est valable que [delay] ou jusqu'à [views] consultations — au premier des deux atteint. Vérifiez toujours l'origine du message avant de cliquer sur un lien internet.",
+    "shareDefaultUrl": "Information lien 'ppush.online' : le contenu qui vous a été transmis n'est valable que [delay] ou jusqu'à [views] consultations — au premier des deux atteint. Vérifiez toujours l'origine du message avant de cliquer sur un lien internet."
   },
   "viewer": {
     "expiredTitle": "Ce secret n'est plus disponible",
@@ -281,7 +284,19 @@
     "themeTitle": "Thème",
     "themeHint": "Auto suit l'heure (clair le jour, sombre la nuit). Votre choix est enregistré sur votre compte et s'applique sur tous vos appareils.",
     "autoOpenUrls": "Ouvrir automatiquement les liens URL externes",
-    "autoOpenUrlsHint": "À la révélation d'un push URL, redirige automatiquement après un décompte. Désactivé par défaut (sécurité) — les liens du site (ex. réinitialisation de mot de passe) s'ouvrent toujours automatiquement."
+    "autoOpenUrlsHint": "À la révélation d'un push URL, redirige automatiquement après un décompte. Désactivé par défaut (sécurité) — les liens du site (ex. réinitialisation de mot de passe) s'ouvrent toujours automatiquement.",
+    "tabPushes": "Pushes",
+    "tabAccount": "Compte",
+    "tabSecurity": "Sécurité",
+    "shareTitle": "Message à envoyer avec vos liens",
+    "shareIntro": "Une note facultative, affichée prête à copier après la création d'un push — une par type de push.",
+    "shareNotSent": "Jamais transmise au destinataire. ppush n'envoie rien de lui-même — c'est juste un texte que vous pouvez copier pour accompagner le lien vous-même.",
+    "shareTypePassword": "Mot de passe",
+    "shareTypeText": "Texte",
+    "shareTypeFile": "Fichier",
+    "shareTypeUrl": "URL",
+    "sharePlaceholders": "Laissez vide pour le texte par défaut. Variables facultatives : [link], [delay], [views].",
+    "shareCustomized": "Personnalisé"
   },
   "tokens": {
     "title": "Tokens API",

@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { startAuthentication } from "@simplewebauthn/browser";
-import { KeyRound, Plus, Trash2, Save, TriangleAlert } from "lucide-react";
-import { Button, Card, Field, Input, Toggle, ErrorText } from "./ui";
+import { KeyRound, FileText, FileUp, Link2, Plus, Trash2, Save, TriangleAlert } from "lucide-react";
+import { Button, Card, Field, Input, Textarea, Toggle, ErrorText, cls } from "./ui";
 import { CopyButton } from "./copy-button";
 
 type Defaults = {
@@ -82,6 +82,106 @@ export function DefaultsPanel({ initial }: { initial: Defaults }) {
         label={t("autoOpenUrls")}
         hint={t("autoOpenUrlsHint")}
       />
+      <ErrorText>{error}</ErrorText>
+      <Button onClick={save} loading={busy}>
+        <Save className="size-4" />
+        {saved ? t("saved") : t("save")}
+      </Button>
+    </Card>
+  );
+}
+
+type ShareMessages = { password: string; text: string; file: string; url: string };
+
+/**
+ * Editing of the "note to send with the link" per push type. This text is NEVER
+ * transmitted to the recipient: it's just a ready-to-copy label the sender
+ * attaches to the link themselves. Empty = default text.
+ */
+export function ShareMessagesPanel({
+  initial,
+  defaults,
+}: {
+  initial: ShareMessages;
+  defaults: ShareMessages;
+}) {
+  const t = useTranslations("account");
+  const tc = useTranslations("common");
+  const [values, setValues] = useState(initial);
+  const [active, setActive] = useState<keyof ShareMessages>("password");
+  const [saved, setSaved] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function save() {
+    setBusy(true);
+    setError("");
+    const res = await fetch("/api/account/share-messages", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(values),
+    });
+    if (!res.ok) {
+      setError((await res.json()).error ?? tc("error"));
+    } else {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    }
+    setBusy(false);
+  }
+
+  const types: [keyof ShareMessages, string, typeof KeyRound][] = [
+    ["password", t("shareTypePassword"), KeyRound],
+    ["text", t("shareTypeText"), FileText],
+    ["file", t("shareTypeFile"), FileUp],
+    ["url", t("shareTypeUrl"), Link2],
+  ];
+
+  return (
+    <Card className="space-y-4 p-6">
+      <div>
+        <h2 className="font-semibold">{t("shareTitle")}</h2>
+        <p className="mt-1 text-sm text-ink-dim">{t("shareIntro")}</p>
+        <p className="mt-2 flex items-start gap-2 rounded-xl border border-warn/25 bg-warn/[0.07] px-3 py-2 text-xs text-ink-dim">
+          <TriangleAlert className="mt-0.5 size-3.5 shrink-0 text-warn" />
+          {t("shareNotSent")}
+        </p>
+      </div>
+
+      <div className="flex flex-wrap gap-1.5">
+        {types.map(([k, label, Icon]) => {
+          const on = active === k;
+          const custom = values[k].trim().length > 0;
+          return (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setActive(k)}
+              className={cls(
+                "inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm transition-colors cursor-pointer",
+                on ? "bg-accent/15 text-accent-soft" : "text-ink-faint hover:bg-panel hover:text-ink-dim"
+              )}
+            >
+              <Icon className="size-3.5" />
+              {label}
+              {custom && (
+                <span className="size-1.5 rounded-full bg-accent" title={t("shareCustomized")} aria-hidden />
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      <Textarea
+        rows={4}
+        maxLength={500}
+        value={values[active]}
+        placeholder={defaults[active]}
+        onChange={(e) => setValues({ ...values, [active]: e.target.value })}
+        className="text-sm"
+      />
+
+      <p className="text-xs text-ink-faint">{t("sharePlaceholders")}</p>
       <ErrorText>{error}</ErrorText>
       <Button onClick={save} loading={busy}>
         <Save className="size-4" />

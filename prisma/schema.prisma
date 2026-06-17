@@ -34,6 +34,13 @@ model User {
   // Preferred theme: "auto" (day mecha / night midnight) | "midnight" | "mecha"
   // | null (= follows the cookie / auto default).
   theme                    String?
+  // Custom "note to send with the link" per push type (null = default text).
+  // NOT transmitted to the recipient: just a ready-to-copy text the sender
+  // attaches to the link themselves. Templates: [link] [delay] [views].
+  shareMsgPassword         String?
+  shareMsgText             String?
+  shareMsgFile             String?
+  shareMsgUrl              String?
 
   sessions       Session[]
   pushes         Push[]
