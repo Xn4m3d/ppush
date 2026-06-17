@@ -12,7 +12,11 @@ const CONTENT: Record<Locale, React.ComponentType> = {
 
 export async function generateMetadata() {
   const t = await getTranslations("meta");
-  return { title: t("privacy"), description: t("privacyDescription") };
+  return {
+    title: t("privacy"),
+    description: t("privacyDescription"),
+    alternates: { canonical: "/privacy" },
+  };
 }
 
 export default async function PrivacyPage() {

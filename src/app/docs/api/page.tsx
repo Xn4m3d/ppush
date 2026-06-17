@@ -16,7 +16,11 @@ const CONTENT: Record<Locale, React.ComponentType> = {
 
 export async function generateMetadata() {
   const t = await getTranslations("meta");
-  return { title: t("apiDocs"), description: t("apiDocsDescription") };
+  return {
+    title: t("apiDocs"),
+    description: t("apiDocsDescription"),
+    alternates: { canonical: "/docs/api" },
+  };
 }
 
 export default async function ApiDocsPage() {

@@ -8,7 +8,10 @@ import { PushForm } from "@/components/push-form";
 import { MascotCat } from "@/components/mascot-cat";
 
 export async function generateMetadata() {
-  return { description: (await getTranslations("meta"))("homeDescription") };
+  return {
+    description: (await getTranslations("meta"))("homeDescription"),
+    alternates: { canonical: "/" },
+  };
 }
 
 export default async function HomePage() {

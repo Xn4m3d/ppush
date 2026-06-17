@@ -11,7 +11,11 @@ import type { Locale } from "@/i18n/locale";
 
 export async function generateMetadata() {
   const t = await getTranslations("meta");
-  return { title: t("register"), description: t("registerDescription") };
+  return {
+    title: t("register"),
+    description: t("registerDescription"),
+    alternates: { canonical: "/register" },
+  };
 }
 
 export default async function RegisterPage() {
