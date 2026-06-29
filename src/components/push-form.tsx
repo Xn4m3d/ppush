@@ -258,13 +258,28 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
             <Field label={t("passwordLabel")}>
               <div className="flex gap-2">
                 <div className="relative flex-1">
+                  {/* No `type="password"`: password managers would treat this as
+                      a login field and inject a stored credential (they ignore
+                      `autocomplete=off` on password fields). We mask the value
+                      with CSS instead and opt out of the remaining heuristics
+                      via per-manager data attributes. */}
                   <Input
-                    type={showSecret ? "text" : "password"}
+                    type="text"
                     value={secret}
                     onChange={(e) => setSecret(e.target.value)}
                     placeholder="••••••••••••"
-                    className="pr-10 font-mono"
+                    className={cls(
+                      "pr-10 font-mono",
+                      !showSecret && "[-webkit-text-security:disc]"
+                    )}
                     autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
+                    data-1p-ignore
+                    data-lpignore="true"
+                    data-bwignore
+                    data-form-type="other"
                   />
                   <button
                     type="button"
