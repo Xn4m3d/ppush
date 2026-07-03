@@ -434,6 +434,10 @@
     "statusActive": "Active",
     "statusExpired": "Expired",
     "statusFile": "Files",
+    "sourceAll": "Any source",
+    "sourceWeb": "Web",
+    "sourceApi": "API",
+    "sourceAnon": "Anonymous",
     "colSlug": "Push",
     "colOwner": "Owner",
     "colViews": "Views",
@@ -559,6 +563,11 @@
     "chartPushesHint": "Links created over the period (you + anonymous).",
     "chartViewsHint": "Secrets revealed by recipients — not site visits or page loads.",
     "chartSignupsHint": "New accounts created.",
+    "chartPushesApi": "API pushes",
+    "chartPushesApiHint": "Links created via an API token over the period.",
+    "sourceBreakdown": "Push origin",
+    "sourceApiShare": "API: {pct}% of creations",
+    "topApiTokens": "Top API tokens",
     "mapCredit": "IP geolocation by DB-IP"
   },
   "auth": {

@@ -86,6 +86,7 @@ model ApiToken {
   tokenHash  String    @unique
   createdAt  DateTime  @default(now())
   lastUsedAt DateTime?
+  pushes     Push[]
 
   @@index([userId])
 }
@@ -96,6 +97,17 @@ model Push {
   kind   String // PASSWORD | TEXT | FILE | URL
   userId String? // null = anonymous push (created without an account)
   user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Creation origin: WEB (session cookie) | API (Bearer token) | ANON (neither
+  // session nor token — mostly the public UI without an account). Set at
+  // creation via resolveAuth(). ANON <=> userId null; WEB/API => userId set.
+  source String @default("WEB")
+  // Creating API token (when source=API). SetNull to survive token revocation;
+  // apiTokenName is a snapshot for durable audit (the token name is fixed at
+  // creation of the token, never renamed).
+  apiTokenId   String?
+  apiToken     ApiToken? @relation(fields: [apiTokenId], references: [id], onDelete: SetNull)
+  apiTokenName String?
 
   // Client-side encrypted payload (AES-256-GCM, key never sent to the server).
   // Small payloads in the DB; files on disk (blobPath).
@@ -124,6 +136,8 @@ model Push {
 
   @@index([userId, createdAt])
   @@index([expiresAt])
+  @@index([source, createdAt])
+  @@index([apiTokenId])
 }
 
 model AuditEvent {
@@ -214,6 +228,7 @@ model DailyStat {
   date       String @id
   pushes     Int    @default(0)
   pushesAnon Int    @default(0)
+  pushesApi  Int    @default(0)
   views      Int    @default(0)
   signups    Int    @default(0)
 }

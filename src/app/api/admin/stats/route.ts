@@ -28,6 +28,9 @@ export async function GET(req: Request) {
       views,
       storage,
       recoveryPending,
+      pushesApiActive,
+      sourceRows,
+      topApiTokenRows,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { active: true } }),
@@ -44,7 +47,21 @@ export async function GET(req: Request) {
       prisma.auditEvent.count({ where: { kind: "VIEW" } }),
       storageStatus(),
       prisma.recoveryRequest.count({ where: { status: "PENDING" } }),
+      prisma.push.count({
+        where: { source: "API", payloadDeleted: false, expiresAt: { gt: now } },
+      }),
+      prisma.push.groupBy({ by: ["source"], _count: { _all: true } }),
+      prisma.push.groupBy({
+        by: ["apiTokenName"],
+        where: { source: "API" },
+        _count: { _all: true },
+        orderBy: { _count: { apiTokenName: "desc" } },
+        take: 5,
+      }),
     ]);
+
+    const srcCount = (s: string) =>
+      sourceRows.find((r) => r.source === s)?._count._all ?? 0;
 
     return json({
       users: {
@@ -64,6 +81,16 @@ export async function GET(req: Request) {
         anon: pushesAnon,
         anonActive: pushesAnonActive,
         views,
+        bySource: {
+          web: srcCount("WEB"),
+          api: srcCount("API"),
+          anon: srcCount("ANON"),
+        },
+        apiActive: pushesApiActive,
+        topApiTokens: topApiTokenRows.map((r) => ({
+          name: r.apiTokenName ?? "",
+          count: r._count._all,
+        })),
       },
       storage: { usedBytes: storage.usedBytes, availableBytes: storage.availableBytes },
       recovery: { pending: recoveryPending },

@@ -15,6 +15,8 @@ type AdminPush = {
   url: string;
   ownerEmail: string | null;
   anon: boolean;
+  source: string; // WEB | API | ANON
+  apiTokenName: string | null;
   views: number;
   expireAfterViews: number;
   fileSize: number | null;
@@ -37,6 +39,7 @@ export function PushesTab({ refreshKey, bump }: { refreshKey: number; bump: () =
   const [owner, setOwner] = useState("all");
   const [kind, setKind] = useState("all");
   const [status, setStatus] = useState("all");
+  const [source, setSource] = useState("all");
   const [open, setOpen] = useState<AdminPush | null>(null);
   const [localKey, setLocalKey] = useState(0);
 
@@ -55,6 +58,7 @@ export function PushesTab({ refreshKey, bump }: { refreshKey: number; bump: () =
     if (owner !== "all") params.set("owner", owner);
     if (kind !== "all") params.set("kind", kind);
     if (status !== "all") params.set("status", status);
+    if (source !== "all") params.set("source", source);
     fetch(`/api/admin/pushes?${params}`).then(async (res) => {
       if (res.ok && !cancelled) {
         const d = await res.json();
@@ -65,7 +69,7 @@ export function PushesTab({ refreshKey, bump }: { refreshKey: number; bump: () =
     return () => {
       cancelled = true;
     };
-  }, [page, debouncedQ, owner, kind, status, refreshKey, localKey]);
+  }, [page, debouncedQ, owner, kind, status, source, refreshKey, localKey]);
 
   const pages = Math.max(1, Math.ceil(total / 20));
   const kindLabel = (k: string) =>
@@ -113,6 +117,12 @@ export function PushesTab({ refreshKey, bump }: { refreshKey: number; bump: () =
             ["expired", t("statusExpired")],
             ["file", t("statusFile")],
           ])}
+          {select(source, setSource, [
+            ["all", t("sourceAll")],
+            ["WEB", t("sourceWeb")],
+            ["API", t("sourceApi")],
+            ["ANON", t("sourceAnon")],
+          ])}
         </div>
       </div>
 
@@ -151,6 +161,16 @@ export function PushesTab({ refreshKey, bump }: { refreshKey: number; bump: () =
                       <Badge tone="neutral">{t("anonBadge")}</Badge>
                     ) : (
                       <span className="text-xs text-ink-dim break-all">{p.ownerEmail}</span>
+                    )}
+                    {p.source === "API" && (
+                      <p className="mt-1 flex flex-wrap items-center gap-1.5">
+                        <Badge tone="accent">{t("sourceApi")}</Badge>
+                        {p.apiTokenName && (
+                          <span className="font-mono text-[11px] text-ink-faint break-all">
+                            {p.apiTokenName}
+                          </span>
+                        )}
+                      </p>
                     )}
                   </td>
                   <td className="px-3 py-3.5 hidden sm:table-cell tabular-nums text-ink-dim">
@@ -261,6 +281,12 @@ function PushDrawer({
         <div className="flex flex-wrap items-center gap-2">
           <Badge tone="accent">{kindLabel(push.kind)}</Badge>
           {push.anon ? <Badge tone="neutral">{t("anonBadge")}</Badge> : <Badge tone="ok">{push.ownerEmail}</Badge>}
+          {push.source === "API" && (
+            <Badge tone="accent">
+              {t("sourceApi")}
+              {push.apiTokenName ? ` · ${push.apiTokenName}` : ""}
+            </Badge>
+          )}
           {push.expired ? <Badge tone="neutral">{t("statusExpired")}</Badge> : <Badge tone="ok">{t("statusActive")}</Badge>}
           {push.hasPassphrase && (
             <Badge tone="warn">

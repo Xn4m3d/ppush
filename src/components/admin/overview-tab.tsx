@@ -8,7 +8,7 @@ import { WorldMap } from "./world-map";
 import type { Locale } from "@/i18n/locale";
 
 type Insights = {
-  timeseries: { date: string; pushes: number; views: number; signups: number }[];
+  timeseries: { date: string; pushes: number; pushesApi: number; views: number; signups: number }[];
   granularity: "day" | "week" | "month";
   geo: {
     available: boolean;
@@ -38,7 +38,8 @@ export function OverviewTab({ refreshKey }: { refreshKey: number }) {
 
   const series = data?.timeseries ?? [];
   const gran = data?.granularity ?? "day";
-  const sum = (k: "pushes" | "views" | "signups") => series.reduce((a, d) => a + d[k], 0);
+  const sum = (k: "pushes" | "pushesApi" | "views" | "signups") =>
+    series.reduce((a, d) => a + d[k], 0);
 
   const fmt = (iso: string) => {
     const d = new Date(iso + "T00:00:00Z");
@@ -77,13 +78,20 @@ export function OverviewTab({ refreshKey }: { refreshKey: number }) {
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <BarChart
             data={series.map((d) => d.pushes)}
             label={t("chartPushes")}
             hint={t("chartPushesHint")}
             total={sum("pushes")}
             tone="accent"
+          />
+          <BarChart
+            data={series.map((d) => d.pushesApi)}
+            label={t("chartPushesApi")}
+            hint={t("chartPushesApiHint")}
+            total={sum("pushesApi")}
+            tone="warn"
           />
           <BarChart
             data={series.map((d) => d.views)}

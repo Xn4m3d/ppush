@@ -22,6 +22,8 @@ function adminPushRow(
     url: `${config.baseUrl}/p/${push.slug}`,
     ownerEmail: push.user?.email ?? null, // null = anonyme
     anon: push.userId === null,
+    source: push.source, // WEB | API | ANON
+    apiTokenName: push.apiTokenName, // token name when source=API (snapshot)
     views: push.views,
     expireAfterViews: push.expireAfterViews,
     fileSize: push.fileSize,
@@ -47,12 +49,14 @@ export async function GET(req: Request) {
     const owner = url.searchParams.get("owner"); // anon | account
     const kind = url.searchParams.get("kind"); // PASSWORD | TEXT | FILE | URL
     const status = url.searchParams.get("status"); // active | expired | file
+    const source = url.searchParams.get("source"); // WEB | API | ANON
     const now = new Date();
 
     const where = {
       ...(q ? { OR: [{ slug: { contains: q } }, { id: q }] } : {}),
       ...(owner === "anon" ? { userId: null } : owner === "account" ? { userId: { not: null } } : {}),
       ...(kind && ["PASSWORD", "TEXT", "FILE", "URL"].includes(kind) ? { kind } : {}),
+      ...(source && ["WEB", "API", "ANON"].includes(source) ? { source } : {}),
       ...(status === "active"
         ? { payloadDeleted: false, expiresAt: { gt: now } }
         : status === "expired"

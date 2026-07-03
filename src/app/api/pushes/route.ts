@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { requireUser, hashPassword } from "@/lib/auth";
+import { requireUser, resolveAuth, hashPassword } from "@/lib/auth";
 import { json, apiError, badOrigin, handleError } from "@/lib/api";
 import { apiT } from "@/lib/i18n-api";
 import { randomToken } from "@/lib/tokens";
@@ -35,8 +35,12 @@ export async function POST(req: Request) {
   try {
     if (badOrigin(req)) return apiError(t("badOrigin"), 403);
     const ip = clientIp(req);
-    const user = await requireUser(req);
+    const auth = await resolveAuth(req);
+    const user = auth.user;
     const tier = user ? "user" : "anon";
+    // Origin: Bearer token → API; session cookie → WEB; otherwise ANON.
+    const source =
+      auth.via === "api" ? "API" : auth.via === "session" ? "WEB" : "ANON";
 
     // Anti-abuse: anonymous creation is capped per IP (accounts, on the other hand,
     // are tracked and get wider limits).
@@ -107,6 +111,9 @@ export async function POST(req: Request) {
         retrievalStep: body.retrievalStep,
         deletableByViewer: body.deletableByViewer,
         note: user ? body.note?.trim() || null : null, // no anonymous history → note pointless
+        source,
+        apiTokenId: auth.via === "api" ? auth.token.id : null,
+        apiTokenName: auth.via === "api" ? auth.token.name : null,
         expiresAt: new Date(Date.now() + minutes * 60_000),
       },
     });
@@ -117,6 +124,7 @@ export async function POST(req: Request) {
     });
     await bumpDailyStat("pushes");
     if (!user) await bumpDailyStat("pushesAnon");
+    if (source === "API") await bumpDailyStat("pushesApi");
 
     return json(ownerPushView(push), 201);
   } catch (err) {

@@ -17,13 +17,26 @@ export function BarChart({
   data: number[];
   label: string;
   total: number;
-  tone?: "accent" | "ok" | "ink";
+  tone?: "accent" | "ok" | "ink" | "warn";
   hint?: string;
 }) {
   const max = Math.max(1, ...data);
   const color =
-    tone === "ok" ? "var(--color-ok)" : tone === "ink" ? "var(--color-ink-faint)" : "var(--color-accent)";
-  const valueColor = tone === "ok" ? "text-ok" : tone === "ink" ? "text-ink-dim" : "text-accent-soft";
+    tone === "ok"
+      ? "var(--color-ok)"
+      : tone === "ink"
+        ? "var(--color-ink-faint)"
+        : tone === "warn"
+          ? "var(--color-warn)"
+          : "var(--color-accent)";
+  const valueColor =
+    tone === "ok"
+      ? "text-ok"
+      : tone === "ink"
+        ? "text-ink-dim"
+        : tone === "warn"
+          ? "text-warn"
+          : "text-accent-soft";
   const W = 120;
   const H = 36;
   const n = Math.max(1, data.length);

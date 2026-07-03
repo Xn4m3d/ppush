@@ -5,7 +5,12 @@ import { prisma } from "./db";
  * RELIABLE multi-year history despite the purge of raw data at ~12 months. No
  * personal data, GDPR-compliant.
  */
-export type StatField = "pushes" | "pushesAnon" | "views" | "signups";
+export type StatField =
+  | "pushes"
+  | "pushesAnon"
+  | "pushesApi"
+  | "views"
+  | "signups";
 
 export function dayKey(d: Date = new Date()): string {
   return d.toISOString().slice(0, 10); // YYYY-MM-DD (UTC)
@@ -33,17 +38,20 @@ export async function bumpDailyStat(field: StatField, n = 1): Promise<void> {
 export async function backfillDailyStats(): Promise<void> {
   if ((await prisma.dailyStat.count()) > 0) return;
   const [pushes, views, users] = await Promise.all([
-    prisma.push.findMany({ select: { createdAt: true, userId: true } }),
+    prisma.push.findMany({ select: { createdAt: true, userId: true, source: true } }),
     prisma.auditEvent.findMany({ where: { kind: "VIEW" }, select: { createdAt: true } }),
     prisma.user.findMany({ select: { createdAt: true } }),
   ]);
 
-  const map = new Map<string, { pushes: number; pushesAnon: number; views: number; signups: number }>();
+  const map = new Map<
+    string,
+    { pushes: number; pushesAnon: number; pushesApi: number; views: number; signups: number }
+  >();
   const at = (d: Date) => {
     const k = dayKey(d);
     let v = map.get(k);
     if (!v) {
-      v = { pushes: 0, pushesAnon: 0, views: 0, signups: 0 };
+      v = { pushes: 0, pushesAnon: 0, pushesApi: 0, views: 0, signups: 0 };
       map.set(k, v);
     }
     return v;
@@ -52,6 +60,7 @@ export async function backfillDailyStats(): Promise<void> {
     const v = at(p.createdAt);
     v.pushes++;
     if (p.userId === null) v.pushesAnon++;
+    if (p.source === "API") v.pushesApi++;
   }
   for (const e of views) at(e.createdAt).views++;
   for (const u of users) at(u.createdAt).signups++;

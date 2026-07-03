@@ -90,8 +90,13 @@ export async function destroySession(): Promise<void> {
   jar.delete(SESSION_COOKIE);
 }
 
-/** API authentication via Bearer token. */
-export async function apiUser(req: Request): Promise<User | null> {
+/**
+ * API authentication via Bearer token. Returns the user AND the token (id +
+ * name) so an action can be attributed to its creating token.
+ */
+export async function apiAuth(
+  req: Request
+): Promise<{ user: User; token: { id: string; name: string } } | null> {
   const header = req.headers.get("authorization");
   if (!header?.startsWith("Bearer ")) return null;
   const token = header.slice(7).trim();
@@ -104,7 +109,33 @@ export async function apiUser(req: Request): Promise<User | null> {
   prisma.apiToken
     .update({ where: { id: apiToken.id }, data: { lastUsedAt: new Date() } })
     .catch(() => {});
-  return apiToken.user;
+  return { user: apiToken.user, token: { id: apiToken.id, name: apiToken.name } };
+}
+
+/** API authentication via Bearer token (user only, or null). */
+export async function apiUser(req: Request): Promise<User | null> {
+  return (await apiAuth(req))?.user ?? null;
+}
+
+/**
+ * Resolved authentication context: web session, API token, or anonymous. We
+ * keep the MODE (dropped by requireUser) to tag the origin of actions, e.g. the
+ * origin of a push (Push.source).
+ */
+export type AuthContext =
+  | { user: User; via: "session" }
+  | { user: User; via: "api"; token: { id: string; name: string } }
+  | { user: null; via: "anon" };
+
+/** Resolves the current user while keeping the authentication mode used. */
+export async function resolveAuth(req?: Request): Promise<AuthContext> {
+  const fromSession = await currentUser();
+  if (fromSession) return { user: fromSession, via: "session" };
+  if (req) {
+    const api = await apiAuth(req);
+    if (api) return { user: api.user, via: "api", token: api.token };
+  }
+  return { user: null, via: "anon" };
 }
 
 /** Current user: web session OR API token. */

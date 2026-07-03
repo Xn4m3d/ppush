@@ -53,12 +53,17 @@ export async function GET(req: Request) {
     const gran: Gran = spanDays > 365 ? "month" : spanDays > 92 ? "week" : "day";
 
     const rows = await prisma.dailyStat.findMany({ where: { date: { gte: startKey } }, orderBy: { date: "asc" } });
-    const buckets = new Map<string, { date: string; pushes: number; views: number; signups: number }>();
-    for (const k of bucketStarts(startKey, gran)) buckets.set(k, { date: k, pushes: 0, views: 0, signups: 0 });
+    const buckets = new Map<
+      string,
+      { date: string; pushes: number; pushesApi: number; views: number; signups: number }
+    >();
+    for (const k of bucketStarts(startKey, gran))
+      buckets.set(k, { date: k, pushes: 0, pushesApi: 0, views: 0, signups: 0 });
     for (const r of rows) {
       const b = buckets.get(bucketKeyFor(r.date, gran));
       if (b) {
         b.pushes += r.pushes;
+        b.pushesApi += r.pushesApi;
         b.views += r.views;
         b.signups += r.signups;
       }
