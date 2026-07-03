@@ -7,7 +7,13 @@ import { BackHome } from "@/components/back-home";
 
 export async function generateMetadata() {
   const t = await getTranslations("meta");
-  return { title: t("login"), description: t("loginDescription") };
+  // Login page: no SEO value, keep it out of the index (but follow links).
+  // Consistent with its removal from the sitemap.
+  return {
+    title: t("login"),
+    description: t("loginDescription"),
+    robots: { index: false, follow: true },
+  };
 }
 
 export default async function LoginPage() {

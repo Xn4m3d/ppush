@@ -23,7 +23,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/register", priority: 0.6, changeFrequency: "monthly" },
     { path: "/legal", priority: 0.5, changeFrequency: "monthly" },
     { path: "/privacy", priority: 0.5, changeFrequency: "monthly" },
-    { path: "/login", priority: 0.4, changeFrequency: "monthly" },
+    // /login intentionally omitted: noindex page (no SEO value).
   ];
   return pages.map((p) => ({
     url: `${base}${p.path}`,
