@@ -24,7 +24,7 @@ export function Button({
     "inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-50 disabled:pointer-events-none cursor-pointer";
   const variants = {
     primary:
-      "bg-accent text-white hover:bg-accent-soft active:scale-[0.98] shadow-[0_4px_20px_-4px_var(--accent-glow)]",
+      "bg-accent text-[var(--on-accent)] hover:bg-accent-soft active:scale-[0.98] shadow-[0_4px_20px_-4px_var(--accent-glow)]",
     ghost:
       "bg-transparent border border-line text-ink-dim hover:text-ink hover:border-line-soft hover:bg-panel",
     subtle: "bg-panel-soft text-ink hover:bg-line/60 border border-line",
@@ -101,7 +101,7 @@ export function Card({
   return (
     <div
       className={cls(
-        "rounded-2xl border border-line bg-panel/80 backdrop-blur-sm shadow-[0_8px_40px_-12px_rgba(0,0,0,0.5)]",
+        "surface-card rounded-2xl border border-line bg-panel/80 backdrop-blur-sm",
         className
       )}
     >

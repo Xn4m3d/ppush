@@ -1,6 +1,9 @@
 /**
  * Visual themes. Two APPLIED themes (value of `data-theme`): `midnight`
- * (dark violet) and `mecha` (light grey/lava-red). The selector also offers
+ * — "Yoake", slate night + dawn-orange accent — and `mecha` — "Hinode",
+ * ivory day + vermilion accent. The technical ids are kept as-is: they live
+ * in the `theme` cookie and in `User.theme`, so renaming them would
+ * invalidate already-saved preferences. The selector also offers
  * plus `auto` = day → mecha / night → midnight, based on the visitor's LOCAL hour
  * (resolved client-side by an anti-flash inline script, see layout.tsx).
  *
@@ -43,7 +46,7 @@ export function resolveTheme(choice: string | null | undefined, hour: number): T
 
 /** Preview swatches (background · line · accent) for the selector. */
 export const THEME_SWATCH: Record<ThemeChoice, [string, string, string]> = {
-  auto: ["#e7e9ec", "#0b0d12", "#d4231a"],
-  midnight: ["#0b0d12", "#232a3b", "#7c6cff"],
-  mecha: ["#e7e9ec", "#cbd0d7", "#d4231a"],
+  auto: ["#f6f4f1", "#191b26", "#d23b28"],
+  midnight: ["#191b26", "#2c3044", "#ff9e64"],
+  mecha: ["#f6f4f1", "#e4ded9", "#d23b28"],
 };

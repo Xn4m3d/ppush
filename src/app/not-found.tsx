@@ -146,7 +146,7 @@ export default function NotFound() {
 
       <Link
         href="/"
-        className="mt-6 rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-white shadow-[0_4px_20px_-4px_rgba(124,108,255,0.45)] transition-all hover:bg-accent-soft"
+        className="mt-6 rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-[var(--on-accent)] shadow-[0_4px_20px_-4px_var(--accent-glow)] transition-all hover:bg-accent-soft"
       >
         Back to home
       </Link>

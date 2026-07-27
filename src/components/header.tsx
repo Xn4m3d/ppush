@@ -10,7 +10,7 @@ export async function Logo() {
   return (
     <HomeLink className="flex items-center gap-2.5 group">
       <span className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-accent to-accent-deep shadow-[0_4px_16px_-2px_var(--accent-glow)] transition-transform group-hover:scale-105">
-        <CatMark className="size-6 text-white" />
+        <CatMark className="size-6 text-[var(--on-accent)]" />
       </span>
       <span className="text-lg font-semibold tracking-tight">
         ppush

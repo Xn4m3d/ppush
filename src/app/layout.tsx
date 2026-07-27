@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Bricolage_Grotesque, Manrope, JetBrains_Mono } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
 import { currentUser } from "@/lib/auth";
@@ -11,15 +11,23 @@ import { PawPrint } from "@/components/cat";
 import { FlagFr } from "@/components/flag-fr";
 import { SourceLink } from "@/components/source-link";
 import { StructuredData } from "@/components/structured-data";
+import { Ambient } from "@/components/ambient";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+/* Three roles, three families: headings (Bricolage Grotesque, tight
+   counters), running text (Manrope), data and labels (JetBrains Mono). */
+const bricolage = Bricolage_Grotesque({
+  variable: "--font-bricolage",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const manrope = Manrope({
+  variable: "--font-manrope",
+  subsets: ["latin"],
+});
+
+const jetbrains = JetBrains_Mono({
+  variable: "--font-jetbrains",
   subsets: ["latin"],
 });
 
@@ -75,9 +83,9 @@ export default async function RootLayout({
       // hydration: the attribute is deliberately driven client-side, so we
       // don't warn about the mismatch on this node (see next-themes).
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${bricolage.variable} ${manrope.variable} ${jetbrains.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-glow">
+      <body className="min-h-full flex flex-col">
         {/* Anti-flash script: applies the theme (auto → day/night based on the
             LOCAL hour) BEFORE first paint. Priority cookie > account preference > auto. */}
         <script
@@ -86,6 +94,7 @@ export default async function RootLayout({
             __html: `(function(){try{var m=document.cookie.match(/(?:^|; )theme=([^;]+)/);var c=m?decodeURIComponent(m[1]):"";var u=${JSON.stringify(ut ?? "")};var re=/^(midnight|mecha|auto)$/;var p=re.test(c)?c:re.test(u)?u:"auto";var h=new Date().getHours();var t=(p==="midnight"||p==="mecha")?p:((h>=${DAY_START}&&h<${DAY_END})?"mecha":"midnight");document.documentElement.dataset.theme=t;var f=document.querySelector("link[rel~='icon']");if(f)f.href=(t==='mecha')?'/icon-mecha.svg':'/icon-midnight.svg';}catch(e){}})();`,
           }}
         />
+        <Ambient />
         <StructuredData />
         <NextIntlClientProvider>
           {children}
