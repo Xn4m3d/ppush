@@ -56,8 +56,8 @@
     "buildTooltip": "Version running in production"
   },
   "home": {
-    "title": "Share a secret",
-    "subtitle": "An end-to-end encrypted link that self-destructs. Nothing transits or is stored in cleartext.",
+    "title": "A secret that <em>erases itself</em>.",
+    "subtitle": "The link carries the key, the server never sees it. On the last view — or at expiry — there is nothing left to steal.",
     "anonBadge": "No account",
     "anonLimits": "Limits: up to {days} days · {views} views · {fileMb} MB max per file",
     "anonNoTracking": "no history, no push tracking 🙀",
@@ -89,6 +89,10 @@
     "urlLabel": "Secret URL",
     "urlHint": "The recipient will be redirected after decryption.",
     "urlPlaceholder": "https://example.com/confidential-link",
+    "lifespan": "Link lifespan",
+    "lifespanRead": "expires {delay} · {count, plural, one {# view left} other {# views left}}",
+    "lifespanHint": "Whichever limit comes first destroys the secret.",
+    "lastView": "the last view destroys the secret",
     "expiresAfter": "Expires after",
     "maxViews": "Maximum views",
     "dayUnit": "{count, plural, one {day} other {days}}",

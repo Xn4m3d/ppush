@@ -62,19 +62,27 @@ export default async function HomePage() {
       <Header />
       <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 pt-10 sm:px-6">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-            {t("title")}
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            {t.rich("title", {
+              em: (chunks) => (
+                <em className="not-italic text-accent [text-shadow:0_0_34px_var(--accent-glow)]">
+                  {chunks}
+                </em>
+              ),
+            })}
           </h1>
-          <p className="mt-2 text-sm text-ink-dim">{t("subtitle")}</p>
+          <p className="mx-auto mt-3 max-w-md text-sm text-ink-dim">{t("subtitle")}</p>
         </div>
 
         {!user && (
-          <div className="relative mb-6 rounded-2xl border border-accent/30 bg-gradient-to-b from-accent/[0.10] to-accent/[0.02] animate-fade-up">
+          /* gradient hairline: a 1px frame painted as a gradient with the
+             opaque inner surface on top — border-color alone cannot do this */
+          <div className="relative mb-6 rounded-2xl bg-gradient-to-br from-accent/50 via-accent/20 to-line p-px animate-fade-up">
             {/* title badge: straddling the top-left border of the zone */}
-            <span className="absolute -top-3 left-4 inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-bg px-2.5 py-1 text-xs font-medium text-accent-soft shadow-sm">
+            <span className="absolute -top-3 left-4 z-10 inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-bg px-2.5 py-1 text-xs font-medium text-accent-soft shadow-sm">
               <Sparkles className="size-3.5" /> {t("anonBadge")}
             </span>
-            <div className="px-4 pt-5 pb-3.5 sm:px-5 sm:pt-5 sm:pb-4">
+            <div className="rounded-[15px] bg-gradient-to-b from-panel/90 to-bg/80 px-4 pt-5 pb-3.5 sm:px-5 sm:pt-5 sm:pb-4">
               <p className="text-center text-sm text-ink-dim">
                 {t("anonLimits", { days: a.maxDays, views: a.maxViews, fileMb: a.maxFileMb })}
               </p>

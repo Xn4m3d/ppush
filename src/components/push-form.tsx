@@ -339,26 +339,16 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
           <FileDrop file={file} onFile={setFile} maxMb={defaults.maxFileSizeMb} />
         )}
 
-        {/* Expiration */}
-        <div className="grid gap-4 sm:grid-cols-2">
-          <ExpiryField
-            icon={<Clock className="size-4" />}
-            label={t("expiresAfter")}
-            minutes={minutes}
-            presets={expiryPresets(kind === "FILE" ? defaults.maxFileDays : defaults.maxDays)}
-            onChange={setMinutes}
-            locale={locale}
-          />
-          <RangeField
-            icon={<Flame className="size-4" />}
-            label={t("maxViews")}
-            value={views}
-            min={1}
-            max={Math.min(defaults.maxViews, 100)}
-            onChange={setViews}
-            unit={t("viewUnit", { count: views })}
-          />
-        </div>
+        {/* Lifespan: delay and views are two ways to die, not two settings */}
+        <Lifespan
+          minutes={minutes}
+          presets={expiryPresets(kind === "FILE" ? defaults.maxFileDays : defaults.maxDays)}
+          onMinutes={setMinutes}
+          views={views}
+          maxViews={Math.min(defaults.maxViews, 100)}
+          onViews={setViews}
+          locale={locale}
+        />
 
         {/* Advanced options */}
         <details className="group rounded-xl border border-line bg-bg-soft/50">
@@ -501,82 +491,140 @@ function GeneratorOptions({
   );
 }
 
-function RangeField({
+/**
+ * Link lifespan — the fuse.
+ *
+ * Delay and view count are not two independent settings: they are two ways
+ * for the same secret to die, and whichever is reached first wins. So they
+ * live in a single object — a fuse whose lit part is the chosen delay, the
+ * spark its deadline, and the nicks the views; the last nick, the one that
+ * destroys, is red.
+ *
+ * Expiry stays tiered (5 min → ceiling), so the spark follows the tier index
+ * rather than raw minutes: otherwise every short delay would pile up on the
+ * left of the track.
+ */
+function Lifespan({
+  minutes,
+  presets,
+  onMinutes,
+  views,
+  maxViews,
+  onViews,
+  locale,
+}: {
+  minutes: number;
+  presets: number[];
+  onMinutes: (minutes: number) => void;
+  views: number;
+  maxViews: number;
+  onViews: (v: number) => void;
+  locale: Locale;
+}) {
+  const t = useTranslations("form");
+  const idx = nearestPresetIndex(presets, minutes);
+  const delay = formatDelay(presets[idx] * 60_000, locale);
+  // 8%..96%: keeps the spark on the fuse at both ends
+  const pct = presets.length > 1 ? 8 + (idx / (presets.length - 1)) * 88 : 52;
+  // past a couple of dozen, nicks stop being readable — drop them
+  const nicks = views <= 20 ? views : 0;
+
+  return (
+    <div className="rounded-xl border border-line bg-bg-soft/50 p-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <span className="text-[13px] font-semibold text-ink">{t("lifespan")}</span>
+        <span className="font-mono text-xs text-ink-faint tabular-nums">
+          {t("lifespanRead", { delay, count: views })}
+        </span>
+      </div>
+
+      <div className="relative mt-3.5 mb-1 h-8" aria-hidden>
+        <span className="absolute inset-x-0 top-3.5 h-[3px] rounded-full bg-line-soft/50" />
+        <span
+          className="absolute left-0 top-3.5 h-[3px] rounded-full bg-gradient-to-r from-danger via-accent to-warn shadow-[0_0_14px_var(--accent-glow)] transition-[width] duration-300"
+          style={{ width: `${pct}%` }}
+        />
+        {Array.from({ length: nicks }, (_, i) => (
+          <span
+            key={i}
+            title={i === nicks - 1 ? t("lastView") : undefined}
+            className={cls(
+              "absolute top-2 h-[14px] w-0.5 rounded-full transition-colors",
+              i === nicks - 1 ? "bg-danger" : "bg-line-soft"
+            )}
+            style={{ left: `${((i + 1) / (nicks + 1)) * 100}%` }}
+          />
+        ))}
+        <span
+          className="absolute top-2 size-[11px] -translate-x-1/2 rounded-full bg-accent shadow-[0_0_16px_3px_var(--accent-glow)] transition-[left] duration-300"
+          style={{ left: `${pct}%` }}
+        />
+      </div>
+
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <LifespanDial
+          icon={<Clock className="size-3.5" />}
+          label={t("expiresAfter")}
+          value={delay}
+          min={0}
+          max={presets.length - 1}
+          current={idx}
+          onChange={(i) => onMinutes(presets[i])}
+        />
+        <LifespanDial
+          icon={<Flame className="size-3.5" />}
+          label={t("maxViews")}
+          value={`${views} ${t("viewUnit", { count: views })}`}
+          min={1}
+          max={maxViews}
+          current={views}
+          onChange={onViews}
+        />
+      </div>
+
+      <p className="mt-2.5 text-xs text-ink-faint">{t("lifespanHint")}</p>
+    </div>
+  );
+}
+
+/** One of the fuse's two controls: label, read-out, slider. */
+function LifespanDial({
   icon,
   label,
   value,
   min,
   max,
-  unit,
+  current,
   onChange,
 }: {
   icon: React.ReactNode;
   label: string;
-  value: number;
+  value: string;
   min: number;
   max: number;
-  unit: string;
+  current: number;
   onChange: (v: number) => void;
 }) {
   return (
-    <div className="rounded-xl border border-line bg-bg-soft/50 p-4">
-      <div className="flex items-center justify-between">
-        <span className="flex items-center gap-1.5 text-[13px] font-medium text-ink-dim">
+    <div className="rounded-lg border border-line bg-panel/40 px-3 pb-1.5 pt-2.5">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-ink-faint">
           {icon}
           {label}
         </span>
-        <span className="text-sm font-semibold text-accent-soft tabular-nums">
-          {value} {unit}
+        <span className="font-mono text-[13px] font-semibold text-accent-soft tabular-nums">
+          {value}
         </span>
       </div>
       <input
         type="range"
         min={min}
         max={max}
-        value={value}
-        onChange={(e) => onChange(parseInt(e.target.value, 10))}
-        className="mt-3 w-full accent-[var(--color-accent)] cursor-pointer"
-      />
-    </div>
-  );
-}
-
-/** Tiered expiry gauge (5 min → tier ceiling) — non-linear. */
-function ExpiryField({
-  icon,
-  label,
-  minutes,
-  presets,
-  onChange,
-  locale,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  minutes: number;
-  presets: number[];
-  onChange: (minutes: number) => void;
-  locale: Locale;
-}) {
-  const idx = nearestPresetIndex(presets, minutes);
-  return (
-    <div className="rounded-xl border border-line bg-bg-soft/50 p-4">
-      <div className="flex items-center justify-between">
-        <span className="flex items-center gap-1.5 text-[13px] font-medium text-ink-dim">
-          {icon}
-          {label}
-        </span>
-        <span className="text-sm font-semibold text-accent-soft tabular-nums">
-          {formatDelay(presets[idx] * 60_000, locale)}
-        </span>
-      </div>
-      <input
-        type="range"
-        min={0}
-        max={presets.length - 1}
         step={1}
-        value={idx}
-        onChange={(e) => onChange(presets[parseInt(e.target.value, 10)])}
-        className="mt-3 w-full accent-[var(--color-accent)] cursor-pointer"
+        value={current}
+        aria-label={label}
+        onChange={(e) => onChange(parseInt(e.target.value, 10))}
+        className="mt-1.5 w-full accent-[var(--color-accent)] cursor-pointer"
       />
     </div>
   );

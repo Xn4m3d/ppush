@@ -56,8 +56,8 @@
     "buildTooltip": "Version en ligne en production"
   },
   "home": {
-    "title": "Partager un secret",
-    "subtitle": "Un lien chiffré de bout en bout, qui s'autodétruit. Rien ne transite ni n'est stocké en clair.",
+    "title": "Un secret qui <em>s'efface</em> de lui-même.",
+    "subtitle": "Le lien porte la clé, le serveur ne la voit jamais. À la dernière vue — ou à l'échéance — il ne reste plus rien à voler.",
     "anonBadge": "Sans compte",
     "anonLimits": "Limitations : dispo {days} jours max · {views} vues · fichier max {fileMb} Mo",
     "anonNoTracking": "sans historique ni suivi des push 🙀",
@@ -89,6 +89,10 @@
     "urlLabel": "URL secrète",
     "urlHint": "Le destinataire sera redirigé après déchiffrement.",
     "urlPlaceholder": "https://exemple.com/lien-confidentiel",
+    "lifespan": "Durée de vie du lien",
+    "lifespanRead": "expire {delay} · {count, plural, one {# vue restante} other {# vues restantes}}",
+    "lifespanHint": "La première limite atteinte détruit le secret.",
+    "lastView": "la dernière vue détruit le secret",
     "expiresAfter": "Expire après",
     "maxViews": "Nombre de vues max",
     "dayUnit": "{count, plural, one {jour} other {jours}}",
