@@ -24,7 +24,7 @@ import {
   type SecretPayload,
 } from "@/lib/crypto";
 import { Button, Input, Card, ErrorText, cls } from "./ui";
-import { GuardianCat, PawLoader } from "./cat";
+import { PawLoader } from "./cat";
 import { CopyButton } from "./copy-button";
 
 type Meta = {
@@ -241,11 +241,7 @@ export function SecretViewer({ slug, autoOpen = false }: { slug: string; autoOpe
 
   if (stage === "gate" || stage === "revealing") {
     return (
-      <div className="animate-fade-up">
-        <div className="-mb-3 flex justify-center">
-          <GuardianCat />
-        </div>
-      <Card className="relative p-8 text-center">
+      <Card className="relative p-8 text-center animate-fade-up">
         <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-accent/10 border border-accent/25">
           {meta?.hasPassphrase ? (
             <KeyRound className="size-7 text-accent-soft" />
@@ -255,7 +251,7 @@ export function SecretViewer({ slug, autoOpen = false }: { slug: string; autoOpe
         </div>
         <h1 className="mt-4 text-xl font-semibold">{t("gateTitle")}</h1>
         <p className="mt-2 text-sm text-ink-faint">
-{meta?.hasPassphrase ? t("gatePassphrase") : t("gateReveal")}
+          {meta?.hasPassphrase ? t("gatePassphrase") : t("gateReveal")}
         </p>
 
         {meta?.expiresAt && <Countdown expiresAt={meta.expiresAt} onExpire={expire} />}
@@ -299,96 +295,92 @@ export function SecretViewer({ slug, autoOpen = false }: { slug: string; autoOpe
           {t("localNote")}
         </p>
       </Card>
-      </div>
     );
   }
 
-  // revealed: the keeper is happy — the secret arrived safely
+  // revealed: the secret arrived safely
   return (
     <div className="animate-fade-up">
-      <div className="-mb-3 flex justify-center">
-        <GuardianCat happy />
-      </div>
-    <Card className="relative p-8">
-      <div className="flex items-center gap-3">
-        <span className="grid size-10 place-items-center rounded-xl bg-ok/10 border border-ok/25">
-          <ShieldCheck className="size-5 text-ok" />
-        </span>
-        <div>
-          <h1 className="font-semibold">{t("revealedTitle")}</h1>
-          <p className="text-xs text-ink-faint">{t("revealedNote")}</p>
-        </div>
-      </div>
-
-      <div className="mt-6">
-        {payload?.t === "URL" ? (
-          <UrlReveal url={payload.d} autoOpen={autoOpen} />
-        ) : payload?.t === "FILE" ? (
-          <div className="rounded-xl border border-line bg-bg-soft p-5 text-center">
-            <p className="font-medium text-ink break-all">{payload.name}</p>
-            <p className="mt-1 text-xs text-ink-faint">
-              {payload.size ? t("fileSize", { size: (payload.size / 1024 / 1024).toFixed(2) }) : ""}
-            </p>
-            {dlProgress !== null && dlProgress < 100 && (
-              <div className="mx-auto mt-3 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-line">
-                <div
-                  className="h-full bg-accent transition-all"
-                  style={{ width: `${dlProgress}%` }}
-                />
-              </div>
-            )}
-            <Button
-              onClick={downloadFile}
-              className="mt-4"
-              disabled={dlProgress !== null && dlProgress < 100}
-            >
-              <Download className="size-4" />
-              {dlProgress === 100
-                ? t("downloaded")
-                : dlProgress !== null
-                  ? t("decryptingPct", { pct: dlProgress })
-                  : t("download")}
-            </Button>
+      <Card className="relative p-8">
+        <div className="flex items-center gap-3">
+          <span className="grid size-10 place-items-center rounded-xl bg-ok/10 border border-ok/25">
+            <ShieldCheck className="size-5 text-ok" />
+          </span>
+          <div>
+            <h1 className="font-semibold">{t("revealedTitle")}</h1>
+            <p className="text-xs text-ink-faint">{t("revealedNote")}</p>
           </div>
-        ) : (
-          <SecretText value={payload?.d ?? ""} mono={payload?.t === "PASSWORD"} />
-        )}
-      </div>
-
-      {error && <div className="mt-4"><ErrorText>{error}</ErrorText></div>}
-
-      {deletable && (
-        <div className="mt-6 border-t border-line pt-4 text-center">
-          <button
-            onClick={burn}
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-danger transition-colors hover:text-danger/80 cursor-pointer"
-          >
-            <Flame className="size-3.5" />
-            {t("burnAction")}
-          </button>
         </div>
-      )}
-    </Card>
 
-    <div className="mt-5 rounded-2xl border border-line bg-panel/40 p-5 text-center">
-      <p className="text-sm font-medium text-ink">{t("thanksTitle")}</p>
-      <p className="mx-auto mt-1 max-w-sm text-xs text-ink-dim">{t("thanksText")}</p>
-      <div className="mt-4 flex flex-wrap justify-center gap-2.5">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-sm font-medium text-[var(--on-accent)] shadow-[0_4px_20px_-4px_var(--accent-glow)] transition-all hover:bg-accent-soft"
-        >
-          <Lock className="size-4" />
-          {t("thanksCreate")}
-        </Link>
-        <Link
-          href="/about"
-          className="inline-flex items-center gap-1.5 rounded-xl border border-line px-4 py-2 text-sm text-ink-dim transition-colors hover:border-line-soft hover:text-ink"
-        >
-          {t("thanksAbout")}
-        </Link>
+        <div className="mt-6">
+          {payload?.t === "URL" ? (
+            <UrlReveal url={payload.d} autoOpen={autoOpen} />
+          ) : payload?.t === "FILE" ? (
+            <div className="rounded-xl border border-line bg-bg-soft p-5 text-center">
+              <p className="font-medium text-ink break-all">{payload.name}</p>
+              <p className="mt-1 text-xs text-ink-faint">
+                {payload.size ? t("fileSize", { size: (payload.size / 1024 / 1024).toFixed(2) }) : ""}
+              </p>
+              {dlProgress !== null && dlProgress < 100 && (
+                <div className="mx-auto mt-3 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-line">
+                  <div
+                    className="h-full bg-accent transition-all"
+                    style={{ width: `${dlProgress}%` }}
+                  />
+                </div>
+              )}
+              <Button
+                onClick={downloadFile}
+                className="mt-4"
+                disabled={dlProgress !== null && dlProgress < 100}
+              >
+                <Download className="size-4" />
+                {dlProgress === 100
+                  ? t("downloaded")
+                  : dlProgress !== null
+                    ? t("decryptingPct", { pct: dlProgress })
+                    : t("download")}
+              </Button>
+            </div>
+          ) : (
+            <SecretText value={payload?.d ?? ""} mono={payload?.t === "PASSWORD"} />
+          )}
+        </div>
+
+        {error && <div className="mt-4"><ErrorText>{error}</ErrorText></div>}
+
+        {deletable && (
+          <div className="mt-6 border-t border-line pt-4 text-center">
+            <button
+              onClick={burn}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-danger transition-colors hover:text-danger/80 cursor-pointer"
+            >
+              <Flame className="size-3.5" />
+              {t("burnAction")}
+            </button>
+          </div>
+        )}
+      </Card>
+
+      <div className="mt-5 rounded-2xl border border-line bg-panel/40 p-5 text-center">
+        <p className="text-sm font-medium text-ink">{t("thanksTitle")}</p>
+        <p className="mx-auto mt-1 max-w-sm text-xs text-ink-dim">{t("thanksText")}</p>
+        <div className="mt-4 flex flex-wrap justify-center gap-2.5">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-sm font-medium text-[var(--on-accent)] shadow-[0_4px_20px_-4px_var(--accent-glow)] transition-all hover:bg-accent-soft"
+          >
+            <Lock className="size-4" />
+            {t("thanksCreate")}
+          </Link>
+          <Link
+            href="/about"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-line px-4 py-2 text-sm text-ink-dim transition-colors hover:border-line-soft hover:text-ink"
+          >
+            {t("thanksAbout")}
+          </Link>
+        </div>
       </div>
-    </div>
     </div>
   );
 }

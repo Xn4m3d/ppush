@@ -5,7 +5,6 @@ import { currentUser } from "@/lib/auth";
 import { config, clamp } from "@/lib/config";
 import { Header } from "@/components/header";
 import { PushForm } from "@/components/push-form";
-import { MascotCat } from "@/components/mascot-cat";
 
 export async function generateMetadata() {
   return {
@@ -60,7 +59,7 @@ export default async function HomePage() {
   return (
     <>
       <Header />
-      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 pt-10 sm:px-6">
+      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-10 sm:px-6">
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
             {t.rich("title", {
@@ -146,14 +145,6 @@ export default async function HomePage() {
         )}
 
         <PushForm defaults={defaults} />
-
-        {/* Home mascot: decorative, pushed to the bottom to sit on the footer's
-            top border. translate-y makes it bite the line a little; z-10 (on a
-            relative parent) brings it IN FRONT of the footer, so the wagging
-            tail sweeps over the border, not behind it. */}
-        <div className="relative z-10 mt-auto flex translate-y-1.5 justify-center pt-12">
-          <MascotCat />
-        </div>
       </main>
     </>
   );
