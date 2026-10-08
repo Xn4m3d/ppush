@@ -132,8 +132,13 @@ ppush-cli.mjs --file dump.sql.gz --passphrase "sesame" --note "backup pour Bob"
             <p>
               Révèle le ciphertext et <strong className="text-ink">consomme une vue</strong>. Corps :{" "}
               <code>{`{ "passphrase": "…" }`}</code> si exigée. Pour un FILE,
-              retourne aussi un <code>viewToken</code> à usage unique pour{" "}
-              <code>GET /api/p/:slug/blob?vt=…</code>.
+              retourne aussi un <code>viewToken</code> à usage unique, à passer en
+              en-tête <code>X-View-Token</code> sur{" "}
+              <code>GET /api/p/:slug/blob</code> (jamais dans l’URL). Si le
+              transfert est interrompu, rappeler <code>reveal</code> ré-émet un
+              token <strong className="text-ink">sans consommer de vue
+              supplémentaire</strong>, tant que le fichier n’a pas été livré en
+              entier.
             </p>
           </Endpoint>
 

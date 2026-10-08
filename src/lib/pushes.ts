@@ -1,6 +1,7 @@
 import { prisma } from "./db";
 import { deleteBlob } from "./files";
 import { config } from "./config";
+import { hasPendingDelivery } from "./viewtokens";
 import type { Push } from "@/generated/prisma/client";
 
 export type ExpireReason = "VIEWS" | "TIME" | "OWNER" | "VIEWER" | "ADMIN";
@@ -26,10 +27,32 @@ export async function expirePush(push: Push, reason: ExpireReason): Promise<void
   });
 }
 
+/** Expired for every reason EXCEPT a spent views quota. */
+function isExpiredIgnoringViews(push: Push): boolean {
+  return push.payloadDeleted || !!push.expiredAt || push.expiresAt < new Date();
+}
+
+/**
+ * A FILE push whose reserved view was never delivered in full still owes its
+ * payload. Its views quota is spent, but the recipient never got the blob (a
+ * dropped transfer), so treating it as expired here would purge the file and
+ * make a retry impossible. Bounded by the pending-delivery TTL in
+ * lib/viewtokens, and only ever ignores the VIEWS condition — time expiry, an
+ * owner/viewer burn and an already-purged payload all still count.
+ */
+export function owesDelivery(push: Push): boolean {
+  return (
+    push.kind === "FILE" &&
+    !isExpiredIgnoringViews(push) &&
+    hasPendingDelivery(push.slug)
+  );
+}
+
 export function isExpired(push: Push): boolean {
   if (push.payloadDeleted || push.expiredAt) return true;
   if (push.expiresAt < new Date()) return true;
-  if (push.views >= push.expireAfterViews) return true;
+  // the views quota is spent, but the blob still owes delivery
+  if (push.views >= push.expireAfterViews) return !owesDelivery(push);
   return false;
 }
 
