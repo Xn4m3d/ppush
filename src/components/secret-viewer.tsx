@@ -144,7 +144,11 @@ export function SecretViewer({ slug, autoOpen = false }: { slug: string; autoOpe
     setError("");
     try {
       const key = await importKey(keyB64);
-      const res = await fetch(`/api/p/${slug}/blob?vt=${viewToken}`);
+      // the token goes in a header, never in the URL: query strings end up in
+      // access logs, `Referer` and browser history
+      const res = await fetch(`/api/p/${slug}/blob`, {
+        headers: { "x-view-token": viewToken },
+      });
       if (!res.ok || !res.body) throw new Error("Download failed");
       const blob = await decryptFileStream(key, res.body, payload.mime ?? "", (b) =>
         setDlProgress(payload.size ? Math.min(100, Math.round((b / payload.size) * 100)) : 0)
@@ -159,6 +163,12 @@ export function SecretViewer({ slug, autoOpen = false }: { slug: string; autoOpe
     } catch {
       setError(t("downloadFailed"));
       setDlProgress(null);
+      // The token is single-use and was burned when the transfer started, so a
+      // retry needs a fresh one. The server knows this view is still owed a
+      // delivery and re-issues without charging another view — re-arm so the
+      // button works again instead of staying inert.
+      setViewToken(null);
+      reveal();
     }
   }
 

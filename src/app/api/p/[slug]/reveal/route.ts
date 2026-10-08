@@ -5,7 +5,12 @@ import { json, apiError, badOrigin, handleError } from "@/lib/api";
 import { apiT } from "@/lib/i18n-api";
 import { audit, isExpired, withLazyExpiry, expirePush } from "@/lib/pushes";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
-import { issueViewToken } from "@/lib/viewtokens";
+import {
+  issueViewToken,
+  hasPendingDelivery,
+  markPendingDelivery,
+  consumeRedelivery,
+} from "@/lib/viewtokens";
 import { bumpDailyStat } from "@/lib/stats";
 
 type Params = { params: Promise<{ slug: string }> };
@@ -47,28 +52,49 @@ export async function POST(req: Request, { params }: Params) {
       }
     }
 
-    // ATOMIC reservation of a view (anti-race): the conditional UPDATE
-    // only increments if the quota isn't already reached. Two concurrent
-    // reveals on a "1 view" secret therefore cannot both serve the clear text
-    // — only one reserves the view, the other gets 410.
-    const claim = await prisma.push.updateMany({
-      where: {
-        id: push.id,
-        payloadDeleted: false,
-        expiresAt: { gt: new Date() },
-        views: { lt: push.expireAfterViews },
-      },
-      data: { views: { increment: 1 } },
-    });
-    if (claim.count === 0) return apiError(t("secretExpired"), 410);
-    await audit(push.id, "VIEW", { ip, userAgent });
-    await bumpDailyStat("views");
+    // A FILE push whose already-reserved view was never delivered in full
+    // (dropped transfer): hand out a fresh token WITHOUT charging another view.
+    // The view was paid for at the first reveal; see lib/viewtokens.
+    // Budget spent → redeliver is false and we fall through to the ordinary
+    // claim, which fails on the views quota and yields 410, as it should.
+    const redeliver =
+      push.kind === "FILE" && hasPendingDelivery(slug) && consumeRedelivery(slug);
+
+    if (redeliver) {
+      // Logged so the owner's trail stays truthful, and deliberately NOT
+      // counted in the daily stats — it is the same view being served again.
+      await audit(push.id, "VIEW_RETRY", { ip, userAgent });
+    } else {
+      // ATOMIC reservation of a view (anti-race): the conditional UPDATE
+      // only increments if the quota isn't already reached. Two concurrent
+      // reveals on a "1 view" secret therefore cannot both serve the clear text
+      // — only one reserves the view, the other gets 410.
+      const claim = await prisma.push.updateMany({
+        where: {
+          id: push.id,
+          payloadDeleted: false,
+          expiresAt: { gt: new Date() },
+          views: { lt: push.expireAfterViews },
+        },
+        data: { views: { increment: 1 } },
+      });
+      if (claim.count === 0) return apiError(t("secretExpired"), 410);
+      await audit(push.id, "VIEW", { ip, userAgent });
+      await bumpDailyStat("views");
+    }
+
+    let viewToken: string | undefined;
+    if (push.kind === "FILE") {
+      viewToken = issueViewToken(slug);
+      // the blob now owes delivery: until it goes out in full, a retry is free
+      markPendingDelivery(slug);
+    }
 
     const response = {
       kind: push.kind,
       ciphertext: Buffer.from(push.ciphertext).toString("base64"),
       deletableByViewer: push.deletableByViewer,
-      viewToken: push.kind === "FILE" ? issueViewToken(slug) : undefined,
+      viewToken,
     };
 
     // Quota reached → immediate purge AFTER reading the ciphertext (not for FILE:
