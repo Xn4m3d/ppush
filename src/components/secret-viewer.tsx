@@ -468,8 +468,28 @@ function SecretText({ value, mono }: { value: string; mono: boolean }) {
   );
 }
 
+/**
+ * Only http(s) may ever reach `location.href`. The URL comes from a payload the
+ * SENDER controls end-to-end, so a crafted push could carry `javascript:` —
+ * assigning that to `location.href` executes it in our own origin (XSS, and the
+ * recipient's session is same-origin from there). The production CSP already
+ * blocks `javascript:` (script-src has no 'unsafe-inline'), but CSP must not be
+ * the only barrier: dev loosens it, and a future CSP edit would silently
+ * re-open the hole. `data:`/`blob:` are refused for the same reason.
+ */
+function isNavigable(raw: string): boolean {
+  try {
+    const scheme = new URL(raw, window.location.href).protocol;
+    return scheme === "http:" || scheme === "https:";
+  } catch {
+    return false;
+  }
+}
+
 function UrlReveal({ url, autoOpen }: { url: string; autoOpen: boolean }) {
   const t = useTranslations("viewer");
+
+  const navigable = typeof window !== "undefined" && isNavigable(url);
 
   // Same origin (ppush itself, e.g. /reset-password) → safe → auto-redirect
   // always. EXTERNAL URL → auto only if the recipient opted in (account).
@@ -482,7 +502,7 @@ function UrlReveal({ url, autoOpen }: { url: string; autoOpen: boolean }) {
         return false;
       }
     })();
-  const auto = sameOrigin || autoOpen;
+  const auto = navigable && (sameOrigin || autoOpen);
 
   const [count, setCount] = useState(5);
   useEffect(() => {
@@ -506,10 +526,12 @@ function UrlReveal({ url, autoOpen }: { url: string; autoOpen: boolean }) {
         </p>
       )}
       <div className="mt-4 flex flex-wrap justify-center gap-3">
-        <Button onClick={() => (window.location.href = url)}>
-          <ExternalLink className="size-4" />
-          {t("openNow")}
-        </Button>
+        {navigable && (
+          <Button onClick={() => (window.location.href = url)}>
+            <ExternalLink className="size-4" />
+            {t("openNow")}
+          </Button>
+        )}
         <CopyButton value={url} label={t("copyUrl")} />
       </div>
     </div>
