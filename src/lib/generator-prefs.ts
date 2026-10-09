@@ -8,6 +8,10 @@
 export type GenMode = "chars" | "words";
 export const SEPARATORS = ["-", " ", ".", "_"] as const;
 export type Separator = (typeof SEPARATORS)[number];
+/** Symbols offered at the end of a word passphrase (easy to type on any keyboard). */
+export const END_SYMBOLS = ["!", "?", "#", "$", "%", "&", "*", "+", "=", "@"] as const;
+/** "none": no symbol; "random": drawn from END_SYMBOLS; otherwise the chosen symbol. */
+export type EndSymbol = "none" | "random" | (typeof END_SYMBOLS)[number];
 
 export type GenPrefs = {
   mode: GenMode;
@@ -23,6 +27,7 @@ export type GenPrefs = {
   separator: Separator;
   capitalize: boolean;
   digitCount: number;
+  symbol: EndSymbol;
   lang: "fr" | "en";
 };
 
@@ -39,10 +44,11 @@ export function genDefaults(locale: string): GenPrefs {
     digits: true,
     symbols: true,
     ambiguous: false,
-    words: 5,
+    words: 2,
     separator: "-",
     capitalize: true,
     digitCount: 2,
+    symbol: "random",
     lang: locale === "fr" ? "fr" : "en",
   };
 }
@@ -66,6 +72,7 @@ export function sanitizeGenPrefs(raw: unknown, locale: string): GenPrefs {
     separator: (SEPARATORS as readonly unknown[]).includes(r.separator) ? (r.separator as Separator) : d.separator,
     capitalize: bool(r.capitalize, d.capitalize),
     digitCount: int(r.digitCount, LIMITS.digitCount, d.digitCount),
+    symbol: r.symbol === "none" || r.symbol === "random" || (END_SYMBOLS as readonly unknown[]).includes(r.symbol) ? (r.symbol as EndSymbol) : d.symbol,
     lang: r.lang === "fr" || r.lang === "en" ? r.lang : d.lang,
   };
   // at least one character class enabled

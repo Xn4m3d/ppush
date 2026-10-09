@@ -287,6 +287,9 @@ export type PassphraseOptions = {
   capitalize?: boolean;
   /** Number of digits (0 to 6), appended as one block to a randomly chosen word. */
   digitCount?: number;
+  /** Final character: none (""/absent), a fixed symbol, or drawn from `symbolPool`. */
+  symbol?: string;
+  symbolPool?: readonly string[];
 };
 
 const clampWords = (n: number | undefined) => Math.min(Math.max(Math.trunc(n ?? 5) || 5, 2), 7);
@@ -306,11 +309,14 @@ export function generatePassphrase(list: readonly string[], o: PassphraseOptions
     const i = randomIndex(count);
     out[i] = out[i] + Array.from({ length: nd }, () => String(randomIndex(10))).join("");
   }
-  return out.join(o.separator ?? "-");
+  const end = o.symbol === "random" && o.symbolPool?.length ? o.symbolPool[randomIndex(o.symbolPool.length)] : o.symbol && o.symbol !== "random" && o.symbol !== "none" ? o.symbol : "";
+  return out.join(o.separator ?? "-") + end;
 }
 
 /** Entropy of a word passphrase: log2(list size) per word, plus the digits and their position. */
 export function passphraseBits(listSize: number, o: PassphraseOptions = {}): number {
   const count = clampWords(o.words), nd = clampDigits(o.digitCount);
-  return count * Math.log2(listSize) + (nd > 0 ? nd * Math.log2(10) + Math.log2(count) : 0);
+  // a fixed symbol is known to the attacker and adds nothing; a random one adds log2(pool size)
+  const sym = o.symbol === "random" && o.symbolPool?.length ? Math.log2(o.symbolPool.length) : 0;
+  return count * Math.log2(listSize) + (nd > 0 ? nd * Math.log2(10) + Math.log2(count) : 0) + sym;
 }

@@ -15,7 +15,7 @@ import {
   passwordAlphabetSize,
 } from "@/lib/crypto";
 import { loadWordlist, WORDLIST_SIZE } from "@/lib/passphrase";
-import { genDefaults, parseGenPrefs, LIMITS, SEPARATORS, type GenPrefs } from "@/lib/generator-prefs";
+import { genDefaults, parseGenPrefs, LIMITS, SEPARATORS, END_SYMBOLS, type GenPrefs } from "@/lib/generator-prefs";
 import { formatBytes, formatDelay } from "@/lib/format";
 import type { Locale } from "@/i18n/locale";
 import { Button, Input, Textarea, Toggle, ErrorText, cls } from "./ui";
@@ -204,7 +204,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
 
   const runGenerate = async (g: GenPrefs) => {
     const v = g.mode === "words"
-      ? generatePassphrase(await loadWordlist(g.lang), { words: g.words, separator: g.separator, capitalize: g.capitalize, digitCount: g.digitCount })
+      ? generatePassphrase(await loadWordlist(g.lang), { words: g.words, separator: g.separator, capitalize: g.capitalize, digitCount: g.digitCount, symbol: g.symbol, symbolPool: END_SYMBOLS })
       : generatePassword(g.length, { lowercase: g.lowercase, uppercase: g.uppercase, digits: g.digits, symbols: g.symbols, ambiguous: g.ambiguous });
     lastGenerated.current = v;
     setTexts((m) => ({ ...m, PASSWORD: v }));
@@ -751,7 +751,7 @@ function GeneratorOptions({
   const [open, setOpen] = useState(false);
   const set = (patch: Partial<GenPrefs>) => onGen({ ...gen, ...patch });
   const charBits = Math.round(gen.length * Math.log2(passwordAlphabetSize(gen)));
-  const wordBits = Math.round(passphraseBits(WORDLIST_SIZE[gen.lang], { words: gen.words, digitCount: gen.digitCount }));
+  const wordBits = Math.round(passphraseBits(WORDLIST_SIZE[gen.lang], { words: gen.words, digitCount: gen.digitCount, symbol: gen.symbol, symbolPool: END_SYMBOLS }));
   const bits = gen.mode === "words" ? wordBits : charBits;
   const classKeys = ["lowercase", "uppercase", "digits", "symbols"] as const;
   const enabledCount = classKeys.filter((k) => gen[k]).length;
@@ -879,6 +879,16 @@ function GeneratorOptions({
               {SEPARATORS.map((v) => (
                 <button key={SEP_KEYS[v]} type="button" aria-pressed={gen.separator === v} onClick={() => set({ separator: v })} className={chip(gen.separator === v)}>
                   {t(SEP_KEYS[v])}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5 px-2 pb-2">
+              <span className="mr-1 w-full text-[13px] font-medium text-ink-dim">{t("endSymbol")}</span>
+              <button type="button" aria-pressed={gen.symbol === "none"} onClick={() => set({ symbol: "none" })} className={chip(gen.symbol === "none")}>{t("symbolNone")}</button>
+              <button type="button" aria-pressed={gen.symbol === "random"} onClick={() => set({ symbol: "random" })} className={chip(gen.symbol === "random")}>{t("symbolRandom")}</button>
+              {END_SYMBOLS.map((c) => (
+                <button key={c} type="button" aria-pressed={gen.symbol === c} aria-label={t("symbolPick", { c })} onClick={() => set({ symbol: c })} className={cls(chip(gen.symbol === c), "min-w-9 px-0 font-mono text-sm")}>
+                  {c}
                 </button>
               ))}
             </div>
