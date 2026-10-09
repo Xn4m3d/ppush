@@ -120,7 +120,9 @@
     "advChanged": "{count, plural, one {# option active} other {# options actives}}",
     "advDefault": "par défaut",
     "advClose": "Fermer",
-    "advDone": "Terminé"
+    "advDone": "Terminé",
+    "ctaReadyMobile": "Prêt. Ajustez la durée et les lectures plus bas si besoin, puis cliquez.",
+    "ctaHintMobile": "Saisissez ou générez votre secret ci-dessus, puis cliquez sur le bouton."
   },
   "tabs": {
     "PASSWORD": "Mot de passe",

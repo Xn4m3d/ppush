@@ -244,3 +244,29 @@ h1, h2, h3, h4 {
    driven in JS (Web Animations); only the backdrop and drop shadow live here. */
 .morph-dialog { box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.7); transform-origin: 0 0; }
 .morph-dialog::backdrop { background: rgba(3, 5, 8, 0.62); backdrop-filter: blur(4px); }
+
+/* ══════════════════════════════════════════════════════════════════════
+   Full-screen home (desktop): header + workbench = exact visible
+   height (100dvh follows the browser bars), the footer starts
+   below the fold. Content compacts according to the available HEIGHT; below
+   ~600 px it scrolls rather than becoming unreadable. Mobile: normal
+   flow, unaffected.
+   ══════════════════════════════════════════════════════════════════════ */
+@media (min-width: 1024px) {
+  .hc-host {
+    min-height: calc(100dvh - 4rem);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-top: clamp(8px, 2.5vh, 28px);
+    padding-bottom: clamp(8px, 2.5vh, 28px);
+  }
+}
+@media (min-width: 1024px) and (max-height: 860px) {
+  .hc-title { font-size: clamp(26px, 4.4vh, 40px); }
+  .hc-gap { gap: clamp(8px, 1.4vh, 14px); }
+  .hc-cloud { height: clamp(170px, 36vh, 330px); }
+}
+@media (min-width: 1024px) and (max-height: 720px) {
+  .hc-lede, .hc-anon { display: none; }
+}
