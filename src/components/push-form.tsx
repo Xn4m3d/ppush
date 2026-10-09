@@ -10,9 +10,13 @@ import {
   encryptPayload,
   encryptFile,
   generatePassword,
+  generatePassphrase,
+  passphraseBits,
   passwordAlphabetSize,
   type PasswordOptions,
+  type PassphraseOptions,
 } from "@/lib/crypto";
+import { loadWordlist, WORDLIST_SIZE, type WordlistLang } from "@/lib/passphrase";
 import { formatBytes, formatDelay } from "@/lib/format";
 import type { Locale } from "@/i18n/locale";
 import { Button, Input, Textarea, Toggle, ErrorText, cls } from "./ui";
@@ -66,6 +70,8 @@ type Defaults = {
   upgrade?: { maxDays: number; maxFileDays: number; maxViews: number };
 };
 
+type GenMode = "chars" | "words";
+
 type Created = { url: string; kind: Kind; expireAfterMinutes: number; expireAfterViews: number };
 
 // Beyond that, only the start of the file is visualized: the cloud stops changing
@@ -105,6 +111,10 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
     symbols: true,
     ambiguous: false,
   });
+  // generator: random characters or words (remembered preference)
+  const [genMode, setGenMode] = useState<GenMode>("chars");
+  const [ppOpts, setPpOpts] = useState<Required<PassphraseOptions>>({ words: 6, separator: "-", capitalize: false, digit: false });
+  const [ppLang, setPpLang] = useState<WordlistLang>(locale === "fr" ? "fr" : "en");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
@@ -221,6 +231,21 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
     previewKey.current = null;
     scene.current?.unseal();
   }, []);
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => {
+      try {
+        const saved = JSON.parse(localStorage.getItem("ppush-gen") ?? "null");
+        if (saved?.mode === "words" || saved?.mode === "chars") setGenMode(saved.mode);
+        if (saved?.pp) setPpOpts((o) => ({ ...o, ...saved.pp }));
+        if (saved?.lang === "fr" || saved?.lang === "en") setPpLang(saved.lang);
+      } catch {}
+    });
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  useEffect(() => {
+    try { localStorage.setItem("ppush-gen", JSON.stringify({ mode: genMode, pp: ppOpts, lang: ppLang })); } catch {}
+  }, [genMode, ppOpts, ppLang]);
 
   // The logo and the header "New" button emit `ppush:reset` to start over
   // from a blank form even when already on the home page (a same-route
@@ -459,8 +484,10 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
                     <button
                       type="button"
                       title={t("generateTitle")}
-                      onClick={() => {
-                        const v = generatePassword(genLength, genOpts);
+                      onClick={async () => {
+                        const v = genMode === "words"
+                          ? generatePassphrase(await loadWordlist(ppLang), ppOpts)
+                          : generatePassword(genLength, genOpts);
                         setSecret(v);
                         setShowSecret(true);
                         scene.current?.clear();
@@ -495,7 +522,18 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
                   data-bwignore
                   data-form-type="other"
                 />
-                <GeneratorOptions length={genLength} onLength={setGenLength} opts={genOpts} onOpts={setGenOpts} />
+                <GeneratorOptions
+                  mode={genMode}
+                  onMode={setGenMode}
+                  length={genLength}
+                  onLength={setGenLength}
+                  opts={genOpts}
+                  onOpts={setGenOpts}
+                  pp={ppOpts}
+                  onPp={setPpOpts}
+                  lang={ppLang}
+                  onLang={setPpLang}
+                />
               </div>
             )}
 
@@ -674,19 +712,39 @@ function HeroTitle() {
   return <>{t.rich("title", { em: (c) => <em className="not-italic text-accent">{c}</em> })}</>;
 }
 
+const SEPARATORS = [
+  { v: "-", key: "sepHyphen" },
+  { v: " ", key: "sepSpace" },
+  { v: ".", key: "sepDot" },
+  { v: "_", key: "sepUnderscore" },
+] as const;
+
 function GeneratorOptions({
+  mode,
+  onMode,
   length,
   onLength,
   opts,
   onOpts,
+  pp,
+  onPp,
+  lang,
+  onLang,
 }: {
+  mode: GenMode;
+  onMode: (m: GenMode) => void;
   length: number;
   onLength: (n: number) => void;
   opts: Required<PasswordOptions>;
   onOpts: (o: Required<PasswordOptions>) => void;
+  pp: Required<PassphraseOptions>;
+  onPp: (o: Required<PassphraseOptions>) => void;
+  lang: WordlistLang;
+  onLang: (l: WordlistLang) => void;
 }) {
   const t = useTranslations("generator");
   const entropy = Math.round(length * Math.log2(passwordAlphabetSize(opts)));
+  const ppBits = Math.round(passphraseBits(WORDLIST_SIZE[lang], pp));
   const classKeys = ["lowercase", "uppercase", "digits", "symbols"] as const;
   const enabledCount = classKeys.filter((k) => opts[k]).length;
 
@@ -696,60 +754,94 @@ function GeneratorOptions({
     onOpts({ ...opts, [key]: v });
   }
 
+  const chip = (on: boolean) =>
+    cls(
+      "min-h-9 rounded-lg border px-3 text-[13px] transition-colors cursor-pointer",
+      on ? "border-ink bg-ink text-bg" : "border-line bg-bg text-ink-dim hover:border-line-soft hover:text-ink"
+    );
+
   return (
     <details className="group rounded-xl border border-line bg-bg/60">
       <summary className="flex cursor-pointer select-none items-center justify-between px-4 py-2.5 text-sm text-ink-dim transition-colors hover:text-ink">
         <span>{t("summary")}</span>
         <span className="text-xs text-ink-faint tabular-nums">
-          {t("summaryStats", { length, bits: entropy })}
+          {mode === "words"
+            ? t("summaryWords", { count: pp.words, bits: ppBits })
+            : t("summaryStats", { length, bits: entropy })}
         </span>
       </summary>
       <div className="space-y-1 border-t border-line px-2 pb-3 pt-3">
-        <div className="px-2 pb-2">
-          <div className="flex items-center justify-between text-[13px]">
-            <span className="font-medium text-ink-dim">{t("length")}</span>
-            <span className="font-semibold text-accent-soft tabular-nums">
-              {t("lengthValue", { count: length })}
-            </span>
-          </div>
-          <input
-            type="range"
-            min={8}
-            max={64}
-            value={length}
-            onChange={(e) => onLength(parseInt(e.target.value, 10))}
-            className="mt-2 w-full accent-[var(--color-accent)] cursor-pointer"
-          />
+        {/* two kinds of secrets: random characters, or words */}
+        <div className="grid grid-cols-2 gap-1.5 px-2 pb-2" role="group" aria-label={t("summary")}>
+          <button type="button" aria-pressed={mode === "chars"} onClick={() => onMode("chars")} className={chip(mode === "chars")}>
+            {t("modeChars")}
+          </button>
+          <button type="button" aria-pressed={mode === "words"} onClick={() => onMode("words")} className={chip(mode === "words")}>
+            {t("modeWords")}
+          </button>
         </div>
-        <Toggle
-          checked={opts.lowercase}
-          onChange={(v) => setClass("lowercase", v)}
-          label={t("lowercase")}
-        />
-        <Toggle
-          checked={opts.uppercase}
-          onChange={(v) => setClass("uppercase", v)}
-          label={t("uppercase")}
-        />
-        <Toggle
-          checked={opts.digits}
-          onChange={(v) => setClass("digits", v)}
-          label={t("digits")}
-        />
-        <Toggle
-          checked={opts.symbols}
-          onChange={(v) => setClass("symbols", v)}
-          label={t("symbols")}
-        />
-        <Toggle
-          checked={opts.ambiguous}
-          onChange={(v) => onOpts({ ...opts, ambiguous: v })}
-          label={t("ambiguous")}
-          hint={t("ambiguousHint")}
-        />
-        <p className="px-2 pt-1 text-xs text-ink-faint">
-          {t("guarantee", { bits: entropy })}
-        </p>
+
+        {mode === "chars" ? (
+          <>
+            <div className="px-2 pb-2">
+              <div className="flex items-center justify-between text-[13px]">
+                <span className="font-medium text-ink-dim">{t("length")}</span>
+                <span className="font-semibold text-accent-soft tabular-nums">{t("lengthValue", { count: length })}</span>
+              </div>
+              <input
+                type="range"
+                min={8}
+                max={64}
+                value={length}
+                aria-label={t("length")}
+                onChange={(e) => onLength(parseInt(e.target.value, 10))}
+                className="mt-2 w-full accent-[var(--color-accent)] cursor-pointer"
+              />
+            </div>
+            <Toggle checked={opts.lowercase} onChange={(v) => setClass("lowercase", v)} label={t("lowercase")} />
+            <Toggle checked={opts.uppercase} onChange={(v) => setClass("uppercase", v)} label={t("uppercase")} />
+            <Toggle checked={opts.digits} onChange={(v) => setClass("digits", v)} label={t("digits")} />
+            <Toggle checked={opts.symbols} onChange={(v) => setClass("symbols", v)} label={t("symbols")} />
+            <Toggle checked={opts.ambiguous} onChange={(v) => onOpts({ ...opts, ambiguous: v })} label={t("ambiguous")} hint={t("ambiguousHint")} />
+            <p className="px-2 pt-1 text-xs text-ink-faint">{t("guarantee", { bits: entropy })}</p>
+          </>
+        ) : (
+          <>
+            <div className="px-2 pb-2">
+              <div className="flex items-center justify-between text-[13px]">
+                <span className="font-medium text-ink-dim">{t("words")}</span>
+                <span className="font-semibold text-accent-soft tabular-nums">{t("wordsValue", { count: pp.words })}</span>
+              </div>
+              <input
+                type="range"
+                min={4}
+                max={10}
+                value={pp.words}
+                aria-label={t("words")}
+                onChange={(e) => onPp({ ...pp, words: parseInt(e.target.value, 10) })}
+                className="mt-2 w-full accent-[var(--color-accent)] cursor-pointer"
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5 px-2 pb-2">
+              <span className="mr-1 text-[13px] font-medium text-ink-dim">{t("separator")}</span>
+              {SEPARATORS.map(({ v, key }) => (
+                <button key={key} type="button" aria-pressed={pp.separator === v} onClick={() => onPp({ ...pp, separator: v })} className={chip(pp.separator === v)}>
+                  {t(key)}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5 px-2 pb-2">
+              <span className="mr-1 text-[13px] font-medium text-ink-dim">{t("language")}</span>
+              <button type="button" aria-pressed={lang === "fr"} onClick={() => onLang("fr")} className={chip(lang === "fr")}>{t("langFr")}</button>
+              <button type="button" aria-pressed={lang === "en"} onClick={() => onLang("en")} className={chip(lang === "en")}>{t("langEn")}</button>
+            </div>
+            <Toggle checked={pp.capitalize} onChange={(v) => onPp({ ...pp, capitalize: v })} label={t("capitalize")} hint={t("capitalizeHint")} />
+            <Toggle checked={pp.digit} onChange={(v) => onPp({ ...pp, digit: v })} label={t("addDigit")} />
+            <p className="px-2 pt-1 text-xs text-ink-faint">
+              {t("guaranteeWords", { size: WORDLIST_SIZE[lang], bits: ppBits })}
+            </p>
+          </>
+        )}
       </div>
     </details>
   );

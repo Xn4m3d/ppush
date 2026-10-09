@@ -269,3 +269,44 @@ export function generatePassword(length = 20, opts: PasswordOptions = {}): strin
     if (classes.every((c) => [...pwd].some((ch) => c.includes(ch)))) return pwd;
   }
 }
+
+/** Uniform index in [0, n): biased draws are rejected (CSPRNG). */
+function randomIndex(n: number): number {
+  const limit = Math.floor(0x1_0000_0000 / n) * n;
+  for (;;) {
+    const v = crypto.getRandomValues(new Uint32Array(1))[0];
+    if (v < limit) return v % n;
+  }
+}
+
+export type PassphraseOptions = {
+  /** Number of words (3 to 12). */
+  words?: number;
+  separator?: string;
+  /** Capitalize each word (adds no entropy: it is for complexity rules). */
+  capitalize?: boolean;
+  /** A digit appended to a randomly chosen word. */
+  digit?: boolean;
+};
+
+/**
+ * Words drawn uniformly from `list` (the Diceware method, but with the
+ * browser's CSPRNG instead of dice). Strength comes from the number of words and
+ * the size of the list, not from how odd they are: see `passphraseBits`.
+ */
+export function generatePassphrase(list: readonly string[], o: PassphraseOptions = {}): string {
+  const count = Math.min(Math.max(Math.trunc(o.words ?? 6) || 6, 3), 12);
+  const words = Array.from({ length: count }, () => list[randomIndex(list.length)]);
+  const out = o.capitalize ? words.map((w) => w.charAt(0).toUpperCase() + w.slice(1)) : words;
+  if (o.digit) {
+    const i = randomIndex(count);
+    out[i] = out[i] + String(randomIndex(10));
+  }
+  return out.join(o.separator ?? "-");
+}
+
+/** Entropy of a word passphrase: log2(list size) per word, plus the digit and its position. */
+export function passphraseBits(listSize: number, o: PassphraseOptions = {}): number {
+  const count = Math.min(Math.max(Math.trunc(o.words ?? 6) || 6, 3), 12);
+  return count * Math.log2(listSize) + (o.digit ? Math.log2(10) + Math.log2(count) : 0);
+}
