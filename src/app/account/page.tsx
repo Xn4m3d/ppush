@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { currentUser, primaryAdminId } from "@/lib/auth";
 import { THEME_COOKIE, effectiveChoice } from "@/lib/themes";
 import { Header } from "@/components/header";
 import { AccountTabs } from "@/components/account-tabs";
+import { parseGenPrefs } from "@/lib/generator-prefs";
 import { MiniCloud } from "@/components/diffusion/mini-cloud";
 
 export async function generateMetadata() {
@@ -38,6 +39,7 @@ export default async function AccountPage() {
         </div>
 
         <AccountTabs
+          generator={parseGenPrefs(user.generatorPrefs, await getLocale())}
           defaults={{
             defaultDays: user.defaultDays,
             defaultViews: user.defaultViews,
