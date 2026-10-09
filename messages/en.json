@@ -89,7 +89,7 @@
     "ageIn": "in {delay}",
     "ageExpired": "expired",
     "destroyed": "Destroyed. Nothing left to decrypt.",
-    "validFor": "Valid for",
+    "validFor": "Link valid for",
     "reads": "Reads",
     "readsValue": "{count, plural, one {# read} other {# reads}}",
     "readsMore": "One more read",

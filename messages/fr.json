@@ -89,7 +89,7 @@
     "ageIn": "dans {delay}",
     "ageExpired": "expiré",
     "destroyed": "Détruit. Plus rien à déchiffrer.",
-    "validFor": "Valable",
+    "validFor": "Le lien sera valable",
     "reads": "Lectures",
     "readsValue": "{count, plural, one {# lecture} other {# lectures}}",
     "readsMore": "Une lecture de plus",

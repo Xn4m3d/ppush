@@ -512,19 +512,19 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
             {kind === "PASSWORD" && (
               <div className="flex flex-col gap-2">
                 <div className="flex items-baseline justify-between gap-3">
-                  <label htmlFor="pp-secret" className="eyebrow">{t("passwordLabel")}</label>
+                  <label htmlFor="pp-secret" className="text-[15px] font-semibold text-ink">{t("passwordLabel")}</label>
                   <span className="flex gap-1">
-                    <button type="button" onClick={() => setShowSecret(!showSecret)} className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-ink-dim hover:bg-panel hover:text-ink cursor-pointer">
-                      {showSecret ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                    <button type="button" onClick={() => setShowSecret(!showSecret)} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line-soft bg-panel px-3 text-sm font-medium text-ink transition-colors hover:border-ink-faint cursor-pointer">
+                      {showSecret ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                       {showSecret ? t("hide") : t("show")}
                     </button>
                     <button
                       type="button"
                       title={t("generateTitle")}
                       onClick={() => void runGenerate(gen)}
-                      className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-ink-dim hover:bg-panel hover:text-ink cursor-pointer"
+                      className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-accent/60 bg-accent/10 px-3 text-sm font-semibold text-accent transition-colors hover:bg-accent/20 cursor-pointer"
                     >
-                      <Dices className="size-3.5" />
+                      <Dices className="size-4" />
                       {t("generate")}
                     </button>
                   </span>
@@ -568,7 +568,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
 
             {kind === "TEXT" && (
               <div className="flex flex-col gap-2">
-                <label htmlFor="pp-text" className="eyebrow">{t("textLabel")}</label>
+                <label htmlFor="pp-text" className="text-[15px] font-semibold text-ink">{t("textLabel")}</label>
                 <Textarea
                   id="pp-text"
                   ref={(el: HTMLInputElement | HTMLTextAreaElement | null) => { fieldRef.current = el; }}
@@ -583,7 +583,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
 
             {kind === "URL" && (
               <div className="flex flex-col gap-2">
-                <label htmlFor="pp-url" className="eyebrow">{t("urlLabel")}</label>
+                <label htmlFor="pp-url" className="text-[15px] font-semibold text-ink">{t("urlLabel")}</label>
                 <Input
                   id="pp-url"
                   ref={(el: HTMLInputElement | HTMLTextAreaElement | null) => { fieldRef.current = el; }}
@@ -607,8 +607,8 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
             <div className="grid gap-x-4 gap-y-2 sm:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
               <div className="flex min-w-0 flex-col gap-2">
                 <div className="flex items-baseline justify-between gap-2">
-                  <span id="pp-dur" className="eyebrow">{td("validFor")}</span>
-                  <output className="text-lg font-bold tracking-tight tabular-nums">{longDelay}</output>
+                  <span id="pp-dur" className="text-[15px] font-semibold text-ink">{td("validFor")}</span>
+                  <output className="whitespace-nowrap text-lg font-bold tracking-tight tabular-nums">{longDelay}</output>
                 </div>
                 <DurationDial
                   presets={dialPresets}
@@ -623,8 +623,8 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
               </div>
               <div className="flex min-w-0 flex-col gap-2">
                 <div className="flex items-baseline justify-between gap-2">
-                  <span id="pp-reads" className="eyebrow">{td("reads")}</span>
-                  <output className="text-lg font-bold tracking-tight tabular-nums">{td("readsValue", { count: views })}</output>
+                  <span id="pp-reads" className="text-[15px] font-semibold text-ink">{td("reads")}</span>
+                  <output className="whitespace-nowrap text-lg font-bold tracking-tight tabular-nums">{td("readsValue", { count: views })}</output>
                 </div>
                 <ReadsPips
                   value={views}
@@ -684,7 +684,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
         </form>
 
         {/* The cloud: what the server receives — then, once created, the link */}
-        <section ref={zoneRef} aria-label={sealed ? td("zoneLink") : td("zoneSend")} className={cls("relative z-[4] flex min-w-0 flex-col", sealed ? "" : "min-h-[380px] lg:min-h-[460px]")}>
+        <section ref={zoneRef} aria-label={sealed ? td("zoneLink") : td("zoneSend")} className="relative z-[4] flex min-w-0 flex-col self-start">
           {/* The button lives above the cloud: disabled while there is nothing to
               encrypt, then, on click, it dissolves into particles that
               join the cloud — that is where the link will be written. */}
@@ -718,7 +718,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
                 ref={cloudRef}
                 role="img"
                 aria-label={cipherLen ? td("cloudAria", { bytes: cipherLen }) : td("cloudEmpty")}
-                className={cls("min-h-[240px] flex-1", cipherLen > 0 && "cursor-ns-resize")}
+                className={cls("h-[260px] lg:h-[330px]", cipherLen > 0 && "cursor-ns-resize")}
               />
               <div data-noage>
               <AgeTimeline value={age} onChange={setAgeHold} ticks={ticks} bubble={ageBubble} label={td("ageLabel")} />
