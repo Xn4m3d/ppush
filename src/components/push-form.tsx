@@ -831,7 +831,7 @@ function GeneratorOptions({
 
   const chip = (on: boolean) =>
     cls(
-      "min-h-9 rounded-lg border px-3 text-[13px] transition-colors cursor-pointer",
+      "min-h-8 rounded-md border px-2.5 text-[13px] transition-colors cursor-pointer",
       on ? "border-ink bg-ink text-bg" : "border-line bg-bg text-ink-dim hover:border-line-soft hover:text-ink"
     );
   // Readable numeric setting. Small range (≤ 12 values): one cell per
@@ -841,10 +841,10 @@ function GeneratorOptions({
     const n = hi - lo + 1;
     const pct = ((v - lo) / (hi - lo)) * 100;
     return (
-      <div className="px-2 pb-3">
-        <div className="mb-2 flex items-baseline justify-between text-[13px]">
+      <div className="pb-2">
+        <div className="mb-1.5 flex items-baseline justify-between text-[13px]">
           <span className="font-medium text-ink-dim">{label}</span>
-          <span className="text-base font-bold text-ink tabular-nums">{value}</span>
+          <span className="text-sm font-bold text-ink tabular-nums">{value}</span>
         </div>
         {n <= 12 ? (
           <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }} role="radiogroup" aria-label={label}>
@@ -856,7 +856,7 @@ function GeneratorOptions({
                 aria-checked={k === v}
                 onClick={() => onV(k)}
                 className={cls(
-                  "min-h-10 rounded-lg border font-mono text-sm tabular-nums transition-colors cursor-pointer",
+                  "min-h-8 rounded-md border font-mono text-[13px] tabular-nums transition-colors cursor-pointer",
                   k === v
                     ? "border-accent bg-accent font-semibold text-[var(--on-accent)]"
                     : k < v
@@ -928,84 +928,96 @@ function GeneratorOptions({
       </div>
       {/* The settings "grow out" of the button (morphing modal); a live
           preview stands in for the field, which is hidden meanwhile. */}
-      <MorphDialog open={open} onClose={() => setOpen(false)} anchorRef={settingsBtn} labelledBy="gen-title" className="w-[min(560px,calc(100vw-32px))]">
-        <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">
-          <h2 id="gen-title" className="text-lg font-bold">{t("settingsTitle")}</h2>
-          <button type="button" onClick={(e) => requestMorphClose(e.currentTarget)} aria-label={t("close")} className="grid size-9 place-items-center rounded-lg text-ink-dim hover:bg-panel hover:text-ink cursor-pointer">✕</button>
+      <MorphDialog open={open} onClose={() => setOpen(false)} anchorRef={settingsBtn} labelledBy="gen-title" className="w-[min(640px,calc(100vw-32px))]">
+        <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-2.5">
+          <h2 id="gen-title" className="text-base font-bold">{t("settingsTitle")}</h2>
+          <button type="button" onClick={(e) => requestMorphClose(e.currentTarget)} aria-label={t("close")} className="grid size-8 place-items-center rounded-lg text-ink-dim hover:bg-panel hover:text-ink cursor-pointer">✕</button>
         </div>
-        <div className="border-b border-line bg-panel px-5 py-3.5">
-          <p className="eyebrow mb-1">{t("preview")}</p>
-          <p className={cls("m-0 break-all font-mono text-lg", preview ? "text-ink" : "text-ink-faint")}>{preview || t("previewEmpty")}</p>
-          <p className={cls("mt-1 font-mono text-xs tabular-nums", bits < WEAK_BITS ? "text-warn" : "text-ink-faint")}>
+        <div className="border-b border-line bg-panel px-5 py-2.5">
+          <p className="eyebrow mb-0.5">{t("preview")}</p>
+          <p className={cls("m-0 break-all font-mono text-base", preview ? "text-ink" : "text-ink-faint")}>{preview || t("previewEmpty")}</p>
+          <p className={cls("mt-0.5 font-mono text-xs tabular-nums", bits < WEAK_BITS ? "text-warn" : "text-ink-faint")}>
             {gen.mode === "words" ? t("summaryWords", { count: gen.words, bits: wordBits }) : t("summaryStats", { length: gen.length, bits: charBits })}
             {charCount > 0 && <span className="text-ink-dim"> · {t("fieldChars", { count: charCount })}</span>}
           </p>
         </div>
-      <div className="min-h-0 flex-1 space-y-1 overflow-auto px-3 pb-2 pt-3">
-        <div className="grid grid-cols-2 gap-1.5 px-2 pb-3" role="group" aria-label={t("summary")}>
+      <div className="min-h-0 flex-1 space-y-1 overflow-auto px-3 pb-1 pt-2.5">
+        <div className="grid grid-cols-2 gap-1.5 px-2 pb-2" role="group" aria-label={t("summary")}>
           <button type="button" aria-pressed={gen.mode === "words"} onClick={() => set({ mode: "words" })} className={cls(chip(gen.mode === "words"), "py-1.5")}>{t("modeWords")}</button>
           <button type="button" aria-pressed={gen.mode === "chars"} onClick={() => set({ mode: "chars" })} className={cls(chip(gen.mode === "chars"), "py-1.5")}>{t("modeChars")}</button>
         </div>
 
         {gen.mode === "chars" ? (
           <>
-            {slider(t("length"), t("lengthValue", { count: gen.length }), gen.length, LIMITS.length, (n) => set({ length: n }))}
-            <Toggle checked={gen.lowercase} onChange={(v) => setClass("lowercase", v)} label={t("lowercase")} />
-            <Toggle checked={gen.uppercase} onChange={(v) => setClass("uppercase", v)} label={t("uppercase")} />
-            <Toggle checked={gen.digits} onChange={(v) => setClass("digits", v)} label={t("digits")} />
-            <Toggle checked={gen.symbols} onChange={(v) => setClass("symbols", v)} label={t("symbols")} />
+            <div className="px-2">{slider(t("length"), t("lengthValue", { count: gen.length }), gen.length, LIMITS.length, (n) => set({ length: n }))}</div>
+            <div className="grid sm:grid-cols-2">
+              <Toggle checked={gen.lowercase} onChange={(v) => setClass("lowercase", v)} label={t("lowercase")} />
+              <Toggle checked={gen.uppercase} onChange={(v) => setClass("uppercase", v)} label={t("uppercase")} />
+              <Toggle checked={gen.digits} onChange={(v) => setClass("digits", v)} label={t("digits")} />
+              <Toggle checked={gen.symbols} onChange={(v) => setClass("symbols", v)} label={t("symbols")} />
+            </div>
             <Toggle checked={gen.ambiguous} onChange={(v) => set({ ambiguous: v })} label={t("ambiguous")} hint={t("ambiguousHint")} />
-            <p className="px-2 pt-1 text-xs text-ink-faint">{t("guarantee", { bits: charBits })}</p>
+            <p className="px-2 pt-0.5 text-[11px] text-ink-faint">{t("guarantee", { bits: charBits })}</p>
           </>
         ) : (
           <>
-            {slider(t("words"), t("wordsValue", { count: gen.words }), gen.words, LIMITS.words, (n) => set({ words: n }))}
-            {slider(t("digitCount"), t("digitCountValue", { count: gen.digitCount }), gen.digitCount, LIMITS.digitCount, (n) => set({ digitCount: n }))}
-            <div className="flex flex-wrap items-center gap-1.5 px-2 pb-2">
-              <span className="mr-1 text-[13px] font-medium text-ink-dim">{t("separator")}</span>
-              {SEPARATORS.map((v) => (
-                <button key={SEP_KEYS[v]} type="button" aria-pressed={gen.separator === v} onClick={() => set({ separator: v })} className={chip(gen.separator === v)}>
-                  {t(SEP_KEYS[v])}
-                </button>
-              ))}
+            <div className="grid gap-x-5 px-2 sm:grid-cols-2">
+              {slider(t("words"), t("wordsValue", { count: gen.words }), gen.words, LIMITS.words, (n) => set({ words: n }))}
+              {slider(t("digitCount"), t("digitCountValue", { count: gen.digitCount }), gen.digitCount, LIMITS.digitCount, (n) => set({ digitCount: n }))}
             </div>
-            <div className="flex flex-wrap items-center gap-1.5 px-2 pb-2">
-              <span className="mr-1 w-full text-[13px] font-medium text-ink-dim">{t("endSymbol")}</span>
-              <button type="button" aria-pressed={gen.symbol === "none"} onClick={() => set({ symbol: "none" })} className={chip(gen.symbol === "none")}>{t("symbolNone")}</button>
-              <button type="button" aria-pressed={gen.symbol === "random"} onClick={() => set({ symbol: "random" })} className={chip(gen.symbol === "random")}>{t("symbolRandom")}</button>
-              {END_SYMBOLS.map((c) => (
-                <button key={c} type="button" aria-pressed={gen.symbol === c} aria-label={t("symbolPick", { c })} onClick={() => set({ symbol: c })} className={cls(chip(gen.symbol === c), "min-w-9 px-0 font-mono text-sm")}>
-                  {c}
-                </button>
-              ))}
+            <div className="grid gap-x-5 gap-y-2 px-2 pb-2 sm:grid-cols-2">
+              <div>
+                <p className="mb-1.5 text-[13px] font-medium text-ink-dim">{t("separator")}</p>
+                <div className="flex flex-wrap gap-1">
+                  {SEPARATORS.map((v) => (
+                    <button key={SEP_KEYS[v]} type="button" aria-pressed={gen.separator === v} onClick={() => set({ separator: v })} className={chip(gen.separator === v)}>
+                      {t(SEP_KEYS[v])}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="mb-1.5 text-[13px] font-medium text-ink-dim">{t("language")}</p>
+                <div className="flex flex-wrap gap-1">
+                  <button type="button" aria-pressed={gen.lang === "fr"} onClick={() => set({ lang: "fr" })} className={chip(gen.lang === "fr")}>{t("langFr")}</button>
+                  <button type="button" aria-pressed={gen.lang === "en"} onClick={() => set({ lang: "en" })} className={chip(gen.lang === "en")}>{t("langEn")}</button>
+                </div>
+              </div>
             </div>
-            <div className="flex flex-wrap items-center gap-1.5 px-2 pb-2">
-              <span className="mr-1 text-[13px] font-medium text-ink-dim">{t("language")}</span>
-              <button type="button" aria-pressed={gen.lang === "fr"} onClick={() => set({ lang: "fr" })} className={chip(gen.lang === "fr")}>{t("langFr")}</button>
-              <button type="button" aria-pressed={gen.lang === "en"} onClick={() => set({ lang: "en" })} className={chip(gen.lang === "en")}>{t("langEn")}</button>
+            <div className="px-2 pb-1.5">
+              <p className="mb-1.5 text-[13px] font-medium text-ink-dim">{t("endSymbol")}</p>
+              <div className="flex flex-wrap gap-1">
+                <button type="button" aria-pressed={gen.symbol === "none"} onClick={() => set({ symbol: "none" })} className={chip(gen.symbol === "none")}>{t("symbolNone")}</button>
+                <button type="button" aria-pressed={gen.symbol === "random"} onClick={() => set({ symbol: "random" })} className={chip(gen.symbol === "random")}>{t("symbolRandom")}</button>
+                {END_SYMBOLS.map((c) => (
+                  <button key={c} type="button" aria-pressed={gen.symbol === c} aria-label={t("symbolPick", { c })} onClick={() => set({ symbol: c })} className={cls(chip(gen.symbol === c), "w-8 px-0 font-mono text-sm")}>
+                    {c}
+                  </button>
+                ))}
+              </div>
             </div>
             <Toggle checked={gen.capitalize} onChange={(v) => set({ capitalize: v })} label={t("capitalize")} hint={t("capitalizeHint")} />
-            <p className="px-2 pt-1 text-xs text-ink-faint">{t("guaranteeWords", { size: WORDLIST_SIZE[gen.lang], bits: wordBits })}</p>
+            <p className="px-2 pt-0.5 text-[11px] text-ink-faint">{t("guaranteeWords", { size: WORDLIST_SIZE[gen.lang], bits: wordBits })}</p>
           </>
         )}
         {bits < WEAK_BITS && <p className="px-2 text-xs text-warn">{gen.mode === "words" ? t("weakWords") : t("weakChars")}</p>}
 
       </div>
         {/* fixed window footer: generate and save stay within reach */}
-        <div className="flex flex-wrap items-center gap-2 border-t border-line px-5 py-3.5">
-          <Button type="button" onClick={onGenerate} className="min-h-10">
+        <div className="flex flex-wrap items-center gap-2 border-t border-line px-5 py-2.5">
+          <Button type="button" onClick={onGenerate} className="min-h-9">
             <Dices className="size-4" />
             {t("generateNow")}
           </Button>
           {canSave && (
-            <Button type="button" variant="ghost" onClick={onSave} loading={saveState === "saving"} className="min-h-10">
+            <Button type="button" variant="ghost" onClick={onSave} loading={saveState === "saving"} className="min-h-9">
               {t("saveDefault")}
             </Button>
           )}
           <span className={cls("text-xs", saveState === "error" ? "text-danger" : "text-ok")} aria-live="polite">
             {saveState === "saved" ? t("savedDefault") : saveState === "error" ? t("saveDefaultError") : ""}
           </span>
-          <Button type="button" variant="ghost" onClick={(e) => requestMorphClose(e.currentTarget)} className="ml-auto min-h-10">
+          <Button type="button" variant="ghost" onClick={(e) => requestMorphClose(e.currentTarget)} className="ml-auto min-h-9">
             {t("done")}
           </Button>
         </div>

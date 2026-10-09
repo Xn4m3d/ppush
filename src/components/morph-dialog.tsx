@@ -2,8 +2,20 @@
 
 import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 
-const EASE_OUT = "cubic-bezier(0.2, 0.9, 0.1, 1)";
-const EASE_IN = "cubic-bezier(0.5, 0, 0.75, 0.2)";
+// light spring: barely overshoots the target, then settles ("Apple" feel)
+const SPRING = "cubic-bezier(0.32, 1.12, 0.42, 1)";
+const EASE_IN = "cubic-bezier(0.55, 0, 0.75, 0.25)";
+const OPEN_MS = 740;
+const CLOSE_MS = 420;
+
+/** Token colors read when the animation starts (current theme). */
+function tokens() {
+  const cs = getComputedStyle(document.documentElement);
+  const acc = cs.getPropertyValue("--color-accent").trim() || "#ff7a59";
+  const line = cs.getPropertyValue("--color-line").trim() || "#1b222e";
+  const panel = cs.getPropertyValue("--color-panel-soft").trim() || "#141a24";
+  return { acc, line, panel };
+}
 
 /**
  * Modal window that "grows out" of its button: on open, the window starts
@@ -57,24 +69,28 @@ export function MorphDialog({
       d.showModal();
       if (reduce) return;
       const from = fromAnchor();
+      const { acc, line, panel } = tokens();
       if (from) {
+        // the shape leaves the button, opaque and outlined in accent: it visibly
+        // detaches, grows and slides into place
         d.animate(
           [
-            { transform: from, borderRadius: "14px", opacity: 0.4 },
-            { transform: "none", borderRadius: "18px", opacity: 1 },
+            { transform: from, borderRadius: "10px", borderColor: acc, backgroundColor: panel, boxShadow: `0 0 0 1px ${acc}, 0 0 32px -4px ${acc}` },
+            { borderColor: acc, boxShadow: `0 0 0 1px ${acc}, 0 0 48px -10px ${acc}`, offset: 0.55 },
+            { transform: "none", borderRadius: "18px", borderColor: line, boxShadow: "0 30px 80px -20px rgba(0,0,0,0.7)" },
           ],
-          { duration: 520, easing: EASE_OUT, fill: "none" }
+          { duration: OPEN_MS, easing: SPRING }
         );
       }
       inner.current?.animate(
         [
-          { opacity: 0, transform: "translateY(10px)", filter: "blur(4px)" },
-          { opacity: 0, transform: "translateY(10px)", filter: "blur(4px)", offset: 0.35 },
+          { opacity: 0, transform: "translateY(12px) scale(0.98)", filter: "blur(6px)" },
+          { opacity: 0, transform: "translateY(12px) scale(0.98)", filter: "blur(6px)", offset: 0.45 },
           { opacity: 1, transform: "none", filter: "none" },
         ],
-        { duration: 560, easing: EASE_OUT }
+        { duration: OPEN_MS + 80, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" }
       );
-      d.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 420, easing: "ease", pseudoElement: "::backdrop" });
+      d.animate([{ opacity: 0 }, { opacity: 1 }], { duration: OPEN_MS, easing: "ease", pseudoElement: "::backdrop" });
     }
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -86,14 +102,16 @@ export function MorphDialog({
     const done = () => { d.close(); onCloseRef.current(); };
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return done();
     const to = fromAnchor();
-    inner.current?.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 140, easing: "ease", fill: "forwards" });
-    d.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 360, easing: "ease", pseudoElement: "::backdrop", fill: "forwards" });
+    const { acc, panel } = tokens();
+    inner.current?.animate([{ opacity: 1, filter: "none" }, { opacity: 0, filter: "blur(6px)" }], { duration: 160, easing: "ease", fill: "forwards" });
+    d.animate([{ opacity: 1 }, { opacity: 0 }], { duration: CLOSE_MS, easing: "ease", pseudoElement: "::backdrop", fill: "forwards" });
     const anim = d.animate(
       [
-        { transform: "none", borderRadius: "18px", opacity: 1 },
-        { transform: to ?? "scale(0.96)", borderRadius: "14px", opacity: 0.2 },
+        { transform: "none", borderRadius: "18px" },
+        { borderColor: acc, backgroundColor: panel, offset: 0.4 },
+        { transform: to ?? "scale(0.96)", borderRadius: "10px", borderColor: acc, backgroundColor: panel, opacity: 0.9 },
       ],
-      { duration: 380, easing: EASE_IN, fill: "forwards" }
+      { duration: CLOSE_MS, easing: EASE_IN, fill: "forwards" }
     );
     anim.onfinish = () => {
       done();
