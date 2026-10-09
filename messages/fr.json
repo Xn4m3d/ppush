@@ -192,8 +192,15 @@
     "langEn": "English",
     "capitalize": "Majuscule à chaque mot",
     "capitalizeHint": "Pour les sites qui exigent une majuscule ; n'ajoute pas de sécurité.",
-    "addDigit": "Ajouter un chiffre",
-    "guaranteeWords": "Mots tirés au hasard parmi {size, number}, avec le générateur aléatoire de votre navigateur. Facile à retenir et à dicter, difficile à deviner : ~{bits} bits. Listes : EFF (anglais) et C.-M. Duquesne (français), licence CC BY 3.0."
+    "guaranteeWords": "Mots tirés au hasard parmi {size, number}, avec le générateur aléatoire de votre navigateur. Facile à retenir et à dicter, difficile à deviner : ~{bits} bits. Listes : EFF (anglais) et C.-M. Duquesne (français), licence CC BY 3.0.",
+    "digitCount": "Chiffres",
+    "digitCountValue": "{count, plural, =0 {aucun} one {# chiffre} other {# chiffres}}",
+    "weakWords": "Assez faible : ajoutez un mot ou des chiffres.",
+    "weakChars": "Assez faible : allongez le mot de passe.",
+    "generateNow": "Générer",
+    "saveDefault": "Enregistrer par défaut",
+    "savedDefault": "Réglage enregistré pour votre compte.",
+    "saveDefaultError": "Enregistrement impossible, réessayez."
   },
   "fileDrop": {
     "prompt": "Glissez un fichier ici ou cliquez pour parcourir",
@@ -402,7 +409,14 @@
     "deleteAccountButton": "Supprimer définitivement mon compte",
     "deleteAccountFinal": "Cela efface définitivement votre compte et toutes vos données. Continuer ?",
     "code2fa": "Code 2FA",
-    "deleteReauthHint": "Par sécurité, confirmez avec vos identifiants."
+    "deleteReauthHint": "Par sécurité, confirmez avec vos identifiants.",
+    "genTitle": "Générateur de mots de passe",
+    "genChars": "Caractères aléatoires · {length} caractères",
+    "genWords": "Suite de mots · {count} mots",
+    "genStandard": "Réglage standard : aucun réglage enregistré.",
+    "genHint": "Réglez le générateur sur la page d'accueil, puis « Enregistrer par défaut ».",
+    "genReset": "Revenir au réglage standard",
+    "genResetDone": "Réglage standard rétabli."
   },
   "tokens": {
     "title": "Tokens API",

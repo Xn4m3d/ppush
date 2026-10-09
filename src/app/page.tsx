@@ -1,4 +1,5 @@
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
+import { parseGenPrefs } from "@/lib/generator-prefs";
 import { currentUser } from "@/lib/auth";
 import { config, clamp } from "@/lib/config";
 import { Header } from "@/components/header";
@@ -38,6 +39,7 @@ export default async function HomePage() {
         maxFileSizeMb: u.maxFileMb,
         showNote: true,
         shareTemplates,
+        generator: parseGenPrefs(user.generatorPrefs, await getLocale()),
       }
     : {
         tier: "anon" as const,
