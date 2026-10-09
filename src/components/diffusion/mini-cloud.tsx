@@ -23,3 +23,37 @@ export function MiniCloud({ className = "", seed = 7 }: { className?: string; se
     </svg>
   );
 }
+
+/**
+ * Sidereal halo around a field: a very soft glow and a few stars
+ * twinkling around its edge. Decorative, deterministic positions (same
+ * server/client render), no interaction.
+ */
+export function SiderealHalo() {
+  const h = (n: number) => {
+    let t = Math.imul(0x9e3779b9 + n * 0x85ebca6b, 2246822507);
+    t ^= t >>> 13;
+    return (t >>> 0) / 4294967296;
+  };
+  const stars = Array.from({ length: 18 }, (_, i) => {
+    // spread over the four edges, just outside the field
+    const side = i % 4, u = h(i * 3);
+    const off = 5 + h(i * 3 + 1) * 9;
+    const pos =
+      side === 0 ? { left: `${u * 100}%`, top: `-${off}px` }
+      : side === 1 ? { left: `${u * 100}%`, bottom: `-${off}px` }
+      : side === 2 ? { top: `${15 + u * 70}%`, left: `-${off}px` }
+      : { top: `${15 + u * 70}%`, right: `-${off}px` };
+    return { ...pos, size: 1 + h(i * 3 + 2) * 1.6, delay: h(i * 7) * 6, hot: i % 6 === 0 };
+  });
+  return (
+    <span aria-hidden className="sidereal-halo">
+      {stars.map(({ size, delay, hot, ...pos }, i) => (
+        <i
+          key={i}
+          style={{ ...pos, width: size, height: size, animationDelay: `${-delay}s`, background: hot ? "var(--color-accent)" : undefined }}
+        />
+      ))}
+    </span>
+  );
+}

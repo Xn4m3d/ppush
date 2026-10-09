@@ -30,7 +30,9 @@ export const LIMITS = { length: [8, 64], words: [2, 7], digitCount: [0, 6] } as 
 
 export function genDefaults(locale: string): GenPrefs {
   return {
-    mode: "chars",
+    // words are the recommended mode: easier to remember and to
+    // read out, just as strong at a reasonable length
+    mode: "words",
     length: 20,
     lowercase: true,
     uppercase: true,
@@ -39,8 +41,8 @@ export function genDefaults(locale: string): GenPrefs {
     ambiguous: false,
     words: 5,
     separator: "-",
-    capitalize: false,
-    digitCount: 0,
+    capitalize: true,
+    digitCount: 2,
     lang: locale === "fr" ? "fr" : "en",
   };
 }

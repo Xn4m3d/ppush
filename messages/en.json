@@ -200,7 +200,9 @@
     "generateNow": "Generate",
     "saveDefault": "Save as default",
     "savedDefault": "Saved for your account.",
-    "saveDefaultError": "Couldn't save, try again."
+    "saveDefaultError": "Couldn't save, try again.",
+    "recommended": "recommended",
+    "settings": "Settings"
   },
   "fileDrop": {
     "prompt": "Drag a file here or click to browse",
