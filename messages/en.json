@@ -120,7 +120,9 @@
     "advChanged": "{count, plural, one {# option on} other {# options on}}",
     "advDefault": "default",
     "advClose": "Close",
-    "advDone": "Done"
+    "advDone": "Done",
+    "ctaReadyMobile": "Ready. Adjust duration and reads below if needed, then tap.",
+    "ctaHintMobile": "Type or generate your secret above, then tap the button."
   },
   "tabs": {
     "PASSWORD": "Password",

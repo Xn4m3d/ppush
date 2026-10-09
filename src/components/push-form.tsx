@@ -132,6 +132,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
   const keyRef = useRef<HTMLSpanElement>(null);
   const zoneRef = useRef<HTMLElement>(null);
   const ctaRef = useRef<HTMLButtonElement>(null);
+  const ctaMobileRef = useRef<HTMLButtonElement>(null);
   const advBtn = useRef<HTMLButtonElement>(null);
   const [advOpen, setAdvOpen] = useState(false);
   const scene = useRef<DiffusionScene | null>(null);
@@ -349,8 +350,9 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
 
     setBusy(true);
     // the button dissolves into particles that stream into the cloud
-    if (ctaRef.current && scene.current) {
-      const r = scene.current.toHost(ctaRef.current.getBoundingClientRect());
+    const btn = [ctaRef.current, ctaMobileRef.current].find((b) => b && b.offsetParent !== null);
+    if (btn && scene.current) {
+      const r = scene.current.toHost(btn.getBoundingClientRect());
       scene.current.burst({ x0: r.x, x1: r.x + r.w, y0: r.y, y1: r.y + r.h });
     }
     setLaunching(true);
@@ -468,16 +470,18 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
   const pwLen = [...secret].length;
   const pwShort = kind === "PASSWORD" && pwLen > 0 && pwLen < MIN_PASSWORD;
   const ready = kind === "FILE" ? !!file : secret.trim().length > 0 && !pwShort;
+  const ctaHint = busy ? (progress ?? td("ctaWorking")) : pwShort ? td("ctaTooShort", { count: MIN_PASSWORD - pwLen, min: MIN_PASSWORD }) : ready ? td("ctaReady") : td("ctaHint");
+  const ctaHintMobile = busy || pwShort ? ctaHint : ready ? td("ctaReadyMobile") : td("ctaHintMobile");
 
   return (
-    <div ref={hostRef} className="relative mx-auto w-full max-w-6xl flex-1 px-4 pb-10 pt-6 sm:px-6">
+    <div ref={hostRef} className="hc-host relative mx-auto w-full max-w-6xl flex-1 px-4 pb-10 pt-6 sm:px-6">
       <canvas ref={canvasRef} aria-hidden className="pointer-events-none absolute inset-0 z-[3] h-full w-full" />
       <div className="grid gap-x-16 gap-y-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.1fr)]">
-        <form id="pp-form" ref={formRef} onSubmit={submit} className="relative z-[2] flex min-w-0 flex-col gap-3.5 animate-fade-up">
-          <h1 className="text-[clamp(28px,3.3vw,42px)] font-bold leading-[1.04]">
+        <form id="pp-form" ref={formRef} onSubmit={submit} className="hc-gap relative z-[2] flex min-w-0 flex-col gap-3.5 animate-fade-up">
+          <h1 className="hc-title text-[clamp(28px,3.3vw,42px)] font-bold leading-[1.04]">
             <HeroTitle />
           </h1>
-          <p className="-mt-1 max-w-[46ch] text-base text-ink-dim">
+          <p className="hc-lede -mt-1 max-w-[46ch] text-base text-ink-dim">
             {td.rich("lede", { b: (c) => <b className="font-medium text-ink">{c}</b> })}
           </p>
 
@@ -614,6 +618,9 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
               </div>
             )}
 
+            {/* mobile: the button right under the content, visible on the first screen */}
+            {!sealed && <CtaBlock buttonRef={ctaMobileRef} className="flex lg:hidden" hint={ctaHintMobile} label={t("submit")} disabled={!ready || busy} launching={launching} />}
+
             {/* Lifetime and views: two ways to expire, whichever comes first wins */}
             <div className="grid gap-x-4 gap-y-2 sm:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
               <div className="flex min-w-0 flex-col gap-2">
@@ -705,7 +712,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
           </fieldset>
 
           {defaults.tier === "anon" && !sealed && (
-            <p className="text-[13px] text-ink-faint">
+            <p className="hc-anon text-[13px] text-ink-faint">
               {td.rich("anonStrip", {
                 link: (c) => <Link href="/register" className="font-medium text-ink-dim underline underline-offset-2 hover:text-ink">{c}</Link>,
               })}
@@ -718,26 +725,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
           {/* The button lives above the cloud: disabled while there is nothing to
               encrypt, then, on click, it dissolves into particles that
               join the cloud — that is where the link will be written. */}
-          {!sealed && (
-          <div className="mb-5 flex flex-col gap-2.5">
-            <p className="text-sm text-ink-dim" aria-live="polite">
-              {busy ? (progress ?? td("ctaWorking")) : pwShort ? td("ctaTooShort", { count: MIN_PASSWORD - pwLen, min: MIN_PASSWORD }) : ready ? td("ctaReady") : td("ctaHint")}
-            </p>
-            <Button
-              ref={ctaRef}
-              type="submit"
-              form="pp-form"
-              disabled={!ready || busy}
-              className={cls(
-                "min-h-14 w-full text-base transition-[opacity,transform,filter,background-color] duration-500 disabled:bg-panel disabled:text-ink-faint disabled:opacity-100 disabled:border disabled:border-line",
-                launching && "scale-y-[0.2] opacity-0 blur-[2px]"
-              )}
-            >
-              <Lock className="size-4" />
-              {t("submit")}
-            </Button>
-          </div>
-          )}
+          {!sealed && <CtaBlock buttonRef={ctaRef} className="mb-5 hidden lg:flex" hint={ctaHint} label={t("submit")} disabled={!ready || busy} launching={launching} />}
           <div className="flex justify-between gap-3 eyebrow">
             <span>{sealed ? td("zoneLink") : age > 0.995 ? td("zoneGone") : td("zoneSend")}</span>
             <span className="text-accent">{td("algo")}</span>
@@ -748,7 +736,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
                 ref={cloudRef}
                 role="img"
                 aria-label={cipherLen ? td("cloudAria", { bytes: cipherLen }) : td("cloudEmpty")}
-                className={cls("h-[260px] lg:h-[330px]", cipherLen > 0 && "cursor-ns-resize")}
+                className={cls("hc-cloud h-[260px] lg:h-[330px]", cipherLen > 0 && "cursor-ns-resize")}
               />
               <div data-noage>
               <AgeTimeline value={age} onChange={setAgeHold} ticks={ticks} bubble={ageBubble} label={td("ageLabel")} />
@@ -773,6 +761,46 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
           )}
         </section>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Main button and its hint. Rendered twice by PushForm: in the
+ * cloud column on desktop, higher up in the form on mobile
+ * (only one is visible, depending on the width).
+ */
+function CtaBlock({
+  buttonRef,
+  className,
+  hint,
+  label,
+  disabled,
+  launching,
+}: {
+  buttonRef: React.RefObject<HTMLButtonElement | null>;
+  className: string;
+  hint: string;
+  label: string;
+  disabled: boolean;
+  launching: boolean;
+}) {
+  return (
+    <div className={cls("flex-col gap-2.5", className)}>
+      <p className="text-sm text-ink-dim" aria-live="polite">{hint}</p>
+      <Button
+        ref={buttonRef}
+        type="submit"
+        form="pp-form"
+        disabled={disabled}
+        className={cls(
+          "min-h-14 w-full text-base transition-[opacity,transform,filter,background-color] duration-500 disabled:bg-panel disabled:text-ink-faint disabled:opacity-100 disabled:border disabled:border-line",
+          launching && "scale-y-[0.2] opacity-0 blur-[2px]"
+        )}
+      >
+        <Lock className="size-4" />
+        {label}
+      </Button>
     </div>
   );
 }
