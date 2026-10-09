@@ -20,13 +20,13 @@ export default async function PublicPushPage({
   const t = await getTranslations("viewer");
   const user = await currentUser();
   return (
-    <main className="relative flex min-h-screen flex-col items-center px-4 py-10">
-      <BackHome className="absolute left-4 top-4 sm:left-6 sm:top-6" />
-      <Logo />
-      <div className="mt-10 w-full max-w-lg">
-        <SecretViewer slug={slug} autoOpen={!!user?.autoOpenUrls} />
+    <main className="relative flex min-h-screen flex-col">
+      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
+        <Logo />
+        <BackHome />
       </div>
-      <p className="mt-8 text-xs text-ink-faint">{t("pageFootnote")}</p>
+      <SecretViewer slug={slug} autoOpen={!!user?.autoOpenUrls} />
+      <p className="pb-6 text-center text-xs text-ink-faint">{t("pageFootnote")}</p>
     </main>
   );
 }

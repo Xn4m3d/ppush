@@ -9,12 +9,10 @@ export async function Logo() {
   const t = await getTranslations("header");
   return (
     <HomeLink className="flex items-center gap-2.5 group">
-      <span className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-accent to-accent-deep shadow-[0_4px_16px_-2px_var(--accent-glow)] transition-transform group-hover:scale-105">
-        <CatMark className="size-6 text-[var(--on-accent)]" />
-      </span>
-      <span className="text-lg font-semibold tracking-tight">
-        ppush
-        <span className="ml-2 hidden text-xs font-normal text-ink-faint sm:inline">
+      <CatMark className="size-7 text-ink transition-transform group-hover:-rotate-6" />
+      <span className="text-xl font-bold tracking-[-0.04em]">
+        ppush<span className="text-accent">.</span>
+        <span className="ml-2.5 hidden text-xs font-normal tracking-normal text-ink-faint sm:inline">
           {t("tagline")}
         </span>
       </span>
@@ -30,8 +28,8 @@ export async function Header() {
       ? await prisma.recoveryRequest.count({ where: { status: "PENDING" } })
       : 0;
   return (
-    <header className="sticky top-0 z-40 border-b border-line/60 bg-bg/75 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 sm:px-6">
+    <header className="sticky top-0 z-40 border-b border-line/60 bg-bg/80 backdrop-blur-md">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         <Logo />
         {user ? (
           <div className="flex items-center gap-1.5">
@@ -44,7 +42,7 @@ export async function Header() {
         ) : (
           <Link
             href="/login"
-            className="rounded-xl border border-line px-4 py-2 text-sm text-ink-dim transition-colors hover:border-line-soft hover:text-ink"
+            className="rounded-[10px] border border-line px-4 py-2 text-sm text-ink-dim transition-colors hover:border-line-soft hover:text-ink"
           >
             {t("login")}
           </Link>

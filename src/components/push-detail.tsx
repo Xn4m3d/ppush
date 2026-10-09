@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Trash2, Eye, KeyRound, ShieldOff, Flame, PlusCircle } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { Badge, Button, Card, cls } from "./ui";
-import { PawLoader } from "./cat";
+import { Badge, Button, Card, CondenseLoader, cls } from "./ui";
 import { CopyButton } from "./copy-button";
 import { PushStatus, type OwnerPush } from "./push-list";
 import { formatBytes } from "@/lib/format";
@@ -77,7 +76,7 @@ export function PushDetail({ slug }: { slug: string }) {
   if (!push) {
     return (
       <Card className="p-10 text-center">
-        <PawLoader />
+        <CondenseLoader />
       </Card>
     );
   }

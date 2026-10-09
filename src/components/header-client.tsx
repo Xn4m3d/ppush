@@ -68,7 +68,7 @@ export function NavLinks({ isAdmin, recoveryPending = 0 }: { isAdmin: boolean; r
             className={cls(
               "relative flex items-center gap-1.5 rounded-xl px-2 py-2 text-sm transition-colors sm:px-3",
               active
-                ? "bg-accent/15 text-accent-soft"
+                ? "bg-panel text-ink shadow-[inset_0_-2px_0_var(--color-accent)]"
                 : "text-ink-dim hover:bg-panel hover:text-ink"
             )}
           >

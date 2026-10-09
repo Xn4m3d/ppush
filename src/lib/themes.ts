@@ -8,7 +8,7 @@
  * (resolved client-side by an anti-flash inline script, see layout.tsx).
  *
  * Application priority: explicit `theme` cookie > account preference
- * (User.theme) > `auto` default. PUBLIC selector (footer); a signed-in
+ * (User.theme) > `midnight` (night) default. PUBLIC selector (footer); a signed-in
  * user can set their preference (persisted in the database).
  */
 
@@ -18,8 +18,8 @@ export type Theme = (typeof THEMES)[number];
 export const THEME_CHOICES = ["auto", "midnight", "mecha"] as const;
 export type ThemeChoice = (typeof THEME_CHOICES)[number];
 
-/** SSR / no-JS fallback (day appearance). */
-export const DEFAULT_THEME: Theme = "mecha";
+/** Default theme: night, the black of the Diffusion art direction. */
+export const DEFAULT_THEME: Theme = "midnight";
 export const THEME_COOKIE = "theme";
 
 /** "Day" time window for auto mode (local hour). */
@@ -30,12 +30,12 @@ export function isThemeChoice(v: string | undefined | null): v is ThemeChoice {
   return !!v && (THEME_CHOICES as readonly string[]).includes(v);
 }
 
-/** Effective choice: explicit cookie > account preference > "auto". */
+/** Effective choice: explicit cookie > account preference > night. */
 export function effectiveChoice(
   cookieVal: string | undefined | null,
   userTheme: string | undefined | null
 ): ThemeChoice {
-  return isThemeChoice(cookieVal) ? cookieVal : isThemeChoice(userTheme) ? userTheme : "auto";
+  return isThemeChoice(cookieVal) ? cookieVal : isThemeChoice(userTheme) ? userTheme : "midnight";
 }
 
 /** Resolves a choice into an applied theme (auto → based on the given hour). */
@@ -46,7 +46,7 @@ export function resolveTheme(choice: string | null | undefined, hour: number): T
 
 /** Preview swatches (background · line · accent) for the selector. */
 export const THEME_SWATCH: Record<ThemeChoice, [string, string, string]> = {
-  auto: ["#f6f4f1", "#191b26", "#d23b28"],
-  midnight: ["#191b26", "#2c3044", "#ff9e64"],
-  mecha: ["#f6f4f1", "#e4ded9", "#d23b28"],
+  auto: ["#f3f4f6", "#07090d", "#ff7a59"],
+  midnight: ["#07090d", "#1b222e", "#ff7a59"],
+  mecha: ["#f3f4f6", "#dde1e7", "#d9482a"],
 };

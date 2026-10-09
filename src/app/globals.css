@@ -1,137 +1,101 @@
 @import "tailwindcss";
 
 /* ══════════════════════════════════════════════════════════════════════
-   Two slopes of the same hour — both are Tokyo Night.
+   Diffusion — ppush's art direction.
 
-   NIGHT "Yoake" (夜明け, daybreak)        → data-theme="midnight"
-         Slate base #191b26, surfaces that lift off the background,
-         accent = dawn orange #ff9e64.
-   DAY   "Hinode" (日の出, sunrise)        → data-theme="mecha"
-         Warm ivory paper #f6f4f1 (never pure white: it vibrates under
-         vermilion), night-blue ink kept from the dark slope,
-         accent = vermilion #d23b28.
+   The visual story: what you type is ordered; what goes to the server
+   is disorder (a cloud of particles, maximum entropy). Only the link's key
+   can condense it back. The send and receive screens stage this
+   movement (src/components/diffusion/); the other pages only keep
+   discreet echoes of it (background dust, empty-state cloud).
 
-   The technical ids stay `midnight` / `mecha`: they are written to the
-   `theme` cookie and to User.theme in the database — renaming them would
-   drop existing preferences. Only the displayed labels change
-   (messages/*.json → themes.*).
+   NIGHT → data-theme="midnight" (default): blue-black, cool ink, coral.
+   DAY   → data-theme="mecha": light grey paper, near-black ink, coral
+           darkened to hold contrast on a light background.
+
+   The technical ids stay `midnight` / `mecha`: they are written
+   in the cookies already set and in User.theme in the database — renaming them would break
+   existing preferences. Only the displayed labels change.
    ══════════════════════════════════════════════════════════════════════ */
 
 @theme {
-  /* default = Yoake (night) */
-  --color-bg: #191b26;
-  --color-bg-soft: #14161f;
-  --color-panel: #232636;
-  --color-panel-soft: #2c3044;
-  --color-line: #2e3348;
-  --color-line-soft: #3d4360;
+  /* default = night */
+  --color-bg: #07090d;
+  --color-bg-soft: #0b0f15;
+  --color-panel: #0e131b;
+  --color-panel-soft: #141a24;
+  --color-line: #1b222e;
+  --color-line-soft: #2a3342;
 
-  --color-ink: #d2daf8;
-  --color-ink-dim: #9aa4c8;
-  --color-ink-faint: #727c9f;
+  --color-ink: #e4e9f0;
+  --color-ink-dim: #a9b2c0;
+  --color-ink-faint: #7c8696;
 
-  --color-accent: #ff9e64;
-  --color-accent-soft: #ffbe93;
-  --color-accent-deep: #e8763f;
+  --color-accent: #ff7a59;
+  --color-accent-soft: #ff9a7e;
+  --color-accent-deep: #e85e3c;
 
-  --color-ok: #9ece6a;
-  --color-warn: #e0af68;
-  --color-danger: #f7768e;
+  --color-ok: #6fd3a0;
+  --color-warn: #e8b65c;
+  --color-danger: #ff6b81;
 
-  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
-  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+  --font-display: var(--font-geologica), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-geologica), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-azeret), ui-monospace, monospace;
 }
 
-/* Derived effects (not Tailwind utilities), themeable. Defaults = Yoake. */
+/* Derived effects (outside Tailwind utilities), themable. Values = night. */
 :root {
-  --accent-glow: color-mix(in srgb, var(--color-accent) 45%, transparent);
-
-  /* ink laid ON the accent: the light orange is far too bright for white
-     text (~2:1) — dark ink on it at night, the reverse in daylight */
-  --on-accent: #1c1319;
-
-  /* top hairline of cards: a cool reflection at night, an accent thread by day */
-  --card-edge: rgba(206, 216, 250, 0.28);
-
-  /* atmosphere: slow nebulae + the dawn glow at the foot of the viewport */
-  --sky-top: #1e2231;
-  --neb-a: color-mix(in srgb, #8cb0ff 42%, transparent);
-  --neb-b: color-mix(in srgb, #bb9af7 34%, transparent);
-  --neb-c: color-mix(in srgb, var(--color-accent) 30%, transparent);
-  --horizon-a: color-mix(in srgb, var(--color-accent) 15%, transparent);
-  --horizon-b: color-mix(in srgb, var(--color-danger) 7%, transparent);
-  --grain-op: 0.05;
-  --grain-blend: overlay;
-  --shadow-card: 0 24px 60px -24px rgba(0, 0, 0, 0.7);
-
-  /* Sleeping cat of the empty states (.sc-*): outline and fill. */
-  --mc-stroke: var(--color-line-soft);
-  --mc-fill: var(--color-panel-soft);
+  --accent-glow: color-mix(in srgb, var(--color-accent) 40%, transparent);
+  /* ink placed ON the accent */
+  --on-accent: #1a0a05;
+  /* colors read by the canvases (particles): they cannot see Tailwind */
+  --fx-ink: #e4e9f0;
+  --fx-accent: #ff7a59;
+  --fx-line: rgba(228, 233, 240, 0.32);
+  --dust-op: 0.55;
 }
 
-/* ── HINODE · the light slope ─────────────────────────────────────────
-   Not an inversion of the dark one: the ink stays night-blue and the
-   ground is warm ivory — that is what keeps both themes related. Red is
-   reserved for action, so alerts move to raspberry; otherwise "delete"
-   and "confirm" would wear the same colour.
-   Tailwind utilities read var(--color-*): redefining these variables
-   here flips the whole UI by cascade. */
 html[data-theme="mecha"] {
   color-scheme: light;
 
-  --color-bg: #f6f4f1;
-  --color-bg-soft: #fffdfc;
-  --color-panel: #fffdfc;
-  --color-panel-soft: #f2ebe7;
-  --color-line: #e4ded9;
-  --color-line-soft: #cfc7c1;
+  --color-bg: #f3f4f6;
+  --color-bg-soft: #eceef2;
+  --color-panel: #ffffff;
+  --color-panel-soft: #f6f7f9;
+  --color-line: #dde1e7;
+  --color-line-soft: #c5ccd6;
 
-  --color-ink: #2a2c3d;
-  --color-ink-dim: #5a5d75;
-  --color-ink-faint: #84808f;
+  --color-ink: #0f141c;
+  --color-ink-dim: #46505f;
+  --color-ink-faint: #6b7483;
 
-  /* vermilion; the "soft" variant DARKENS instead of lightening — it is
-     the accent text colour on light ground (text-accent-soft) and the hover */
-  --color-accent: #d23b28;
-  --color-accent-soft: #b8301f;
-  --color-accent-deep: #8f2115;
+  /* darkened coral: text and buttons must hold 4.5:1 on a light background */
+  --color-accent: #d9482a;
+  --color-accent-soft: #b53a1f;
+  --color-accent-deep: #8f2a13;
 
-  --color-ok: #2f7d43;
-  --color-warn: #9a6410;
-  --color-danger: #b52a4e;
+  --color-ok: #1f7a4d;
+  --color-warn: #8a5a00;
+  --color-danger: #b3263e;
 
-  --accent-glow: color-mix(in srgb, var(--color-accent) 32%, transparent);
-  --on-accent: #fffaf8;
-  --card-edge: color-mix(in srgb, var(--color-accent) 30%, transparent);
-
-  --sky-top: #fffdfa;
-  --neb-a: color-mix(in srgb, var(--color-accent) 8%, transparent);
-  --neb-b: color-mix(in srgb, #33509f 14%, transparent);
-  --neb-c: color-mix(in srgb, #f0a15e 15%, transparent);
-  --horizon-a: color-mix(in srgb, var(--color-accent) 8%, transparent);
-  --horizon-b: color-mix(in srgb, #f0a15e 6%, transparent);
-  --grain-op: 0.035;
-  --grain-blend: multiply;
-  --shadow-card: 0 18px 44px -22px rgba(94, 64, 54, 0.16);
-
-  /* firm outline: the cat has to stand off the paper */
-  --mc-stroke: #a9a3ad;
-  --mc-fill: #ffffff;
+  --accent-glow: color-mix(in srgb, var(--color-accent) 25%, transparent);
+  --on-accent: #ffffff;
+  --fx-ink: #1a2230;
+  --fx-accent: #d9482a;
+  --fx-line: rgba(15, 20, 28, 0.28);
+  --dust-op: 0.45;
 }
 
 html {
   color-scheme: dark;
-  /* always reserve the scrollbar gutter: prevents centred content from
-     shifting horizontally between a scrolling page and a short one (e.g.
-     account tabs: long Pushes/Security vs short Account) */
+  /* always reserve the scrollbar gutter: avoids a horizontal shift
+     of centered content between a scrolling page and a short one */
   scrollbar-gutter: stable;
+  background: var(--color-bg);
 }
 
 body {
-  /* no `background` here: an opaque background on <body> paints over the
-     atmosphere layers (negative z-index) and would hide them. The page
-     ground is carried by <html> below. */
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -139,96 +103,38 @@ body {
 
 h1, h2, h3, h4 {
   font-family: var(--font-display);
-  letter-spacing: -0.025em;
+  letter-spacing: -0.035em;
   text-wrap: balance;
 }
-
-/* root background: keeps the <body> background from propagating to the
-   canvas — otherwise the halo positions itself against the viewport
-   instead of the document (misplaced on long / non-home pages) */
-html { background: var(--color-bg); }
 
 ::selection {
   background: color-mix(in srgb, var(--color-accent) 35%, transparent);
 }
 
-/* ══════════════════════════════════════════════════════════════════════
-   Atmosphere (src/components/ambient.tsx) — three nebulae drifting over
-   ~1 min, a dawn glow anchored at the bottom of the viewport, and a grain
-   layer that breaks up the gradients. All `fixed` behind the content: no
-   layout cost, and the halo no longer drifts on long pages.
-   ══════════════════════════════════════════════════════════════════════ */
-.sky {
-  position: fixed;
-  inset: 0;
-  z-index: -2;
-  overflow: hidden;
-  background: radial-gradient(120% 80% at 50% -10%, var(--sky-top) 0%, var(--color-bg) 45%, var(--color-bg-soft) 100%);
-}
-.sky i {
-  position: absolute;
-  display: block;
-  border-radius: 50%;
-  filter: blur(90px);
-  opacity: 0.5;
-  will-change: transform;
-}
-.sky .n1 { width: 52vw; height: 52vw; left: -14vw; top: -10vw;
-  background: radial-gradient(circle, var(--neb-a), transparent 68%); animation: drift1 48s ease-in-out infinite; }
-.sky .n2 { width: 46vw; height: 46vw; right: -12vw; top: 8vh;
-  background: radial-gradient(circle, var(--neb-b), transparent 68%); animation: drift2 61s ease-in-out infinite; }
-.sky .n3 { width: 60vw; height: 34vw; left: 18vw; bottom: -16vw;
-  background: radial-gradient(circle, var(--neb-c), transparent 66%); animation: drift3 55s ease-in-out infinite; }
-@keyframes drift1 { 0%, 100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(7vw,5vh,0) scale(1.12); } }
-@keyframes drift2 { 0%, 100% { transform: translate3d(0,0,0) scale(1.05); } 50% { transform: translate3d(-6vw,8vh,0) scale(0.94); } }
-@keyframes drift3 { 0%, 100% { transform: translate3d(0,0,0); } 50% { transform: translate3d(-8vw,-4vh,0); } }
-
-/* the horizon line: the day rising at the foot of the page */
-.horizon {
-  position: fixed;
-  left: 0; right: 0; bottom: 0;
-  height: 38vh;
-  z-index: -2;
-  pointer-events: none;
-  background: linear-gradient(to top, var(--horizon-a) 0%, var(--horizon-b) 32%, transparent 78%);
-}
-.horizon::after {
-  content: "";
-  position: absolute;
-  left: 12%; right: 12%; bottom: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-accent) 50%, transparent), transparent);
+/* Technical label: spaced mono capitals (sections, column
+   headers, visualization captions). */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-faint);
 }
 
-.grain {
+/* Background dust (src/components/ambient.tsx): a few particles drifting
+   behind every page — the most discreet echo of the cloud. */
+.dust {
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  opacity: var(--grain-op);
-  mix-blend-mode: var(--grain-blend);
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/></filter><rect width='140' height='140' filter='url(%23n)'/></svg>");
+  opacity: var(--dust-op);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .sky i { animation: none; }
-}
-
-/* Card surface: a one-pixel hairline on top — cool reflection at night, an
-   accent thread by day — and a drop shadow dosed per theme (a black shadow
-   dirties ivory; on slate it carves depth). */
+/* Card surface: a hairline, no shadow — depth comes from the contrast
+   between background and surface, not from a blur. */
 .surface-card {
   position: relative;
-  box-shadow: var(--shadow-card);
-}
-.surface-card::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto;
-  height: 1px;
-  border-top-left-radius: inherit;
-  border-top-right-radius: inherit;
-  background: linear-gradient(90deg, transparent, var(--card-edge), transparent);
 }
 
 * {
@@ -237,64 +143,35 @@ html { background: var(--color-bg); }
 }
 
 @keyframes fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-
 .animate-fade-up {
   animation: fade-up 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-/* ---- mascot (src/components/cat.tsx) ---- */
+/* Loading: three dots that condense, then scatter. */
+@keyframes condense {
+  0%, 100% { transform: translate(var(--dx), var(--dy)); opacity: 0.25; }
+  50% { transform: translate(0, 0); opacity: 1; }
+}
+.condense-loader { position: relative; display: inline-block; width: 28px; height: 28px; }
+.condense-loader i {
+  position: absolute; left: 12px; top: 12px; width: 4px; height: 4px; border-radius: 50%;
+  background: var(--color-ink); animation: condense 1.4s ease-in-out infinite;
+}
+.condense-loader i:nth-child(1) { --dx: -10px; --dy: -6px; }
+.condense-loader i:nth-child(2) { --dx: 9px; --dy: -8px; animation-delay: 0.15s; background: var(--color-accent); }
+.condense-loader i:nth-child(3) { --dx: 2px; --dy: 10px; animation-delay: 0.3s; }
 
-@keyframes paw-pulse {
-  0%, 60%, 100% { opacity: 0.25; transform: translateY(0); }
-  30% { opacity: 1; transform: translateY(-2px); }
-}
-.animate-paw {
-  display: inline-flex;
-  animation: paw-pulse 1.1s ease-in-out infinite;
+/* Field being encrypted: a brief halo on each keystroke. */
+.pulse-field { box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 26%, transparent); }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up, .condense-loader i { animation: none; }
 }
 
-@keyframes cat-zz {
-  0% { opacity: 0; transform: translate(0, 0); }
-  30% { opacity: 0.9; }
-  100% { opacity: 0; transform: translate(12px, -18px); }
+@keyframes cloud-drift {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(3px, -2px) rotate(2deg); }
 }
-
-/* sleeping cat (empty states) */
-.sc-cat { position: relative; width: 110px; height: 78px; }
-.sc-body { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
-  width: 86px; height: 46px; background: var(--mc-fill);
-  border: 3px solid var(--mc-stroke); border-bottom: none; border-radius: 44px 44px 0 0; }
-.sc-head { position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%);
-  width: 60px; height: 46px; background: var(--mc-fill);
-  border: 3px solid var(--mc-stroke); border-radius: 48% 48% 45% 45%; z-index: 2; }
-.sc-ear { position: absolute; top: -11px; width: 0; height: 0;
-  border-left: 10px solid transparent; border-right: 10px solid transparent;
-  border-bottom: 17px solid var(--mc-stroke); }
-.sc-ear.l { left: 3px; transform: rotate(-12deg); }
-.sc-ear.r { right: 3px; transform: rotate(12deg); }
-.sc-eye { position: absolute; top: 20px; width: 13px; height: 3px;
-  background: var(--color-ink-faint); border-radius: 2px; }
-.sc-eye.l { left: 9px; }
-.sc-eye.r { right: 9px; }
-.sc-nose { position: absolute; top: 27px; left: 50%; transform: translateX(-50%);
-  width: 6px; height: 4px; background: var(--color-accent-soft); border-radius: 40% 40% 60% 60%; }
-.sc-tail { position: absolute; bottom: 2px; right: -16px; width: 40px; height: 12px;
-  border: 3px solid var(--mc-stroke); border-left: none; border-radius: 0 10px 10px 0;
-  background: var(--mc-fill); transform-origin: left center;
-  animation: sc-wag 3.2s ease-in-out infinite; }
-@keyframes sc-wag {
-  0%, 100% { transform: rotate(-8deg); }
-  50% { transform: rotate(14deg); }
-}
-.sc-zzz { position: absolute; top: -8px; right: 14px; font-size: 14px;
-  color: var(--color-ink-faint); opacity: 0; animation: cat-zz 3s ease-in-out infinite; }
-.sc-zzz:nth-of-type(2) { animation-delay: 1s; }

@@ -1,21 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import {
-  ShieldCheck,
-  ShieldOff,
-  Eye,
-  KeyRound,
-  Download,
-  Flame,
-  ExternalLink,
-  AlertTriangle,
-  Lock,
-  Clock,
-  ShieldAlert,
-} from "lucide-react";
+import { Download, Flame, ExternalLink, AlertTriangle, Eye, EyeOff } from "lucide-react";
 import {
   importKey,
   decryptPayload,
@@ -23,9 +11,11 @@ import {
   fromB64Url,
   type SecretPayload,
 } from "@/lib/crypto";
-import { Button, Input, Card, ErrorText, cls } from "./ui";
-import { PawLoader } from "./cat";
+import { formatBytes } from "@/lib/format";
+import type { Locale } from "@/i18n/locale";
+import { Button, Input, ErrorText, CondenseLoader, cls } from "./ui";
 import { CopyButton } from "./copy-button";
+import { DiffusionScene } from "./diffusion/scene";
 
 type Meta = {
   slug: string;
@@ -36,6 +26,7 @@ type Meta = {
   hasPassphrase: boolean;
   fileSize: number | null;
   expiresAt: string;
+  viewsLeft?: number;
 };
 
 type Stage =
@@ -45,11 +36,22 @@ type Stage =
   | "gate" // passphrase and/or retrieval step
   | "revealing"
   | "revealed"
+  | "wiped"
   | "burned"
   | "error";
 
+const WIDE = "(min-width: 1024px)";
+const reduced = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/**
+ * Reception page. The cloud on the right is the encrypted secret waiting
+ * on the server; on open, it takes the shape of the real ciphertext received, then
+ * condenses back into readable characters in the left panel.
+ */
 export function SecretViewer({ slug, autoOpen = false }: { slug: string; autoOpen?: boolean }) {
   const t = useTranslations("viewer");
+  const tr = useTranslations("receive");
+  const tTabs = useTranslations("tabs");
   const [meta, setMeta] = useState<Meta | null>(null);
   const [stage, setStage] = useState<Stage>("loading");
   const [keyB64, setKeyB64] = useState("");
@@ -59,9 +61,71 @@ export function SecretViewer({ slug, autoOpen = false }: { slug: string; autoOpe
   const [viewToken, setViewToken] = useState<string | null>(null);
   const [deletable, setDeletable] = useState(false);
   const [dlProgress, setDlProgress] = useState<number | null>(null);
+  const [formed, setFormed] = useState(false);
+  const [lastView, setLastView] = useState(false);
+
+  // ---- visualisation ----
+  const hostRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const cloudRef = useRef<HTMLDivElement>(null);
+  const actionRef = useRef<HTMLButtonElement>(null);
+  const textRef = useRef<HTMLElement | null>(null);
+  const scene = useRef<DiffusionScene | null>(null);
+  const cipherRef = useRef<Uint8Array | null>(null);
+
+  useEffect(() => {
+    const host = hostRef.current, canvas = canvasRef.current;
+    if (!host || !canvas) return;
+    const sc = new DiffusionScene({
+      direction: "in",
+      host,
+      canvas,
+      cloud: () => cloudRef.current,
+      anchor: () => actionRef.current,
+      stacked: () => !window.matchMedia(WIDE).matches,
+    });
+    scene.current = sc;
+    return () => { sc.destroy(); scene.current = null; };
+  }, []);
+
+  // the cloud appears as soon as we know the secret is waiting on the server
+  useEffect(() => {
+    const sc = scene.current;
+    if (!sc || !meta) return;
+    const raf = requestAnimationFrame(() => {
+      sc.layout();
+      if (meta.expired) sc.clear();
+      else sc.seedCloud(slug, Math.min(96, 24 + Math.round((meta.fileSize ?? 0) / 4096)));
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [meta, slug]);
+
+  // after display: the cloud writes the secret, then fades (or re-forms
+  // if views remain: the encrypted block is still on the server)
+  useEffect(() => {
+    if (stage !== "revealed") return;
+    const sc = scene.current;
+    let t1: ReturnType<typeof setTimeout> | undefined, t2: ReturnType<typeof setTimeout> | undefined;
+    const raf = requestAnimationFrame(() => {
+      if (!sc) { setFormed(true); return; }
+      sc.layout();
+      if (cipherRef.current) sc.reshape(cipherRef.current);
+      t1 = setTimeout(() => {
+        if (textRef.current) sc.condense(textRef.current);
+        if (!window.matchMedia(WIDE).matches) textRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        t2 = setTimeout(() => {
+          sc.settle();
+          setFormed(true);
+          if (!lastView) setTimeout(() => scene.current?.seedCloud(slug, 48), 900);
+        }, reduced() ? 0 : 1800);
+      }, reduced() ? 0 : 350);
+    });
+    return () => { cancelAnimationFrame(raf); if (t1) clearTimeout(t1); if (t2) clearTimeout(t2); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage]);
 
   // switch the screen to "expired" when the countdown reaches zero
-  const expire = useCallback(() => setStage("expired"), []);
+  const expire = useCallback(() => { setStage("expired"); scene.current?.clear(); }, []);
 
   const reveal = useCallback(
     async (metaArg?: Meta, keyArg?: string) => {
@@ -78,7 +142,7 @@ export function SecretViewer({ slug, autoOpen = false }: { slug: string; autoOpe
         });
         const data = await res.json();
         if (!res.ok) {
-          if (res.status === 410) return setStage("expired");
+          if (res.status === 410) { scene.current?.clear(); return setStage("expired"); }
           setError(data.error ?? t("serverError"));
           return setStage("gate");
         }
@@ -87,9 +151,12 @@ export function SecretViewer({ slug, autoOpen = false }: { slug: string; autoOpe
           data.ciphertext.replace(/\+/g, "-").replace(/\//g, "_")
         );
         const decrypted = await decryptPayload(key, bytes);
+        cipherRef.current = bytes;
+        setLastView((m.viewsLeft ?? 1) <= 1);
         setPayload(decrypted);
         setViewToken(data.viewToken ?? null);
         setDeletable(data.deletableByViewer);
+        setFormed(false);
         setStage("revealed");
       } catch {
         setError(t("decryptFailed"));
@@ -149,14 +216,14 @@ export function SecretViewer({ slug, autoOpen = false }: { slug: string; autoOpe
       const res = await fetch(`/api/p/${slug}/blob`, {
         headers: { "x-view-token": viewToken },
       });
-      if (!res.ok || !res.body) throw new Error("Download failed");
+      if (!res.ok || !res.body) throw new Error("download");
       const blob = await decryptFileStream(key, res.body, payload.mime ?? "", (b) =>
         setDlProgress(payload.size ? Math.min(100, Math.round((b / payload.size) * 100)) : 0)
       );
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = payload.name ?? "fichier";
+      a.download = payload.name ?? "file";
       a.click();
       URL.revokeObjectURL(url);
       setDlProgress(100);
@@ -175,306 +242,261 @@ export function SecretViewer({ slug, autoOpen = false }: { slug: string; autoOpe
   async function burn() {
     if (!confirm(t("burnConfirm"))) return;
     const res = await fetch(`/api/p/${slug}/burn`, { method: "POST" });
-    if (res.ok) setStage("burned");
+    if (res.ok) { setStage("burned"); scene.current?.clear(); }
   }
 
-  // ---- renders by state ----
+  // ---- left column, by state ----
+  const last = (meta?.viewsLeft ?? 1) <= 1;
+  let left: React.ReactNode;
 
   if (stage === "loading") {
-    return (
-      <Card className="p-10 text-center">
-        <PawLoader />
-      </Card>
+    left = <div className="py-16"><CondenseLoader /></div>;
+  } else if (stage === "expired" || stage === "burned") {
+    left = (
+      <View eyebrow={tr("goneEyebrow")} title={stage === "burned" ? t("burnedTitle") : t("expiredTitle")}>
+        <p className="max-w-[48ch] text-[17px] text-ink-dim">{stage === "burned" ? t("burnedBody") : t("expiredBody")}</p>
+        {stage === "expired" && <p className="max-w-[52ch] text-sm text-ink-faint">{tr("goneHint")}</p>}
+      </View>
     );
-  }
-
-  if (stage === "expired" || stage === "burned") {
-    return (
-      <div className="animate-fade-up">
-        <Card className="p-10 text-center">
-          <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-danger/10 border border-danger/25">
-            <ShieldOff className="size-7 text-danger" />
-          </div>
-          <h1 className="mt-4 text-xl font-semibold">
-            {stage === "burned" ? t("burnedTitle") : t("expiredTitle")}
-          </h1>
-          <p className="mt-2 text-sm text-ink-faint">
-            {stage === "burned" ? t("burnedBody") : t("expiredBody")}
-          </p>
-        </Card>
-
-        {/* Invitation to try ppush / learn more */}
-        <div className="mt-5 rounded-2xl border border-line bg-panel/40 p-5 text-center">
-          <p className="text-sm font-medium text-ink">{t("expiredInviteTitle")}</p>
-          <p className="mx-auto mt-1 max-w-sm text-xs text-ink-dim">{t("expiredInviteText")}</p>
-          <div className="mt-4 flex flex-wrap justify-center gap-2.5">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-sm font-medium text-[var(--on-accent)] shadow-[0_4px_20px_-4px_var(--accent-glow)] transition-all hover:bg-accent-soft"
-            >
-              <Lock className="size-4" />
-              {t("thanksCreate")}
-            </Link>
-            <Link
-              href="/about"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-line px-4 py-2 text-sm text-ink-dim transition-colors hover:border-line-soft hover:text-ink"
-            >
-              {t("thanksAbout")}
-            </Link>
-          </div>
-        </div>
-      </div>
+  } else if (stage === "no-key") {
+    left = (
+      <View eyebrow={tr("goneEyebrow")} title={t("noKeyTitle")}>
+        <p className="max-w-[52ch] text-[17px] text-ink-dim">{t.rich("noKeyBody", { code: (c) => <code className="font-mono text-ink">{c}</code> })}</p>
+      </View>
     );
-  }
-
-  if (stage === "no-key") {
-    return (
-      <Card className="p-10 text-center animate-fade-up">
-        <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-warn/10 border border-warn/25">
-          <AlertTriangle className="size-7 text-warn" />
-        </div>
-        <h1 className="mt-4 text-xl font-semibold">{t("noKeyTitle")}</h1>
-        <p className="mt-2 text-sm text-ink-faint">
-          {t.rich("noKeyBody", { code: (chunks) => <code>{chunks}</code> })}
+  } else if (stage === "error") {
+    left = <View eyebrow={tr("eyebrow")} title={t("serverError")} />;
+  } else if (stage === "wiped") {
+    left = (
+      <View eyebrow={tr("wipedEyebrow")} title={lastView ? tr("wipedTitleLast") : tr("wipedTitle")} ok>
+        <p className="text-[17px] text-ink-dim">{tr("wipedBody")}</p>
+      </View>
+    );
+  } else if (stage === "gate" || stage === "revealing") {
+    left = (
+      <View eyebrow={tr("eyebrow")} title={tr("title")}>
+        <p className="-mt-1 max-w-[46ch] text-[17px] text-ink-dim">
+          {tr.rich(last ? "ledeOnce" : "ledeMany", { b: (c) => <b className="font-medium text-ink">{c}</b> })}
         </p>
-      </Card>
-    );
-  }
-
-  if (stage === "error") {
-    return (
-      <Card className="p-10 text-center">
-        <p className="text-sm text-danger">{t("serverError")}</p>
-      </Card>
-    );
-  }
-
-  if (stage === "gate" || stage === "revealing") {
-    return (
-      <Card className="relative p-8 text-center animate-fade-up">
-        <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-accent/10 border border-accent/25">
-          {meta?.hasPassphrase ? (
-            <KeyRound className="size-7 text-accent-soft" />
-          ) : (
-            <Eye className="size-7 text-accent-soft" />
-          )}
-        </div>
-        <h1 className="mt-4 text-xl font-semibold">{t("gateTitle")}</h1>
-        <p className="mt-2 text-sm text-ink-faint">
-          {meta?.hasPassphrase ? t("gatePassphrase") : t("gateReveal")}
-        </p>
-
-        {meta?.expiresAt && <Countdown expiresAt={meta.expiresAt} onExpire={expire} />}
-
-        {/* Security preamble: helps the recipient decide whether to open */}
-        <div className="mt-5 rounded-xl border border-warn/25 bg-warn/[0.06] p-4 text-left">
-          <p className="flex items-center gap-1.5 text-xs font-semibold text-warn">
-            <ShieldAlert className="size-3.5 shrink-0" />
-            {t("safetyTitle")}
-          </p>
-          <p className="mt-1.5 text-xs leading-relaxed text-ink-dim">{t("safetyCaution")}</p>
-          <p className="mt-2 text-xs leading-relaxed text-ink-dim">{t("safetyTrust")}</p>
-        </div>
-
-        {meta?.hasPassphrase && (
-          <Input
-            type="password"
-            value={passphrase}
-            onChange={(e) => setPassphrase(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && reveal()}
-            placeholder={t("passphrasePlaceholder")}
-            className="mt-5 text-center"
-            autoFocus
-          />
+        {meta && (
+          <ul className="grid grid-cols-3 overflow-hidden rounded-2xl border border-line">
+            <Fact label={tr("factKind")} value={tTabs(meta.kind as "PASSWORD")} />
+            <Fact label={tr("factExpires")} value={<Remaining expiresAt={meta.expiresAt} onExpire={expire} />} />
+            <Fact label={tr("factViews")} value={tr("viewsLeft", { count: meta.viewsLeft ?? 1 })} />
+          </ul>
         )}
-
-        {error && <div className="mt-4"><ErrorText>{error}</ErrorText></div>}
-
+        {meta?.hasPassphrase && (
+          <label className="flex flex-col gap-2">
+            <span className="eyebrow">{tr("passLabel")}</span>
+            <Input
+              type="password"
+              value={passphrase}
+              onChange={(e) => { setPassphrase(e.target.value); setError(""); }}
+              onKeyDown={(e) => e.key === "Enter" && passphrase && reveal()}
+              placeholder={tr("passPlaceholder")}
+              className={cls("min-h-14 text-[17px] sm:text-[17px]", error && "border-accent")}
+              autoFocus
+            />
+          </label>
+        )}
+        <ErrorText>{error}</ErrorText>
         <Button
+          ref={actionRef}
           onClick={() => reveal()}
           loading={stage === "revealing"}
-          className="mt-5 w-full py-3"
+          className="min-h-14 w-full text-base"
           disabled={meta?.hasPassphrase && !passphrase}
         >
           <Eye className="size-4" />
           {t("reveal")}
         </Button>
-
-        <p className="mt-4 flex items-center justify-center gap-1.5 text-xs text-ink-faint">
-          <ShieldCheck className="size-3.5 text-ok" />
-          {t("localNote")}
-        </p>
-      </Card>
+        <p className="text-sm text-ink-faint">{last ? tr("revealHintLast") : tr("revealHint")}</p>
+        <details className="border-t border-line pt-3 text-sm text-ink-dim">
+          <summary className="cursor-pointer font-medium text-ink">{tr("unsure")}</summary>
+          <p className="mt-2 max-w-[52ch]">{tr("unsureBody")}</p>
+        </details>
+      </View>
+    );
+  } else {
+    // revealed
+    left = (
+      <View eyebrow={lastView ? tr("shownEyebrowLast") : tr("shownEyebrow")} title={tr("shownTitle")} ok>
+        <div className="flex flex-col gap-3.5 rounded-2xl border border-line bg-panel p-4 sm:p-5">
+          {payload?.t === "URL" ? (
+            <UrlReveal url={payload.d} autoOpen={autoOpen && formed} formed={formed} textRef={textRef} />
+          ) : payload?.t === "FILE" ? (
+            <FileReveal payload={payload} formed={formed} textRef={textRef} progress={dlProgress} onDownload={downloadFile} />
+          ) : (
+            <SecretBox value={payload?.d ?? ""} formed={formed} textRef={textRef} />
+          )}
+        </div>
+        <div className={cls("flex flex-col gap-3.5 transition-[opacity,transform] delay-100 duration-500", formed ? "opacity-100" : "translate-y-1.5 opacity-0")}>
+          <ErrorText>{error}</ErrorText>
+          <p className="rounded-[10px] bg-accent/10 px-3.5 py-3 text-[15px] text-ink">{lastView ? tr("copyNowLast") : tr("copyNow")}</p>
+          {lastView && (
+            <p className="flex items-start gap-2.5 text-[15px] text-ink-dim">
+              <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden className="mt-1 flex-none text-ok">
+                <circle cx="8" cy="8" r="7.5" fill="none" stroke="currentColor" />
+                <path d="M4.5 8.2l2.3 2.3 4.7-4.9" fill="none" stroke="currentColor" strokeWidth="1.6" />
+              </svg>
+              {tr("goneServer")}
+            </p>
+          )}
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <Button variant="ghost" onClick={() => { setPayload(null); setStage("wiped"); }}>
+              {tr("wipe")}
+            </Button>
+            {deletable && !lastView && (
+              <button onClick={burn} className="inline-flex items-center gap-1.5 text-sm font-medium text-danger hover:text-danger/80 cursor-pointer">
+                <Flame className="size-3.5" />
+                {t("burnAction")}
+              </button>
+            )}
+          </div>
+        </div>
+      </View>
     );
   }
 
-  // revealed: the secret arrived safely
+  const serverEmpty = stage === "expired" || stage === "burned" || stage === "no-key" || stage === "wiped" || (stage === "revealed" && lastView && formed);
+
   return (
-    <div className="animate-fade-up">
-      <Card className="relative p-8">
-        <div className="flex items-center gap-3">
-          <span className="grid size-10 place-items-center rounded-xl bg-ok/10 border border-ok/25">
-            <ShieldCheck className="size-5 text-ok" />
-          </span>
-          <div>
-            <h1 className="font-semibold">{t("revealedTitle")}</h1>
-            <p className="text-xs text-ink-faint">{t("revealedNote")}</p>
-          </div>
+    <div ref={hostRef} className="relative mx-auto w-full max-w-6xl flex-1 px-4 pb-10 pt-6 sm:px-6">
+      <canvas ref={canvasRef} aria-hidden className="pointer-events-none absolute inset-0 z-[6] h-full w-full" />
+      <div className="grid gap-x-16 gap-y-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.1fr)]">
+        <div className="relative z-[4] min-w-0">
+          {left}
+          <p className="mt-6 text-sm text-ink-faint">
+            {tr.rich("footCta", { link: (c) => <Link href="/" className="font-medium text-ink-dim underline underline-offset-2 hover:text-ink">{c}</Link> })}
+          </p>
         </div>
-
-        <div className="mt-6">
-          {payload?.t === "URL" ? (
-            <UrlReveal url={payload.d} autoOpen={autoOpen} />
-          ) : payload?.t === "FILE" ? (
-            <div className="rounded-xl border border-line bg-bg-soft p-5 text-center">
-              <p className="font-medium text-ink break-all">{payload.name}</p>
-              <p className="mt-1 text-xs text-ink-faint">
-                {payload.size ? t("fileSize", { size: (payload.size / 1024 / 1024).toFixed(2) }) : ""}
-              </p>
-              {dlProgress !== null && dlProgress < 100 && (
-                <div className="mx-auto mt-3 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-line">
-                  <div
-                    className="h-full bg-accent transition-all"
-                    style={{ width: `${dlProgress}%` }}
-                  />
-                </div>
-              )}
-              <Button
-                onClick={downloadFile}
-                className="mt-4"
-                disabled={dlProgress !== null && dlProgress < 100}
-              >
-                <Download className="size-4" />
-                {dlProgress === 100
-                  ? t("downloaded")
-                  : dlProgress !== null
-                    ? t("decryptingPct", { pct: dlProgress })
-                    : t("download")}
-              </Button>
+        <section aria-label={tr("zoneAria")} className="relative z-[4] order-first flex min-h-[200px] min-w-0 flex-col lg:order-none lg:min-h-[460px]">
+          <div className="flex justify-between gap-3 eyebrow">
+            <span>{serverEmpty ? tr("zoneGone") : tr("zone")}</span>
+            <span className="text-accent">AES-256-GCM</span>
+          </div>
+          <div ref={cloudRef} className="grid min-h-[150px] flex-1 place-items-center">
+            <p className={cls("text-[15px] text-ink-faint transition-opacity duration-700", serverEmpty ? "opacity-100" : "opacity-0")}>
+              {tr("zoneGone")}
+            </p>
+          </div>
+          {!serverEmpty && (
+            <div className="hidden flex-col gap-1 border-t border-line pt-3 font-mono text-xs text-ink-faint lg:flex">
+              <span>{tr("metaUnreadable")}</span>
+              <span>{tr("metaKey")}</span>
             </div>
-          ) : (
-            <SecretText value={payload?.d ?? ""} mono={payload?.t === "PASSWORD"} />
           )}
-        </div>
-
-        {error && <div className="mt-4"><ErrorText>{error}</ErrorText></div>}
-
-        {deletable && (
-          <div className="mt-6 border-t border-line pt-4 text-center">
-            <button
-              onClick={burn}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-danger transition-colors hover:text-danger/80 cursor-pointer"
-            >
-              <Flame className="size-3.5" />
-              {t("burnAction")}
-            </button>
-          </div>
-        )}
-      </Card>
-
-      <div className="mt-5 rounded-2xl border border-line bg-panel/40 p-5 text-center">
-        <p className="text-sm font-medium text-ink">{t("thanksTitle")}</p>
-        <p className="mx-auto mt-1 max-w-sm text-xs text-ink-dim">{t("thanksText")}</p>
-        <div className="mt-4 flex flex-wrap justify-center gap-2.5">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-sm font-medium text-[var(--on-accent)] shadow-[0_4px_20px_-4px_var(--accent-glow)] transition-all hover:bg-accent-soft"
-          >
-            <Lock className="size-4" />
-            {t("thanksCreate")}
-          </Link>
-          <Link
-            href="/about"
-            className="inline-flex items-center gap-1.5 rounded-xl border border-line px-4 py-2 text-sm text-ink-dim transition-colors hover:border-line-soft hover:text-ink"
-          >
-            {t("thanksAbout")}
-          </Link>
-        </div>
+        </section>
       </div>
     </div>
   );
 }
 
-/** Countdown before expiry — nudges the recipient to open quickly. */
-function Countdown({ expiresAt, onExpire }: { expiresAt: string; onExpire: () => void }) {
-  const t = useTranslations("viewer");
-  const locale = useLocale();
+function View({ eyebrow, title, ok, children }: { eyebrow: string; title: string; ok?: boolean; children?: React.ReactNode }) {
+  return (
+    <section className="flex flex-col gap-4 animate-fade-up">
+      <p className={cls("eyebrow !text-accent", ok && "!text-ok")}>{eyebrow}</p>
+      <h1 className="text-[clamp(28px,3.3vw,42px)] font-bold leading-[1.05]">{title}</h1>
+      {children}
+    </section>
+  );
+}
+
+function Fact({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <li className="flex min-w-0 flex-col gap-0.5 border-l border-line px-3 py-2.5 first:border-l-0 sm:px-3.5 sm:py-3">
+      <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-ink-faint sm:text-[11px]">{label}</span>
+      <b className="text-[15px] font-medium tabular-nums sm:text-[17px]">{value}</b>
+    </li>
+  );
+}
+
+/** Time left before expiry; switches the screen to "expired" at zero. */
+function Remaining({ expiresAt, onExpire }: { expiresAt: string; onExpire: () => void }) {
+  const td = useTranslations("diffusion");
+  // spelled out for the recipient: "1 day", "5 hours"
+  const longDelay = (ms: number) => {
+    const min = Math.ceil(ms / 60_000);
+    if (min < 1440) return td("dHour", { n: Math.ceil(min / 60) });
+    return td("dDay", { n: Math.floor(min / 1440) });
+  };
   const target = new Date(expiresAt).getTime();
   const [now, setNow] = useState(() => Date.now());
-
   useEffect(() => {
     const id = setInterval(() => {
-      const left = target - Date.now();
-      setNow(Date.now());
-      if (left <= 0) {
-        clearInterval(id);
-        onExpire();
-      }
+      const n = Date.now();
+      setNow(n);
+      if (target - n <= 0) { clearInterval(id); onExpire(); }
     }, 1000);
     return () => clearInterval(id);
   }, [target, onExpire]);
+  const left = Math.max(0, target - now);
+  if (left < 3_600_000) {
+    const m = Math.floor(left / 60_000), s = Math.floor(left / 1000) % 60;
+    return <span className={left < 300_000 ? "text-danger" : "text-warn"}>{`${m}:${String(s).padStart(2, "0")}`}</span>;
+  }
+  return <>{longDelay(left)}</>;
+}
 
-  const total = Math.max(0, target - now);
-  const s = Math.floor(total / 1000) % 60;
-  const m = Math.floor(total / 60_000) % 60;
-  const h = Math.floor(total / 3_600_000) % 24;
-  const d = Math.floor(total / 86_400_000);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const time =
-    d > 0
-      ? `${d}${locale === "fr" ? "j" : "d"} ${pad(h)}:${pad(m)}:${pad(s)}`
-      : `${pad(h)}:${pad(m)}:${pad(s)}`;
-
-  const urgent = total <= 60 * 60_000; // < 1 h
-  const critical = total <= 5 * 60_000; // < 5 min
-
+function SecretBox({ value, formed, textRef }: { value: string; formed: boolean; textRef: React.RefObject<HTMLElement | null> }) {
+  const t = useTranslations("viewer");
+  const tr = useTranslations("receive");
+  const [masked, setMasked] = useState(false);
   return (
-    <div
-      className={cls(
-        "mt-5 flex flex-col items-center gap-1 rounded-xl border px-4 py-3",
-        critical
-          ? "border-danger/40 bg-danger/10"
-          : urgent
-            ? "border-warn/40 bg-warn/10"
-            : "border-line bg-bg-soft/60"
-      )}
-    >
-      <span className="flex items-center gap-1.5 text-xs text-ink-faint">
-        <Clock className="size-3.5" /> {t("countdownLabel")}
-      </span>
-      <span
+    <>
+      <p
+        ref={(el) => { textRef.current = el; }}
         className={cls(
-          "font-mono text-2xl font-semibold tabular-nums tracking-wider",
-          critical
-            ? "text-danger animate-pulse"
-            : urgent
-              ? "text-warn"
-              : "text-accent-soft"
+          "m-0 max-h-80 min-h-[1.6em] overflow-auto whitespace-pre-wrap break-all font-mono text-[clamp(17px,2vw,22px)] leading-relaxed transition-colors duration-700",
+          formed ? "text-ink" : "text-transparent"
         )}
       >
-        {time}
-      </span>
-      <span className="text-[11px] text-ink-faint">{t("countdownHint")}</span>
-    </div>
+        {masked ? "•".repeat(Math.min(value.length, 64)) : value}
+      </p>
+      <div className={cls("flex flex-wrap items-center gap-2.5 transition-opacity duration-500", formed ? "opacity-100" : "opacity-0")}>
+        <CopyButton value={value} label={t("copySecret")} big className="min-h-12 px-6" />
+        <Button variant="ghost" onClick={() => setMasked(!masked)} className="min-h-12">
+          {masked ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
+          {masked ? tr("unmask") : tr("mask")}
+        </Button>
+      </div>
+    </>
   );
 }
 
-function SecretText({ value, mono }: { value: string; mono: boolean }) {
-  const tSecret = useTranslations("viewer")("copySecret");
+function FileReveal({
+  payload,
+  formed,
+  textRef,
+  progress,
+  onDownload,
+}: {
+  payload: SecretPayload;
+  formed: boolean;
+  textRef: React.RefObject<HTMLElement | null>;
+  progress: number | null;
+  onDownload: () => void;
+}) {
+  const t = useTranslations("viewer");
+  const locale = useLocale() as Locale;
   return (
-    <div className="space-y-3">
-      <div
-        className={cls(
-          "max-h-80 overflow-auto whitespace-pre-wrap break-all rounded-xl border border-line bg-bg-soft px-4 py-3 text-sm",
-          mono && "font-mono text-base tracking-wide"
-        )}
-      >
-        {value}
+    <>
+      <p ref={(el) => { textRef.current = el; }} className={cls("m-0 break-all font-mono text-lg transition-colors duration-700", formed ? "text-ink" : "text-transparent")}>
+        {payload.name}
+      </p>
+      {payload.size ? <p className="-mt-2 font-mono text-xs text-ink-faint">{formatBytes(payload.size, locale)}</p> : null}
+      {progress !== null && progress < 100 && (
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-line">
+          <div className="h-full bg-accent transition-all" style={{ width: `${progress}%` }} />
+        </div>
+      )}
+      <div className={cls("transition-opacity duration-500", formed ? "opacity-100" : "opacity-0")}>
+        <Button onClick={onDownload} className="min-h-12 px-6" disabled={progress !== null && progress < 100}>
+          <Download className="size-4" />
+          {progress === 100 ? t("downloaded") : progress !== null ? t("decryptingPct", { pct: progress }) : t("download")}
+        </Button>
       </div>
-      <div className="flex justify-center">
-        <CopyButton value={value} label={tSecret} big />
-      </div>
-    </div>
+    </>
   );
 }
 
@@ -496,7 +518,17 @@ function isNavigable(raw: string): boolean {
   }
 }
 
-function UrlReveal({ url, autoOpen }: { url: string; autoOpen: boolean }) {
+function UrlReveal({
+  url,
+  autoOpen,
+  formed,
+  textRef,
+}: {
+  url: string;
+  autoOpen: boolean;
+  formed: boolean;
+  textRef: React.RefObject<HTMLElement | null>;
+}) {
   const t = useTranslations("viewer");
 
   const navigable = typeof window !== "undefined" && isNavigable(url);
@@ -512,7 +544,7 @@ function UrlReveal({ url, autoOpen }: { url: string; autoOpen: boolean }) {
         return false;
       }
     })();
-  const auto = navigable && (sameOrigin || autoOpen);
+  const auto = navigable && formed && (sameOrigin || autoOpen);
 
   const [count, setCount] = useState(5);
   useEffect(() => {
@@ -526,24 +558,26 @@ function UrlReveal({ url, autoOpen }: { url: string; autoOpen: boolean }) {
   }, [auto, count, url]);
 
   return (
-    <div className="rounded-xl border border-line bg-bg-soft p-5 text-center">
-      <p className="break-all font-mono text-sm text-accent-soft">{url}</p>
+    <>
+      <p ref={(el) => { textRef.current = el; }} className={cls("m-0 break-all font-mono text-[17px] transition-colors duration-700", formed ? "text-ink" : "text-transparent")}>
+        {url}
+      </p>
       {auto ? (
-        <p className="mt-3 text-xs text-ink-faint">{t("redirect", { s: count })}</p>
+        <p className="text-sm text-ink-faint">{t("redirect", { s: count })}</p>
       ) : (
-        <p className="mt-3 inline-flex items-center justify-center gap-1.5 text-xs text-warn">
+        <p className="inline-flex items-center gap-1.5 text-sm text-warn">
           <AlertTriangle className="size-3.5" /> {t("urlCheckBeforeOpen")}
         </p>
       )}
-      <div className="mt-4 flex flex-wrap justify-center gap-3">
+      <div className={cls("flex flex-wrap gap-2.5 transition-opacity duration-500", formed ? "opacity-100" : "opacity-0")}>
         {navigable && (
-          <Button onClick={() => (window.location.href = url)}>
+          <Button onClick={() => (window.location.href = url)} className="min-h-12 px-6">
             <ExternalLink className="size-4" />
             {t("openNow")}
           </Button>
         )}
         <CopyButton value={url} label={t("copyUrl")} />
       </div>
-    </div>
+    </>
   );
 }

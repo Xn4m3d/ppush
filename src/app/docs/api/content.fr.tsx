@@ -2,14 +2,16 @@ import Link from "next/link";
 import { Lock, TerminalSquare, AlertTriangle, BookOpenText } from "lucide-react";
 import { config } from "@/lib/config";
 import { Code, H2, Endpoint } from "./blocks";
+import { MiniCloud } from "@/components/diffusion/mini-cloud";
 
-/** French content of the API docs. Mirror: content.en.tsx. */
+/** Contenu français de la doc API. Miroir : content.en.tsx. */
 export function ApiDocsContentFr() {
   const base = config.baseUrl;
   return (
     <>
       <div className="flex flex-col items-center gap-4 text-center">
-        <h1 className="text-3xl font-semibold tracking-tight">Documentation API</h1>
+        <MiniCloud seed={11} />
+        <h1 className="text-4xl font-bold">Documentation API</h1>
         <p className="max-w-xl text-ink-dim">
           Créez des pushes par script — provisioning, onboarding, CI — tout en
           conservant le chiffrement de bout en bout.

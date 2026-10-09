@@ -11,8 +11,8 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { Badge, Card, cls } from "./ui";
-import { PawLoader, SleepingCat } from "./cat";
+import { Badge, Card, CondenseLoader, cls } from "./ui";
+import { MiniCloud } from "./diffusion/mini-cloud";
 
 export type OwnerPush = {
   id: string;
@@ -122,12 +122,12 @@ export function PushList() {
 
       {loading ? (
         <Card className="p-10 text-center">
-          <PawLoader />
+          <CondenseLoader />
         </Card>
       ) : pushes.length === 0 ? (
         <Card className="p-10 text-center text-sm text-ink-faint">
           <div className="mb-4">
-            <SleepingCat />
+            <MiniCloud />
           </div>
           {t("empty", { filter })}
         </Card>

@@ -31,8 +31,8 @@ export function CopyButton({
       className={cls(
         "inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-all cursor-pointer",
         big
-          ? "px-4 py-2.5 text-sm bg-accent text-[var(--on-accent)] hover:bg-accent-soft shadow-[0_4px_20px_-4px_var(--accent-glow)]"
-          : "px-3 py-1.5 text-xs border border-line text-ink-dim hover:text-ink hover:border-line-soft",
+          ? "px-4 py-2.5 text-sm font-semibold bg-accent text-[var(--on-accent)] hover:bg-accent-deep hover:text-white"
+          : "px-3 py-1.5 text-xs border border-line bg-bg text-ink-dim hover:text-ink hover:border-line-soft",
         copied && "!text-ok !border-ok/40",
         className
       )}

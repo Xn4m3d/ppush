@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Lock, TerminalSquare, AlertTriangle, BookOpenText } from "lucide-react";
 import { config } from "@/lib/config";
 import { Code, H2, Endpoint } from "./blocks";
+import { MiniCloud } from "@/components/diffusion/mini-cloud";
 
 /** English content of the API docs. Mirror: content.fr.tsx. */
 export function ApiDocsContentEn() {
@@ -9,7 +10,8 @@ export function ApiDocsContentEn() {
   return (
     <>
       <div className="flex flex-col items-center gap-4 text-center">
-        <h1 className="text-3xl font-semibold tracking-tight">API documentation</h1>
+        <MiniCloud seed={11} />
+        <h1 className="text-4xl font-bold">API documentation</h1>
         <p className="max-w-xl text-ink-dim">
           Create pushes from scripts — provisioning, onboarding, CI — while
           keeping end-to-end encryption.
