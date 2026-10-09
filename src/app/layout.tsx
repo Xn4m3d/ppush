@@ -1,33 +1,28 @@
 import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
-import { Bricolage_Grotesque, Manrope, JetBrains_Mono } from "next/font/google";
+import { Geologica, Azeret_Mono } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
 import { currentUser } from "@/lib/auth";
 import { DAY_START, DAY_END, THEME_COOKIE, isThemeChoice, resolveTheme } from "@/lib/themes";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { ThemeSwitcher } from "@/components/theme-switcher";
-import { PawPrint } from "@/components/cat";
 import { FlagFr } from "@/components/flag-fr";
 import { SourceLink } from "@/components/source-link";
 import { StructuredData } from "@/components/structured-data";
 import { Ambient } from "@/components/ambient";
 import "./globals.css";
 
-/* Three roles, three families: headings (Bricolage Grotesque, tight
-   counters), running text (Manrope), data and labels (JetBrains Mono). */
-const bricolage = Bricolage_Grotesque({
-  variable: "--font-bricolage",
+/* Two families: Geologica for headings and text (geometric, tight in
+   heavy weights), Azeret Mono for everything technical — secrets, links,
+   bytes, visualization labels. */
+const geologica = Geologica({
+  variable: "--font-geologica",
   subsets: ["latin"],
 });
 
-const manrope = Manrope({
-  variable: "--font-manrope",
-  subsets: ["latin"],
-});
-
-const jetbrains = JetBrains_Mono({
-  variable: "--font-jetbrains",
+const azeret = Azeret_Mono({
+  variable: "--font-azeret",
   subsets: ["latin"],
 });
 
@@ -37,9 +32,9 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase: new URL(process.env.BASE_URL ?? "https://ppush.online"),
     title: { default: t("title"), template: t("titleTemplate") },
     description: t("description"),
-    // Default favicon = reference theme (mecha); the anti-flash script swaps it
+    // Default favicon = reference theme (midnight); the anti-flash script switches it
     // to the variant of the actually-applied theme (mecha/midnight).
-    icons: { icon: [{ url: "/icon-mecha.svg", type: "image/svg+xml" }] },
+    icons: { icon: [{ url: "/icon-midnight.svg", type: "image/svg+xml" }] },
     openGraph: {
       title: t("title"),
       description: t("description"),
@@ -68,8 +63,9 @@ export default async function RootLayout({
   const themeCookie = (await cookies()).get(THEME_COOKIE)?.value;
   const user = await currentUser();
   const ut = user?.theme ?? null;
-  // priority: explicit cookie > account preference > "auto" (day/night)
-  const choice = isThemeChoice(themeCookie) ? themeCookie : isThemeChoice(ut) ? ut : "auto";
+  // priority: explicit cookie > account preference > night ("midnight",
+  // the black of the Diffusion art direction). "auto" stays an explicit choice.
+  const choice = isThemeChoice(themeCookie) ? themeCookie : isThemeChoice(ut) ? ut : "midnight";
   // SSR / no-JS: "auto" rendered as the DAY theme (mecha, h=12); the inline script
   // corrects it from the visitor's LOCAL hour before first paint (zero flash).
   const theme = resolveTheme(choice, 12);
@@ -83,7 +79,7 @@ export default async function RootLayout({
       // hydration: the attribute is deliberately driven client-side, so we
       // don't warn about the mismatch on this node (see next-themes).
       suppressHydrationWarning
-      className={`${bricolage.variable} ${manrope.variable} ${jetbrains.variable} h-full antialiased`}
+      className={`${geologica.variable} ${azeret.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {/* Anti-flash script: applies the theme (auto → day/night based on the
@@ -91,14 +87,14 @@ export default async function RootLayout({
         <script
           nonce={nonce}
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var m=document.cookie.match(/(?:^|; )theme=([^;]+)/);var c=m?decodeURIComponent(m[1]):"";var u=${JSON.stringify(ut ?? "")};var re=/^(midnight|mecha|auto)$/;var p=re.test(c)?c:re.test(u)?u:"auto";var h=new Date().getHours();var t=(p==="midnight"||p==="mecha")?p:((h>=${DAY_START}&&h<${DAY_END})?"mecha":"midnight");document.documentElement.dataset.theme=t;var f=document.querySelector("link[rel~='icon']");if(f)f.href=(t==='mecha')?'/icon-mecha.svg':'/icon-midnight.svg';}catch(e){}})();`,
+            __html: `(function(){try{var m=document.cookie.match(/(?:^|; )theme=([^;]+)/);var c=m?decodeURIComponent(m[1]):"";var u=${JSON.stringify(ut ?? "")};var re=/^(midnight|mecha|auto)$/;var p=re.test(c)?c:re.test(u)?u:"midnight";var h=new Date().getHours();var t=(p==="midnight"||p==="mecha")?p:((h>=${DAY_START}&&h<${DAY_END})?"mecha":"midnight");document.documentElement.dataset.theme=t;var f=document.querySelector("link[rel~='icon']");if(f)f.href=(t==='mecha')?'/icon-mecha.svg':'/icon-midnight.svg';}catch(e){}})();`,
           }}
         />
         <Ambient />
         <StructuredData />
         <NextIntlClientProvider>
           {children}
-          <footer className="border-t border-line/40 py-5 text-center text-xs text-ink-faint">
+          <footer className="border-t border-line/60 py-5 text-center text-xs text-ink-faint">
             <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
               <a href="/about" className="transition-colors hover:text-ink-dim">
                 {t("about")}
@@ -121,7 +117,7 @@ export default async function RootLayout({
               <ThemeSwitcher current={choice} persist={!!user} />
             </nav>
             <p className="mt-2 inline-flex items-center gap-1.5">
-              {t("tagline")} <PawPrint className="size-3 text-accent-soft/70" />
+              {t("tagline")} <span aria-hidden className="inline-block size-1.5 rounded-full bg-accent" />
             </p>
             <p className="mt-1 flex flex-wrap items-center justify-center gap-1.5">
               {t("network")} <span aria-hidden>·</span> {t("hostedIn")}{" "}

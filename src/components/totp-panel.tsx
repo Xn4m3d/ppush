@@ -29,7 +29,7 @@ export function TotpPanel({
       QRCode.toDataURL(setup.uri, {
         width: 200,
         margin: 1,
-        color: { dark: "#eef1f8", light: "#141823" },
+        color: { dark: "#e4e9f0", light: "#0e131b" },
       }).then(setQr);
     }
   }, [setup]);

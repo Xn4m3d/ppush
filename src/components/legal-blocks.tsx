@@ -1,5 +1,6 @@
 import type { ComponentType, ReactNode } from "react";
 import type { LucideProps } from "lucide-react";
+import { MiniCloud } from "@/components/diffusion/mini-cloud";
 
 /** Common layout for the legal pages (/legal, /privacy). */
 
@@ -14,10 +15,11 @@ export function LegalHeader({
 }) {
   return (
     <header className="flex flex-col items-center gap-3 text-center">
-      <span className="grid size-12 place-items-center rounded-2xl border border-accent/25 bg-accent/10">
-        <Icon className="size-6 text-accent-soft" />
+      <span className="relative grid place-items-center">
+        <MiniCloud seed={title.length} />
+        <Icon className="absolute size-5 text-ink" />
       </span>
-      <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
+      <h1 className="text-3xl font-bold">{title}</h1>
       <p className="text-xs text-ink-faint">{updated}</p>
     </header>
   );

@@ -105,6 +105,9 @@ export function publicPushView(push: Push) {
     fileSize: expired ? null : push.fileSize,
     // for the recipient-side countdown (never any sensitive data)
     expiresAt: push.expiresAt,
+    // remaining views: lets the recipient know whether this is the
+    // last one ("it will only be shown once") — reveals no content
+    viewsLeft: expired ? 0 : Math.max(0, push.expireAfterViews - push.views),
   };
 }
 

@@ -5,6 +5,7 @@ import { currentUser, primaryAdminId } from "@/lib/auth";
 import { THEME_COOKIE, effectiveChoice } from "@/lib/themes";
 import { Header } from "@/components/header";
 import { AccountTabs } from "@/components/account-tabs";
+import { MiniCloud } from "@/components/diffusion/mini-cloud";
 
 export async function generateMetadata() {
   return {
@@ -27,8 +28,9 @@ export default async function AccountPage() {
     <>
       <Header />
       <main className="mx-auto w-full max-w-3xl flex-1 space-y-6 px-4 py-10 sm:px-6">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
+        <div className="relative">
+          <MiniCloud className="absolute right-0 bottom-0 hidden sm:block" seed={23} />
+          <h1 className="text-3xl font-bold">{t("title")}</h1>
           <p className="mt-1 text-sm text-ink-faint">
             {user.name} · {user.email}
             {user.role === "ADMIN" && ` · ${t("administrator")}`}

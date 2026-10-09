@@ -4,21 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import QRCode from "qrcode";
 import { useLocale, useTranslations } from "next-intl";
-import {
-  KeyRound,
-  FileText,
-  FileUp,
-  Link2,
-  Eye,
-  EyeOff,
-  Dices,
-  UploadCloud,
-  ShieldCheck,
-  Lock,
-  Clock,
-  Flame,
-  ArrowLeft,
-} from "lucide-react";
+import { KeyRound, FileText, FileUp, Link2, Eye, EyeOff, Dices, UploadCloud, Lock, ArrowLeft } from "lucide-react";
 import {
   generateKey,
   encryptPayload,
@@ -29,13 +15,15 @@ import {
 } from "@/lib/crypto";
 import { formatBytes, formatDelay } from "@/lib/format";
 import type { Locale } from "@/i18n/locale";
-import { Button, Input, Textarea, Field, Card, Toggle, ErrorText, cls } from "./ui";
+import { Button, Input, Textarea, Toggle, ErrorText, cls } from "./ui";
 import { CopyButton } from "./copy-button";
+import { DiffusionScene } from "./diffusion/scene";
+import { AgeTimeline, DurationDial, ReadsPips, useWheel } from "./diffusion/controls";
 
 type Kind = "PASSWORD" | "TEXT" | "FILE" | "URL";
 
-// Paliers d'expiration (en minutes) : infra-journaliers fixes + jours jusqu'au
-// tier ceiling. The gauge moves tier by tier (non-linear).
+// Expiry steps (in minutes): fixed sub-day steps + days up to the
+// tier's cap. The ruler moves from step to step (non-linear).
 const SUBDAY_PRESETS = [5, 15, 30, 60, 120, 360, 720]; // 5m 15m 30m 1h 2h 6h 12h
 const DAY_STEPS = [1, 2, 3, 5, 7, 14, 21, 30, 60, 90];
 
@@ -74,12 +62,20 @@ type Defaults = {
   showNote: boolean;
   // "Note to send with the link" template per push type (custom or default).
   shareTemplates: Record<Kind, string>;
+  /** Account limits, shown greyed out to visitors without an account. */
+  upgrade?: { maxDays: number; maxFileDays: number; maxViews: number };
 };
 
 type Created = { url: string; kind: Kind; expireAfterMinutes: number; expireAfterViews: number };
 
+// Beyond that, only the start of the file is visualized: the cloud stops changing
+// shape, and the preview encryption stays instant.
+const PREVIEW_FILE_BYTES = 256 * 1024;
+const WIDE = "(min-width: 1024px)";
+
 export function PushForm({ defaults }: { defaults: Defaults }) {
   const t = useTranslations("form");
+  const td = useTranslations("diffusion");
   const tTabs = useTranslations("tabs");
   const locale = useLocale() as Locale;
   const [kind, setKind] = useState<Kind>("PASSWORD");
@@ -107,6 +103,103 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
   const [created, setCreated] = useState<Created | null>(null);
+  const [formed, setFormed] = useState(false);
+  const [lock, setLock] = useState<"dur" | "views" | null>(null);
+  const [cipherLen, setCipherLen] = useState(0);
+  const [age, setAge] = useState(0);
+  const [touch, setTouch] = useState(false);
+
+  // ---- visualisation ----
+  const hostRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const cloudRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const fieldRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
+  const dropRef = useRef<HTMLDivElement>(null);
+  const idRef = useRef<HTMLSpanElement>(null);
+  const keyRef = useRef<HTMLSpanElement>(null);
+  const zoneRef = useRef<HTMLElement>(null);
+  const scene = useRef<DiffusionScene | null>(null);
+  const previewKey = useRef<Promise<CryptoKey | null> | null>(null);
+  const seq = useRef(0);
+  const ageTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const anchor = useCallback(
+    () => (kind === "FILE" ? dropRef.current : fieldRef.current),
+    [kind]
+  );
+  const anchorRef = useRef(anchor);
+  useEffect(() => { anchorRef.current = anchor; });
+
+  useEffect(() => {
+    const host = hostRef.current, canvas = canvasRef.current;
+    if (!host || !canvas) return;
+    const sc = new DiffusionScene({
+      direction: "out",
+      host,
+      canvas,
+      cloud: () => cloudRef.current,
+      anchor: () => anchorRef.current(),
+      stackAnchor: () => formRef.current,
+      stacked: () => !window.matchMedia(WIDE).matches,
+    });
+    scene.current = sc;
+    const mq = window.matchMedia("(hover: none)");
+    const onTouch = () => setTouch(mq.matches);
+    mq.addEventListener("change", onTouch);
+    const raf = requestAnimationFrame(onTouch);
+    return () => { cancelAnimationFrame(raf); mq.removeEventListener("change", onTouch); sc.destroy(); scene.current = null; };
+  }, []);
+
+  /** THROWAWAY ciphertext for the preview: different key and IV from the real send. */
+  const preview = useCallback(async (data: Uint8Array, emit: "caret" | "all") => {
+    const my = ++seq.current;
+    const sc = scene.current;
+    if (!sc) return;
+    let out: Uint8Array;
+    if (!data.length) out = new Uint8Array(0);
+    else if (window.crypto?.subtle) {
+      if (!previewKey.current) {
+        previewKey.current = crypto.subtle
+          .importKey("raw", crypto.getRandomValues(new Uint8Array(32)), "AES-GCM", false, ["encrypt"])
+          .catch(() => null);
+      }
+      const key = await previewKey.current;
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      out = key
+        ? new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, data as BufferSource))
+        : crypto.getRandomValues(new Uint8Array(data.length + 16));
+    } else out = crypto.getRandomValues(new Uint8Array(data.length + 16));
+    if (my !== seq.current || !scene.current) return;
+    sc.layout();
+    const el = fieldRef.current;
+    let span = null;
+    if (el && (kind === "PASSWORD" || kind === "URL" || kind === "TEXT")) {
+      span = sc.textSpan(el, kind === "PASSWORD" && !showSecret, emit === "caret");
+    } else if (dropRef.current) {
+      const r = sc.toHost(dropRef.current.getBoundingClientRect());
+      span = { x0: r.x + 20, x1: r.x + r.w - 20, y0: r.y + 20, y1: r.y + r.h - 20 };
+    }
+    sc.setBytes(out, span);
+    setCipherLen(out.length);
+    if (emit === "caret" && el && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      el.classList.add("pulse-field");
+      setTimeout(() => el.classList.remove("pulse-field"), 260);
+    }
+  }, [kind, showSecret]);
+
+  const changeSecret = (v: string) => {
+    setSecret(v);
+    void preview(new TextEncoder().encode(v), "caret");
+  };
+
+  const changeFile = async (f: File | null) => {
+    setFile(f);
+    scene.current?.clear();
+    if (!f) { setCipherLen(0); return; }
+    const head = new Uint8Array(await f.slice(0, PREVIEW_FILE_BYTES).arrayBuffer());
+    void preview(head, "all");
+  };
 
   const reset = useCallback(() => {
     setSecret("");
@@ -114,8 +207,13 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
     setPassphrase("");
     setNote("");
     setCreated(null);
+    setFormed(false);
     setError("");
     setProgress(null);
+    setCipherLen(0);
+    setAge(0);
+    previewKey.current = null;
+    scene.current?.unseal();
   }, []);
 
   // The logo and the header "New" button emit `ppush:reset` to start over
@@ -126,6 +224,51 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
     window.addEventListener("ppush:reset", onReset);
     return () => window.removeEventListener("ppush:reset", onReset);
   }, [reset]);
+
+  // settings mirrored in the visualization
+  useEffect(() => {
+    const sc = scene.current;
+    if (!sc) return;
+    sc.reads = views;
+    sc.ring = passphrase.length > 0;
+    sc.ageTarget = age;
+    sc.destroyedLabel = td("destroyed");
+  }, [views, passphrase, age, td]);
+
+  // created: the cloud writes the address, the key comes from the field
+  useEffect(() => {
+    if (!created) return;
+    const sc = scene.current;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const raf = requestAnimationFrame(() => {
+      if (!sc || !idRef.current || !keyRef.current) return;
+      sc.layout();
+      const el = fieldRef.current;
+      const from = el && kind !== "FILE"
+        ? sc.textSpan(el, kind === "PASSWORD" && !showSecret)
+        : dropRef.current
+          ? (() => { const r = sc.toHost(dropRef.current!.getBoundingClientRect()); return { x0: r.x + 20, x1: r.x + r.w - 20, y0: r.y + 20, y1: r.y + r.h - 20 }; })()
+          : null;
+      sc.seal(idRef.current, keyRef.current, from);
+      if (!window.matchMedia(WIDE).matches) zoneRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      timer = setTimeout(() => { sc.settle(); setFormed(true); }, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1700);
+    });
+    return () => { cancelAnimationFrame(raf); if (timer) clearTimeout(timer); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [created]);
+
+  // aging: wheel over the cloud; once released, back to the present
+  const setAgeHold = (v: number, hold: boolean) => {
+    setAge(Math.max(0, Math.min(1, v)));
+    if (ageTimer.current) clearTimeout(ageTimer.current);
+    if (!hold) ageTimer.current = setTimeout(() => setAge(0), 2200);
+  };
+  useWheel(zoneRef, (e) => {
+    if (!cipherLen || created) return;
+    if ((e.target as HTMLElement).closest("[data-noage]")) return;
+    e.preventDefault();
+    setAgeHold(age + e.deltaY * (e.deltaMode === 1 ? 16 : 1) * 0.0011, false);
+  });
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -193,6 +336,8 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? t("errorCreate"));
 
+      setAge(0);
+      setFormed(false);
       setCreated({
         url: `${data.url}#${keyB64}`,
         kind,
@@ -208,206 +353,319 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
     }
   }
 
-  if (created) {
-    return (
-      <SuccessScreen
-        created={created}
-        hasPassphrase={!!passphrase}
-        onNew={reset}
-        tier={defaults.tier}
-        shareTemplate={defaults.shareTemplates[created.kind]}
-      />
-    );
-  }
+  // ---- lifetime & views ----
+  const maxDaysNow = kind === "FILE" ? defaults.maxFileDays : defaults.maxDays;
+  const upDays = defaults.upgrade ? (kind === "FILE" ? defaults.upgrade.maxFileDays : defaults.upgrade.maxDays) : maxDaysNow;
+  const allowedPresets = expiryPresets(maxDaysNow);
+  const dialPresets = Array.from(new Set([...allowedPresets, ...expiryPresets(Math.max(upDays, maxDaysNow))])).sort((a, b) => a - b);
+  const allowedMaxIdx = dialPresets.indexOf(maxDaysNow * 1440);
+  const durIdx = nearestPresetIndex(dialPresets, minutes);
+  const upViews = defaults.upgrade?.maxViews ?? defaults.maxViews;
+
+  const unit = (min: number, short: boolean) => {
+    if (min < 60) return td(short ? "sMin" : "dMin", { n: min });
+    if (min < 1440 || min % 1440 !== 0) return td(short ? "sHour" : "dHour", { n: Math.round(min / 60) });
+    return td(short ? "sDay" : "dDay", { n: min / 1440 });
+  };
+  const longDelay = unit(minutes, false);
+
+  const limitNote =
+    lock === "dur"
+      ? td("limitDur", { delay: unit(maxDaysNow * 1440, false), max: unit(upDays * 1440, false) })
+      : lock === "views"
+        ? td("limitViews", { views: defaults.maxViews, max: upViews })
+        : defaults.tier === "anon"
+          ? td.rich("limitsAnon", {
+              delay: unit(maxDaysNow * 1440, false),
+              views: defaults.maxViews,
+              link: (c) => <Link href="/register" className="text-ink-dim underline underline-offset-2 hover:text-ink">{c}</Link>,
+            })
+          : td("limitsUser");
+
+  const ageDelay = formatDelay(age * minutes * 60_000, locale);
+  const ageBubble = age < 0.005 ? td("ageNow") : age > 0.995 ? td("ageExpired") : td("ageIn", { delay: ageDelay });
+  const narrowTicks = [0, 0.5, 1];
+  const ticks = (touch ? narrowTicks : [0, 0.25, 0.5, 0.75, 1]).map((at) => ({
+    at,
+    label: at === 0 ? td("ageNow") : formatDelay(at * minutes * 60_000, locale),
+  }));
+
+  const sealed = !!created;
 
   return (
-    <form onSubmit={submit} className="space-y-5 animate-fade-up">
-      {/* Onglets */}
-      <div className="grid grid-cols-4 gap-1.5 rounded-2xl border border-line bg-panel p-1.5">
-        {TABS.map(({ kind: k, icon: Icon }) => (
-          <button
-            key={k}
-            type="button"
-            onClick={() => {
-              setKind(k);
-              setError("");
-              // files have their own duration ceiling → re-clamp to a valid tier
-              setMinutes((m) => {
-                const md = k === "FILE" ? defaults.maxFileDays : defaults.maxDays;
-                const p = expiryPresets(md);
-                return p[nearestPresetIndex(p, Math.min(m, md * 1440))];
-              });
-            }}
-            className={cls(
-              "flex flex-col items-center gap-1 rounded-xl px-2 py-3 text-xs font-medium transition-all sm:flex-row sm:justify-center sm:gap-2 sm:text-sm cursor-pointer",
-              kind === k
-                ? "bg-accent/15 text-accent-soft shadow-[inset_0_0_0_1px_var(--accent-glow)]"
-                : "text-ink-faint hover:bg-panel-soft hover:text-ink-dim"
-            )}
-          >
-            <Icon className="size-4" />
-            {tTabs(k)}
-          </button>
-        ))}
-      </div>
+    <div ref={hostRef} className="relative mx-auto w-full max-w-6xl flex-1 px-4 pb-10 pt-6 sm:px-6">
+      <canvas ref={canvasRef} aria-hidden className="pointer-events-none absolute inset-0 z-[3] h-full w-full" />
+      <div className="grid gap-x-16 gap-y-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.1fr)]">
+        <form ref={formRef} onSubmit={submit} className="relative z-[2] flex min-w-0 flex-col gap-3.5 animate-fade-up">
+          <h1 className="text-[clamp(28px,3.3vw,42px)] font-bold leading-[1.04]">
+            <HeroTitle />
+          </h1>
+          <p className="-mt-1 max-w-[46ch] text-base text-ink-dim">
+            {td.rich("lede", { b: (c) => <b className="font-medium text-ink">{c}</b> })}
+          </p>
 
-      <Card className="p-6 space-y-5">
-        {/* Secret content */}
-        {kind === "PASSWORD" && (
-          <div className="space-y-3">
-            <Field label={t("passwordLabel")}>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  {/* No `type="password"`: password managers would treat this as
-                      a login field and inject a stored credential (they ignore
-                      `autocomplete=off` on password fields). We mask the value
-                      with CSS instead and opt out of the remaining heuristics
-                      via per-manager data attributes. */}
+          <fieldset disabled={sealed} className={cls("flex min-w-0 flex-col gap-3.5 transition-opacity", sealed && "opacity-55")}>
+            {/* Content type */}
+            <div className="grid grid-cols-4 gap-1.5" role="group" aria-label={t("passwordLabel")}>
+              {TABS.map(({ kind: k, icon: Icon }) => (
+                <button
+                  key={k}
+                  type="button"
+                  aria-pressed={kind === k}
+                  onClick={() => {
+                    if (k === kind) return;
+                    setKind(k);
+                    setError("");
+                    scene.current?.clear();
+                    setCipherLen(0);
+                    // files have their own duration ceiling → re-clamp to a valid tier
+                    setMinutes((m) => {
+                      const md = k === "FILE" ? defaults.maxFileDays : defaults.maxDays;
+                      const p = expiryPresets(md);
+                      return p[nearestPresetIndex(p, Math.min(m, md * 1440))];
+                    });
+                    // content of the new type: re-encrypt it for the cloud
+                    const v = k === "FILE" ? null : secret;
+                    if (k === "FILE") { if (file) void changeFile(file); }
+                    else if (v) setTimeout(() => void preview(new TextEncoder().encode(v), "all"), 0);
+                  }}
+                  className={cls(
+                    "flex items-center justify-center gap-2 whitespace-nowrap rounded-[10px] border px-2 py-2.5 text-[13px] font-medium transition-colors sm:text-sm cursor-pointer",
+                    kind === k ? "border-ink bg-ink text-bg" : "border-line bg-bg text-ink hover:border-line-soft"
+                  )}
+                >
+                  <Icon className="hidden size-4 sm:block" />
+                  {tTabs(k)}
+                </button>
+              ))}
+            </div>
+
+            {/* Secret content */}
+            {kind === "PASSWORD" && (
+              <div className="flex flex-col gap-2">
+                <div className="flex items-baseline justify-between gap-3">
+                  <label htmlFor="pp-secret" className="eyebrow">{t("passwordLabel")}</label>
+                  <span className="flex gap-1">
+                    <button type="button" onClick={() => setShowSecret(!showSecret)} className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-ink-dim hover:bg-panel hover:text-ink cursor-pointer">
+                      {showSecret ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                      {showSecret ? t("hide") : t("show")}
+                    </button>
+                    <button
+                      type="button"
+                      title={t("generateTitle")}
+                      onClick={() => {
+                        const v = generatePassword(genLength, genOpts);
+                        setSecret(v);
+                        setShowSecret(true);
+                        scene.current?.clear();
+                        void preview(new TextEncoder().encode(v), "all");
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-ink-dim hover:bg-panel hover:text-ink cursor-pointer"
+                    >
+                      <Dices className="size-3.5" />
+                      {t("generate")}
+                    </button>
+                  </span>
+                </div>
+                {/* No `type="password"`: password managers would treat this as
+                    a login field and inject a stored credential (they ignore
+                    `autocomplete=off` on password fields). We mask the value
+                    with CSS instead and opt out of the remaining heuristics
+                    via per-manager data attributes. */}
+                <Input
+                  id="pp-secret"
+                  ref={(el: HTMLInputElement | HTMLTextAreaElement | null) => { fieldRef.current = el; }}
+                  type="text"
+                  value={secret}
+                  onChange={(e) => changeSecret(e.target.value)}
+                  placeholder="••••••••••••"
+                  className={cls("min-h-14 font-mono text-[17px] sm:text-[17px]", !showSecret && "[-webkit-text-security:disc]")}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
+                  data-1p-ignore
+                  data-lpignore="true"
+                  data-bwignore
+                  data-form-type="other"
+                />
+                <GeneratorOptions length={genLength} onLength={setGenLength} opts={genOpts} onOpts={setGenOpts} />
+              </div>
+            )}
+
+            {kind === "TEXT" && (
+              <div className="flex flex-col gap-2">
+                <label htmlFor="pp-text" className="eyebrow">{t("textLabel")}</label>
+                <Textarea
+                  id="pp-text"
+                  ref={(el: HTMLInputElement | HTMLTextAreaElement | null) => { fieldRef.current = el; }}
+                  value={secret}
+                  onChange={(e) => changeSecret(e.target.value)}
+                  rows={4}
+                  placeholder={t("textPlaceholder")}
+                  className="font-mono"
+                />
+              </div>
+            )}
+
+            {kind === "URL" && (
+              <div className="flex flex-col gap-2">
+                <label htmlFor="pp-url" className="eyebrow">{t("urlLabel")}</label>
+                <Input
+                  id="pp-url"
+                  ref={(el: HTMLInputElement | HTMLTextAreaElement | null) => { fieldRef.current = el; }}
+                  type="url"
+                  value={secret}
+                  onChange={(e) => changeSecret(e.target.value)}
+                  placeholder={t("urlPlaceholder")}
+                  className="min-h-14 font-mono"
+                />
+                <span className="text-xs text-ink-faint">{t("urlHint")}</span>
+              </div>
+            )}
+
+            {kind === "FILE" && (
+              <div ref={dropRef}>
+                <FileDrop file={file} onFile={(f) => void changeFile(f)} maxMb={defaults.maxFileSizeMb} />
+              </div>
+            )}
+
+            {/* Lifetime and views: two ways to expire, whichever comes first wins */}
+            <div className="grid gap-x-4 gap-y-2 sm:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
+              <div className="flex min-w-0 flex-col gap-2">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span id="pp-dur" className="eyebrow">{td("validFor")}</span>
+                  <output className="text-lg font-bold tracking-tight tabular-nums">{longDelay}</output>
+                </div>
+                <DurationDial
+                  presets={dialPresets}
+                  allowedMax={allowedMaxIdx}
+                  index={durIdx}
+                  onChange={(i) => setMinutes(dialPresets[i])}
+                  onLocked={(l) => setLock(l ? "dur" : null)}
+                  short={(m) => unit(m, true)}
+                  labelId="pp-dur"
+                  valueText={longDelay}
+                />
+              </div>
+              <div className="flex min-w-0 flex-col gap-2">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span id="pp-reads" className="eyebrow">{td("reads")}</span>
+                  <output className="text-lg font-bold tracking-tight tabular-nums">{td("readsValue", { count: views })}</output>
+                </div>
+                <ReadsPips
+                  value={views}
+                  allowed={Math.min(defaults.maxViews, 100)}
+                  onChange={setViews}
+                  onLocked={(l) => setLock(l ? "views" : null)}
+                  labelId="pp-reads"
+                  valueText={td("readsValue", { count: views })}
+                  moreLabel={td("readsMore")}
+                  lessLabel={td("readsLess")}
+                />
+              </div>
+              <p className={cls("text-[13px] sm:col-span-2", lock ? "text-accent" : "text-ink-faint")} aria-live="polite">
+                {limitNote}
+              </p>
+            </div>
+
+            {/* Advanced options */}
+            <details className="group rounded-xl border border-line bg-bg/60">
+              <summary className="cursor-pointer select-none px-4 py-2.5 text-sm text-ink-dim transition-colors hover:text-ink">
+                {t("advanced")}
+              </summary>
+              <div className="space-y-3 border-t border-line px-3 pb-4 pt-3">
+                <label className="block space-y-1.5 px-1">
+                  <span className="eyebrow">{t("passphraseLabel")}</span>
                   <Input
                     type="text"
-                    value={secret}
-                    onChange={(e) => setSecret(e.target.value)}
-                    placeholder="••••••••••••"
-                    className={cls(
-                      "pr-10 font-mono",
-                      !showSecret && "[-webkit-text-security:disc]"
-                    )}
+                    value={passphrase}
+                    onChange={(e) => setPassphrase(e.target.value)}
+                    placeholder={t("passphrasePlaceholder")}
                     autoComplete="off"
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                    spellCheck={false}
-                    data-1p-ignore
-                    data-lpignore="true"
-                    data-bwignore
-                    data-form-type="other"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowSecret(!showSecret)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-faint hover:text-ink cursor-pointer"
-                    title={showSecret ? t("hide") : t("show")}
-                  >
-                    {showSecret ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                  </button>
-                </div>
-                <Button
-                  type="button"
-                  variant="subtle"
-                  onClick={() => {
-                    setSecret(generatePassword(genLength, genOpts));
-                    setShowSecret(true);
-                  }}
-                  title={t("generateTitle")}
-                >
-                  <Dices className="size-4" />
-                  <span className="hidden sm:inline">{t("generate")}</span>
-                </Button>
+                  <span className="block text-xs text-ink-faint">{t("passphraseHint")}</span>
+                </label>
+                <Toggle checked={retrievalStep} onChange={setRetrievalStep} label={t("retrievalLabel")} hint={t("retrievalHint")} />
+                <Toggle checked={deletable} onChange={setDeletable} label={t("deletableLabel")} hint={t("deletableHint")} />
+                {defaults.showNote && (
+                  <label className="block space-y-1.5 px-1">
+                    <span className="eyebrow">{t("noteLabel")}</span>
+                    <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder={t("notePlaceholder")} maxLength={500} />
+                    <span className="block text-xs text-ink-faint">{t("noteHint")}</span>
+                  </label>
+                )}
               </div>
-            </Field>
-            <GeneratorOptions
-              length={genLength}
-              onLength={setGenLength}
-              opts={genOpts}
-              onOpts={setGenOpts}
-            />
-          </div>
-        )}
+            </details>
 
-        {kind === "TEXT" && (
-          <Field label={t("textLabel")}>
-            <Textarea
-              value={secret}
-              onChange={(e) => setSecret(e.target.value)}
-              rows={6}
-              placeholder={t("textPlaceholder")}
-            />
-          </Field>
-        )}
+            <ErrorText>{error}</ErrorText>
+          </fieldset>
 
-        {kind === "URL" && (
-          <Field label={t("urlLabel")} hint={t("urlHint")}>
-            <Input
-              type="url"
-              value={secret}
-              onChange={(e) => setSecret(e.target.value)}
-              placeholder={t("urlPlaceholder")}
-            />
-          </Field>
-        )}
-
-        {kind === "FILE" && (
-          <FileDrop file={file} onFile={setFile} maxMb={defaults.maxFileSizeMb} />
-        )}
-
-        {/* Lifespan: delay and views are two ways to die, not two settings */}
-        <Lifespan
-          minutes={minutes}
-          presets={expiryPresets(kind === "FILE" ? defaults.maxFileDays : defaults.maxDays)}
-          onMinutes={setMinutes}
-          views={views}
-          maxViews={Math.min(defaults.maxViews, 100)}
-          onViews={setViews}
-          locale={locale}
-        />
-
-        {/* Advanced options */}
-        <details className="group rounded-xl border border-line bg-bg-soft/50">
-          <summary className="cursor-pointer select-none px-4 py-3 text-sm font-medium text-ink-dim transition-colors hover:text-ink">
-            {t("advanced")}
-          </summary>
-          <div className="space-y-3 border-t border-line px-3 pb-4 pt-3">
-            <Field label={t("passphraseLabel")} hint={t("passphraseHint")}>
-              <Input
-                type="text"
-                value={passphrase}
-                onChange={(e) => setPassphrase(e.target.value)}
-                placeholder={t("passphrasePlaceholder")}
-                autoComplete="off"
-              />
-            </Field>
-            <Toggle
-              checked={retrievalStep}
-              onChange={setRetrievalStep}
-              label={t("retrievalLabel")}
-              hint={t("retrievalHint")}
-            />
-            <Toggle
-              checked={deletable}
-              onChange={setDeletable}
-              label={t("deletableLabel")}
-              hint={t("deletableHint")}
-            />
-            {defaults.showNote && (
-              <Field label={t("noteLabel")} hint={t("noteHint")}>
-                <Input
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  placeholder={t("notePlaceholder")}
-                  maxLength={500}
-                />
-              </Field>
-            )}
-          </div>
-        </details>
-
-        <ErrorText>{error}</ErrorText>
-
-        <Button type="submit" loading={busy} className="w-full py-3 text-base">
-          {progress ?? (
-            <>
-              <Lock className="size-4" />
-              {t("submit")}
-            </>
+          {!sealed && (
+            <Button type="submit" loading={busy} className="min-h-14 w-full text-base">
+              {progress ?? (
+                <>
+                  <Lock className="size-4" />
+                  {t("submit")}
+                </>
+              )}
+            </Button>
           )}
-        </Button>
 
-        <p className="flex items-center justify-center gap-1.5 text-xs text-ink-faint">
-          <ShieldCheck className="size-3.5 text-ok" />
-          {t("footnote")}
-        </p>
-      </Card>
-    </form>
+          {defaults.tier === "anon" && !sealed && (
+            <p className="text-[13px] text-ink-faint">
+              {td.rich("anonStrip", {
+                link: (c) => <Link href="/register" className="font-medium text-ink-dim underline underline-offset-2 hover:text-ink">{c}</Link>,
+              })}
+            </p>
+          )}
+        </form>
+
+        {/* The cloud: what the server receives — then, once created, the link */}
+        <section ref={zoneRef} aria-label={sealed ? td("zoneLink") : td("zoneSend")} className={cls("relative z-[4] flex min-w-0 flex-col", sealed ? "" : "min-h-[380px] lg:min-h-[460px]")}>
+          <div className="flex justify-between gap-3 eyebrow">
+            <span>{sealed ? td("zoneLink") : age > 0.995 ? td("zoneGone") : td("zoneSend")}</span>
+            <span className="text-accent">{td("algo")}</span>
+          </div>
+          {!sealed ? (
+            <>
+              <div
+                ref={cloudRef}
+                role="img"
+                aria-label={cipherLen ? td("cloudAria", { bytes: cipherLen }) : td("cloudEmpty")}
+                className={cls("min-h-[240px] flex-1", cipherLen > 0 && "cursor-ns-resize")}
+              />
+              <div data-noage>
+              <AgeTimeline value={age} onChange={setAgeHold} ticks={ticks} bubble={ageBubble} label={td("ageLabel")} />
+              <div className="mt-1 flex flex-wrap justify-between gap-x-4 gap-y-1 font-mono text-xs text-ink-faint tabular-nums" aria-live="polite">
+                <span>{cipherLen ? td.rich("metaBytes", { bytes: cipherLen, b: (c) => <b className="font-medium text-ink">{c}</b> }) : td("metaEmpty")}</span>
+                <span>{touch ? td("hintTouch") : td("hintWheel")}</span>
+              </div>
+              </div>
+            </>
+          ) : (
+            <ShareCard
+              created={created!}
+              formed={formed}
+              hasPassphrase={!!passphrase}
+              onNew={reset}
+              tier={defaults.tier}
+              shareTemplate={defaults.shareTemplates[created!.kind]}
+              idRef={idRef}
+              keyRef={keyRef}
+              delayLabel={unit(created!.expireAfterMinutes, false)}
+            />
+          )}
+        </section>
+      </div>
+    </div>
   );
+}
+
+/** Home title, with the highlighted word in the accent color. */
+function HeroTitle() {
+  const t = useTranslations("home");
+  return <>{t.rich("title", { em: (c) => <em className="not-italic text-accent">{c}</em> })}</>;
 }
 
 function GeneratorOptions({
@@ -433,7 +691,7 @@ function GeneratorOptions({
   }
 
   return (
-    <details className="group rounded-xl border border-line bg-bg-soft/50">
+    <details className="group rounded-xl border border-line bg-bg/60">
       <summary className="flex cursor-pointer select-none items-center justify-between px-4 py-2.5 text-sm text-ink-dim transition-colors hover:text-ink">
         <span>{t("summary")}</span>
         <span className="text-xs text-ink-faint tabular-nums">
@@ -488,145 +746,6 @@ function GeneratorOptions({
         </p>
       </div>
     </details>
-  );
-}
-
-/**
- * Link lifespan — the fuse.
- *
- * Delay and view count are not two independent settings: they are two ways
- * for the same secret to die, and whichever is reached first wins. So they
- * live in a single object — a fuse whose lit part is the chosen delay, the
- * spark its deadline, and the nicks the views; the last nick, the one that
- * destroys, is red.
- *
- * Expiry stays tiered (5 min → ceiling), so the spark follows the tier index
- * rather than raw minutes: otherwise every short delay would pile up on the
- * left of the track.
- */
-function Lifespan({
-  minutes,
-  presets,
-  onMinutes,
-  views,
-  maxViews,
-  onViews,
-  locale,
-}: {
-  minutes: number;
-  presets: number[];
-  onMinutes: (minutes: number) => void;
-  views: number;
-  maxViews: number;
-  onViews: (v: number) => void;
-  locale: Locale;
-}) {
-  const t = useTranslations("form");
-  const idx = nearestPresetIndex(presets, minutes);
-  const delay = formatDelay(presets[idx] * 60_000, locale);
-  // 8%..96%: keeps the spark on the fuse at both ends
-  const pct = presets.length > 1 ? 8 + (idx / (presets.length - 1)) * 88 : 52;
-  // past a couple of dozen, nicks stop being readable — drop them
-  const nicks = views <= 20 ? views : 0;
-
-  return (
-    <div className="rounded-xl border border-line bg-bg-soft/50 p-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <span className="text-[13px] font-semibold text-ink">{t("lifespan")}</span>
-        <span className="font-mono text-xs text-ink-faint tabular-nums">
-          {t("lifespanRead", { delay, count: views })}
-        </span>
-      </div>
-
-      <div className="relative mt-3.5 mb-1 h-8" aria-hidden>
-        <span className="absolute inset-x-0 top-3.5 h-[3px] rounded-full bg-line-soft/50" />
-        <span
-          className="absolute left-0 top-3.5 h-[3px] rounded-full bg-gradient-to-r from-danger via-accent to-warn shadow-[0_0_14px_var(--accent-glow)] transition-[width] duration-300"
-          style={{ width: `${pct}%` }}
-        />
-        {Array.from({ length: nicks }, (_, i) => (
-          <span
-            key={i}
-            title={i === nicks - 1 ? t("lastView") : undefined}
-            className={cls(
-              "absolute top-2 h-[14px] w-0.5 rounded-full transition-colors",
-              i === nicks - 1 ? "bg-danger" : "bg-line-soft"
-            )}
-            style={{ left: `${((i + 1) / (nicks + 1)) * 100}%` }}
-          />
-        ))}
-        <span
-          className="absolute top-2 size-[11px] -translate-x-1/2 rounded-full bg-accent shadow-[0_0_16px_3px_var(--accent-glow)] transition-[left] duration-300"
-          style={{ left: `${pct}%` }}
-        />
-      </div>
-
-      <div className="mt-3 grid gap-3 sm:grid-cols-2">
-        <LifespanDial
-          icon={<Clock className="size-3.5" />}
-          label={t("expiresAfter")}
-          value={delay}
-          min={0}
-          max={presets.length - 1}
-          current={idx}
-          onChange={(i) => onMinutes(presets[i])}
-        />
-        <LifespanDial
-          icon={<Flame className="size-3.5" />}
-          label={t("maxViews")}
-          value={`${views} ${t("viewUnit", { count: views })}`}
-          min={1}
-          max={maxViews}
-          current={views}
-          onChange={onViews}
-        />
-      </div>
-
-      <p className="mt-2.5 text-xs text-ink-faint">{t("lifespanHint")}</p>
-    </div>
-  );
-}
-
-/** One of the fuse's two controls: label, read-out, slider. */
-function LifespanDial({
-  icon,
-  label,
-  value,
-  min,
-  max,
-  current,
-  onChange,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  min: number;
-  max: number;
-  current: number;
-  onChange: (v: number) => void;
-}) {
-  return (
-    <div className="rounded-lg border border-line bg-panel/40 px-3 pb-1.5 pt-2.5">
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-ink-faint">
-          {icon}
-          {label}
-        </span>
-        <span className="font-mono text-[13px] font-semibold text-accent-soft tabular-nums">
-          {value}
-        </span>
-      </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={1}
-        value={current}
-        aria-label={label}
-        onChange={(e) => onChange(parseInt(e.target.value, 10))}
-        className="mt-1.5 w-full accent-[var(--color-accent)] cursor-pointer"
-      />
-    </div>
   );
 }
 
@@ -685,10 +804,10 @@ function FileDrop({
       }}
       onClick={() => inputRef.current?.click()}
       className={cls(
-        "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-6 py-10 text-center transition-colors",
+        "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed bg-panel px-6 py-8 text-center transition-colors",
         drag
           ? "border-accent bg-accent/10"
-          : "border-line hover:border-line-soft hover:bg-panel-soft/50"
+          : "border-line-soft hover:border-ink-faint"
       )}
     >
       <input
@@ -740,22 +859,39 @@ function FileDrop({
   );
 }
 
-function SuccessScreen({
+/**
+ * The link, written by the particles: the address comes from the cloud (that is
+ * what is stored), the key comes from the field (it never went through the
+ * server). The real text stays transparent until the shape is complete.
+ */
+function ShareCard({
   created,
+  formed,
   hasPassphrase,
   onNew,
   tier,
   shareTemplate,
+  idRef,
+  keyRef,
+  delayLabel,
 }: {
   created: Created;
+  formed: boolean;
   hasPassphrase: boolean;
   onNew: () => void;
   tier: "anon" | "user";
   shareTemplate: string;
+  idRef: React.RefObject<HTMLSpanElement | null>;
+  keyRef: React.RefObject<HTMLSpanElement | null>;
+  delayLabel: string;
 }) {
   const t = useTranslations("success");
+  const td = useTranslations("diffusion");
   const locale = useLocale() as Locale;
   const [qr, setQr] = useState<string>("");
+  const hash = created.url.indexOf("#");
+  const address = created.url.slice(0, hash);
+  const keyPart = created.url.slice(hash);
 
   const delay = formatDelay(created.expireAfterMinutes * 60_000, locale);
   // "Note to send with the link": ready-to-copy text the sender attaches to the
@@ -767,80 +903,88 @@ function SuccessScreen({
     .replaceAll("[views]", String(created.expireAfterViews));
 
   useEffect(() => {
+    const cs = getComputedStyle(document.documentElement);
     QRCode.toDataURL(created.url, {
-      width: 240,
+      width: 220,
       margin: 1,
-      color: { dark: "#eef1f8", light: "#141823" },
+      color: {
+        dark: cs.getPropertyValue("--fx-ink").trim() || "#e4e9f0",
+        light: cs.getPropertyValue("--color-bg").trim() || "#07090d",
+      },
     }).then(setQr);
   }, [created.url]);
 
+  const sum = [td("shareViews", { views: created.expireAfterViews }), hasPassphrase ? td("sharePass") : null, td("shareNoKey")]
+    .filter(Boolean)
+    .join(" · ");
+
   return (
-    <Card className="p-8 text-center animate-fade-up">
-      <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-ok/10 border border-ok/25">
-        <ShieldCheck className="size-7 text-ok" />
-      </div>
-      <h2 className="mt-4 text-xl font-semibold tracking-tight">{t("title")}</h2>
-      <p className="mt-1 text-sm text-ink-faint">
-        {t("expiry", { delay, views: created.expireAfterViews })}
-        {hasPassphrase && t("withPassphrase")}.
+    <div className="flex flex-col gap-4 pt-5">
+      <p className="m-0 break-all font-mono text-[clamp(15px,1.5vw,18px)] leading-[1.75]">
+        <span ref={idRef} className={cls("transition-colors duration-700", formed ? "text-ink" : "text-transparent")}>{address}</span>
+        <span ref={keyRef} className={cls("transition-colors duration-700", formed ? "text-accent" : "text-transparent")}>{keyPart}</span>
+      </p>
+      <p className="flex flex-wrap gap-x-5 gap-y-1.5 text-[13px] text-ink-faint">
+        <span className="flex items-start gap-2"><i className="mt-[5px] inline-block size-2 flex-none rounded-full bg-ink" /><span>{td("legendAddress")}</span></span>
+        <span className="flex items-start gap-2">
+          <i className="mt-[5px] inline-block size-2 flex-none rounded-full bg-accent" />
+          <span>{td("legendKey")} · <b className="font-medium text-ink">{td("legendExpires", { delay: delayLabel })}</b></span>
+        </span>
       </p>
 
-      <div className="mt-6 break-all rounded-xl border border-line bg-bg-soft px-4 py-3 font-mono text-sm text-accent-soft">
-        {created.url}
-      </div>
-
-      <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
-        <CopyButton value={created.url} label={t("copyLink")} big />
-        <Button variant="ghost" onClick={onNew}>
-          <ArrowLeft className="size-4" />
-          {t("newPush")}
-        </Button>
-      </div>
-
-      {/* Ready-to-copy details for the recipient */}
-      <div className="mt-5 text-left">
-        <div className="flex items-center justify-between gap-2">
-          <label htmlFor="recipient-notice" className="text-xs font-medium text-ink-dim">
-            {t("recipientLabel")}
-          </label>
-          <CopyButton value={recipientNotice} label={t("copyNotice")} />
+      <div className={cls("flex flex-col gap-4 transition-[opacity,transform] delay-150 duration-500", formed ? "translate-y-0 opacity-100" : "translate-y-1.5 opacity-0")}>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <CopyButton value={created.url} label={t("copyLink")} big className="min-h-12 px-6" />
+          <Button variant="ghost" onClick={onNew} className="min-h-12">
+            <ArrowLeft className="size-4" />
+            {t("newPush")}
+          </Button>
         </div>
-        <Textarea
-          id="recipient-notice"
-          readOnly
-          rows={4}
-          value={recipientNotice}
-          onFocus={(e) => e.currentTarget.select()}
-          className="mt-2 resize-none text-xs leading-relaxed"
-        />
-        <p className="mt-1 text-xs text-ink-faint">{t("recipientHint")}</p>
+        <p className="border-t border-line pt-3 font-mono text-xs text-ink-faint">{sum}</p>
+
+        <details className="rounded-xl border border-line bg-bg/60">
+          <summary className="cursor-pointer select-none px-4 py-2.5 text-sm text-ink-dim hover:text-ink">{td("recipientDetails")}</summary>
+          <div className="space-y-2 border-t border-line px-4 pb-4 pt-3">
+            <div className="flex items-center justify-between gap-2">
+              <label htmlFor="recipient-notice" className="eyebrow">{t("recipientLabel")}</label>
+              <CopyButton value={recipientNotice} label={t("copyNotice")} />
+            </div>
+            <Textarea
+              id="recipient-notice"
+              readOnly
+              rows={4}
+              value={recipientNotice}
+              onFocus={(e) => e.currentTarget.select()}
+              className="resize-none text-xs leading-relaxed"
+            />
+            <p className="text-xs text-ink-faint">{t("recipientHint")}</p>
+          </div>
+        </details>
+
+        {qr && (
+          <details className="rounded-xl border border-line bg-bg/60">
+            <summary className="cursor-pointer select-none px-4 py-2.5 text-sm text-ink-dim hover:text-ink">{td("qrDetails")}</summary>
+            <div className="flex flex-col items-center gap-2 border-t border-line px-4 pb-4 pt-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={qr} alt={t("qrAlt")} className="rounded-lg border border-line" />
+              <p className="text-xs text-ink-faint">{t("qrHint")}</p>
+            </div>
+          </details>
+        )}
+
+        {tier === "anon" && (
+          <p className="text-[13px] text-ink-faint">
+            {t.rich("anonTip", {
+              strong: (chunks) => <strong className="text-ink">{chunks}</strong>,
+              link: (chunks) => (
+                <Link href="/register" className="font-medium text-ink-dim underline underline-offset-2 hover:text-ink">
+                  {chunks}
+                </Link>
+              ),
+            })}
+          </p>
+        )}
       </div>
-
-      {qr && (
-        <div className="mt-6 flex flex-col items-center gap-2">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={qr} alt={t("qrAlt")} className="rounded-xl border border-line" />
-          <p className="text-xs text-ink-faint">{t("qrHint")}</p>
-        </div>
-      )}
-
-      <p className="mt-6 text-xs text-ink-faint">{t("warning")}</p>
-
-      {tier === "anon" && (
-        <div className="mt-6 rounded-xl border border-accent/25 bg-accent/[0.07] px-4 py-3 text-left text-xs text-ink-dim">
-          {t.rich("anonTip", {
-            strong: (chunks) => <strong className="text-ink">{chunks}</strong>,
-            link: (chunks) => (
-              <Link
-                href="/register"
-                className="font-medium text-accent-soft underline-offset-2 hover:underline"
-              >
-                {chunks}
-              </Link>
-            ),
-          })}
-        </div>
-      )}
-    </Card>
+    </div>
   );
 }

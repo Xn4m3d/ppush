@@ -13,6 +13,7 @@ import {
 import { config } from "@/lib/config";
 import { Section, Faq } from "./blocks";
 import { FlagFr } from "@/components/flag-fr";
+import { MiniCloud } from "@/components/diffusion/mini-cloud";
 
 /** English content of the About page. Mirror: content.fr.tsx. */
 export function AboutContentEn({ showRegister }: { showRegister: boolean }) {
@@ -20,7 +21,8 @@ export function AboutContentEn({ showRegister }: { showRegister: boolean }) {
     <>
       <div className="flex flex-col items-center gap-6 text-center">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">About</h1>
+          <MiniCloud className="mb-2" seed={5} />
+          <h1 className="text-4xl font-bold">About</h1>
           <p className="mx-auto mt-3 max-w-xl text-ink-dim">
             ppush is a secure secret-sharing service operated by{" "}
             <strong className="text-ink">Alexandre</strong>{" "}
