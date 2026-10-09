@@ -244,6 +244,7 @@ export function AgeTimeline({
   value: number;
   onChange: (t: number, hold: boolean) => void;
   ticks: { at: number; label: string }[];
+  /** Spoken position (screen readers). */
   bubble: string;
   label: string;
 }) {
@@ -283,12 +284,6 @@ export function AgeTimeline({
           </span>
         </div>
       ))}
-      <span
-        className={cls("pointer-events-none absolute bottom-[30px] -translate-x-1/2 whitespace-nowrap rounded-md bg-ink px-2 py-0.5 font-mono text-xs text-bg transition-opacity", active || value > 0.005 ? "opacity-100" : "opacity-0")}
-        style={{ left: pct }}
-      >
-        {bubble}
-      </span>
       <button
         type="button"
         role="slider"
