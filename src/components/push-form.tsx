@@ -79,7 +79,13 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
   const tTabs = useTranslations("tabs");
   const locale = useLocale() as Locale;
   const [kind, setKind] = useState<Kind>("PASSWORD");
-  const [secret, setSecret] = useState("");
+  // one value per type: switching from "Password" to "URL" does not copy
+  // the password into the URL field, and switching back finds it intact
+  const [texts, setTexts] = useState<Record<Exclude<Kind, "FILE">, string>>({ PASSWORD: "", TEXT: "", URL: "" });
+  const secret = kind === "FILE" ? "" : texts[kind];
+  const setSecret = (v: string) => {
+    if (kind !== "FILE") setTexts((m) => ({ ...m, [kind]: v }));
+  };
   const [showSecret, setShowSecret] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [minutes, setMinutes] = useState(() => {
@@ -202,7 +208,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
   };
 
   const reset = useCallback(() => {
-    setSecret("");
+    setTexts({ PASSWORD: "", TEXT: "", URL: "" });
     setFile(null);
     setPassphrase("");
     setNote("");
@@ -425,7 +431,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
                       return p[nearestPresetIndex(p, Math.min(m, md * 1440))];
                     });
                     // content of the new type: re-encrypt it for the cloud
-                    const v = k === "FILE" ? null : secret;
+                    const v = k === "FILE" ? null : texts[k];
                     if (k === "FILE") { if (file) void changeFile(file); }
                     else if (v) setTimeout(() => void preview(new TextEncoder().encode(v), "all"), 0);
                   }}
