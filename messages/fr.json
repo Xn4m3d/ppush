@@ -200,7 +200,9 @@
     "generateNow": "Générer",
     "saveDefault": "Enregistrer par défaut",
     "savedDefault": "Réglage enregistré pour votre compte.",
-    "saveDefaultError": "Enregistrement impossible, réessayez."
+    "saveDefaultError": "Enregistrement impossible, réessayez.",
+    "recommended": "recommandé",
+    "settings": "Réglages"
   },
   "fileDrop": {
     "prompt": "Glissez un fichier ici ou cliquez pour parcourir",

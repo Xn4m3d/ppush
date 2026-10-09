@@ -21,6 +21,7 @@ import type { Locale } from "@/i18n/locale";
 import { Button, Input, Textarea, Toggle, ErrorText, cls } from "./ui";
 import { CopyButton } from "./copy-button";
 import { DiffusionScene } from "./diffusion/scene";
+import { SiderealHalo } from "./diffusion/mini-cloud";
 import { AgeTimeline, DurationDial, ReadsPips, useWheel } from "./diffusion/controls";
 
 type Kind = "PASSWORD" | "TEXT" | "FILE" | "URL";
@@ -480,7 +481,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
                     else if (v) setTimeout(() => void preview(new TextEncoder().encode(v), "all"), 0);
                   }}
                   className={cls(
-                    "flex items-center justify-center gap-2 whitespace-nowrap rounded-[10px] border px-2 py-2.5 text-[13px] font-medium transition-colors sm:text-sm cursor-pointer",
+                    "flex items-center justify-center gap-2 whitespace-nowrap rounded-[10px] border px-1 py-2.5 text-[12px] font-medium tracking-[-0.01em] transition-colors sm:px-2 sm:text-sm sm:tracking-normal cursor-pointer",
                     kind === k ? "border-ink bg-ink text-bg" : "border-line bg-bg text-ink hover:border-line-soft"
                   )}
                 >
@@ -516,6 +517,8 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
                     `autocomplete=off` on password fields). We mask the value
                     with CSS instead and opt out of the remaining heuristics
                     via per-manager data attributes. */}
+                <div className="relative">
+                <SiderealHalo />
                 <Input
                   id="pp-secret"
                   ref={(el: HTMLInputElement | HTMLTextAreaElement | null) => { fieldRef.current = el; }}
@@ -523,7 +526,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
                   value={secret}
                   onChange={(e) => changeSecret(e.target.value)}
                   placeholder="••••••••••••"
-                  className={cls("min-h-14 font-mono text-[17px] sm:text-[17px]", !showSecret && "[-webkit-text-security:disc]")}
+                  className={cls("relative z-[1] min-h-14 font-mono text-[17px] sm:text-[17px]", !showSecret && "[-webkit-text-security:disc]")}
                   autoComplete="off"
                   autoCorrect="off"
                   autoCapitalize="off"
@@ -533,6 +536,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
                   data-bwignore
                   data-form-type="other"
                 />
+                </div>
                 <GeneratorOptions
                   gen={gen}
                   onGen={changeGen}
@@ -744,6 +748,7 @@ function GeneratorOptions({
   onSave: () => void;
 }) {
   const t = useTranslations("generator");
+  const [open, setOpen] = useState(false);
   const set = (patch: Partial<GenPrefs>) => onGen({ ...gen, ...patch });
   const charBits = Math.round(gen.length * Math.log2(passwordAlphabetSize(gen)));
   const wordBits = Math.round(passphraseBits(WORDLIST_SIZE[gen.lang], { words: gen.words, digitCount: gen.digitCount }));
@@ -762,44 +767,98 @@ function GeneratorOptions({
       "min-h-9 rounded-lg border px-3 text-[13px] transition-colors cursor-pointer",
       on ? "border-ink bg-ink text-bg" : "border-line bg-bg text-ink-dim hover:border-line-soft hover:text-ink"
     );
-  const slider = (label: string, value: string, v: number, [lo, hi]: readonly [number, number], onV: (n: number) => void) => (
-    <div className="px-2 pb-2">
-      <div className="flex items-center justify-between text-[13px]">
-        <span className="font-medium text-ink-dim">{label}</span>
-        <span className="font-semibold text-accent-soft tabular-nums">{value}</span>
+  // Readable numeric setting. Small range (≤ 12 values): one cell per
+  // value, everything is visible and one click is enough. Large range: a real slider
+  // (thick track, accent fill, large thumb, tick marks).
+  const slider = (label: string, value: string, v: number, [lo, hi]: readonly [number, number], onV: (n: number) => void) => {
+    const n = hi - lo + 1;
+    const pct = ((v - lo) / (hi - lo)) * 100;
+    return (
+      <div className="px-2 pb-3">
+        <div className="mb-2 flex items-baseline justify-between text-[13px]">
+          <span className="font-medium text-ink-dim">{label}</span>
+          <span className="text-base font-bold text-ink tabular-nums">{value}</span>
+        </div>
+        {n <= 12 ? (
+          <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }} role="radiogroup" aria-label={label}>
+            {Array.from({ length: n }, (_, i) => lo + i).map((k) => (
+              <button
+                key={k}
+                type="button"
+                role="radio"
+                aria-checked={k === v}
+                onClick={() => onV(k)}
+                className={cls(
+                  "min-h-10 rounded-lg border font-mono text-sm tabular-nums transition-colors cursor-pointer",
+                  k === v
+                    ? "border-accent bg-accent font-semibold text-[var(--on-accent)]"
+                    : k < v
+                      ? "border-line-soft bg-bg text-ink"
+                      : "border-line bg-bg text-ink-faint hover:border-line-soft hover:text-ink"
+                )}
+              >
+                {k}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <>
+            <input
+              type="range"
+              min={lo}
+              max={hi}
+              value={v}
+              aria-label={label}
+              onChange={(e) => onV(parseInt(e.target.value, 10))}
+              className="range-lg w-full cursor-pointer"
+              style={{ "--pct": `${pct}%` } as React.CSSProperties}
+            />
+            <div className="mt-1 flex justify-between font-mono text-[11px] text-ink-faint tabular-nums">
+              <span>{lo}</span>
+              <span>{Math.round((lo + hi) / 2)}</span>
+              <span>{hi}</span>
+            </div>
+          </>
+        )}
       </div>
-      <input
-        type="range"
-        min={lo}
-        max={hi}
-        value={v}
-        aria-label={label}
-        onChange={(e) => onV(parseInt(e.target.value, 10))}
-        className="mt-2 w-full accent-[var(--color-accent)] cursor-pointer"
-      />
-    </div>
-  );
+    );
+  };
 
   return (
-    <details className="group rounded-xl border border-line bg-bg/60">
-      <summary className="flex cursor-pointer select-none items-center justify-between px-4 py-2.5 text-sm text-ink-dim transition-colors hover:text-ink">
-        <span>{t("summary")}</span>
-        <span className={cls("text-xs tabular-nums", bits < WEAK_BITS ? "text-warn" : "text-ink-faint")}>
+    <div className="rounded-xl border border-line bg-panel">
+      {/* Always visible: the kind of generated secret (words are
+          recommended), the resulting strength, and access to the settings. */}
+      <div className="px-2.5 pt-2.5">
+        <div className="grid grid-cols-2 gap-1.5" role="group" aria-label={t("summary")}>
+          <button type="button" aria-pressed={gen.mode === "words"} onClick={() => set({ mode: "words" })} className={cls(chip(gen.mode === "words"), "inline-flex flex-col items-center justify-center gap-1 py-1.5 sm:flex-row sm:gap-2")}>
+            {t("modeWords")}
+            <span className={cls("rounded px-1.5 py-px font-mono text-[10px] uppercase tracking-wider", gen.mode === "words" ? "bg-accent text-[var(--on-accent)]" : "bg-accent/15 text-accent")}>
+              {t("recommended")}
+            </span>
+          </button>
+          <button type="button" aria-pressed={gen.mode === "chars"} onClick={() => set({ mode: "chars" })} className={cls(chip(gen.mode === "chars"), "py-1.5")}>
+            {t("modeChars")}
+          </button>
+        </div>
+      </div>
+      <div className="flex items-center justify-between gap-2 px-2.5 py-1">
+        <span className={cls("pl-1 font-mono text-xs tabular-nums", bits < WEAK_BITS ? "text-warn" : "text-ink-faint")}>
           {gen.mode === "words"
             ? t("summaryWords", { count: gen.words, bits: wordBits })
             : t("summaryStats", { length: gen.length, bits: charBits })}
         </span>
-      </summary>
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen(!open)}
+          className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2.5 text-[13px] text-ink-dim hover:bg-bg hover:text-ink cursor-pointer"
+        >
+          {t("settings")}
+          <span aria-hidden className={cls("text-[10px] transition-transform", open && "rotate-180")}>▼</span>
+        </button>
+      </div>
+      {open && (
       <div className="space-y-1 border-t border-line px-2 pt-3">
-        {/* two kinds of secrets: random characters, or words */}
-        <div className="grid grid-cols-2 gap-1.5 px-2 pb-2" role="group" aria-label={t("summary")}>
-          <button type="button" aria-pressed={gen.mode === "chars"} onClick={() => set({ mode: "chars" })} className={chip(gen.mode === "chars")}>
-            {t("modeChars")}
-          </button>
-          <button type="button" aria-pressed={gen.mode === "words"} onClick={() => set({ mode: "words" })} className={chip(gen.mode === "words")}>
-            {t("modeWords")}
-          </button>
-        </div>
 
         {gen.mode === "chars" ? (
           <>
@@ -851,7 +910,8 @@ function GeneratorOptions({
           </span>
         </div>
       </div>
-    </details>
+      )}
+    </div>
   );
 }
 
