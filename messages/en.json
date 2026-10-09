@@ -115,7 +115,8 @@
     "anonStrip": "With a free account: know when the link is opened, history, higher limits. <link>Create an account</link>",
     "ctaHint": "Set up how your secret is shared in the panel on the left, then click the button.",
     "ctaReady": "All set. Encryption happens in your browser, on click.",
-    "ctaWorking": "Encrypting…"
+    "ctaWorking": "Encrypting…",
+    "ctaTooShort": "Password too short: {count, plural, one {# more character} other {# more characters}} needed ({min} minimum)."
   },
   "tabs": {
     "PASSWORD": "Password",

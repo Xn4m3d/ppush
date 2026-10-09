@@ -78,6 +78,7 @@ type Created = { url: string; kind: Kind; expireAfterMinutes: number; expireAfte
 // shape, and the preview encryption stays instant.
 const PREVIEW_FILE_BYTES = 256 * 1024;
 const WIDE = "(min-width: 1024px)";
+const MIN_PASSWORD = 5;
 
 export function PushForm({ defaults }: { defaults: Defaults }) {
   const t = useTranslations("form");
@@ -330,6 +331,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
 
     if (kind === "FILE" && !file) return setError(t("errorEmptyFile"));
     if (kind !== "FILE" && !secret.trim()) return setError(t("errorEmptyContent"));
+    if (kind === "PASSWORD" && [...secret].length < MIN_PASSWORD) return setError(td("ctaTooShort", { count: MIN_PASSWORD - [...secret].length, min: MIN_PASSWORD }));
     if (kind === "URL") {
       try {
         const u = new URL(secret.trim());
@@ -452,7 +454,11 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
   }));
 
   const sealed = !!created;
-  const ready = kind === "FILE" ? !!file : secret.trim().length > 0;
+  // password: 5 characters minimum (browser-side check only:
+  // the server only receives ciphertext and never knows the secret's length)
+  const pwLen = [...secret].length;
+  const pwShort = kind === "PASSWORD" && pwLen > 0 && pwLen < MIN_PASSWORD;
+  const ready = kind === "FILE" ? !!file : secret.trim().length > 0 && !pwShort;
 
   return (
     <div ref={hostRef} className="relative mx-auto w-full max-w-6xl flex-1 px-4 pb-10 pt-6 sm:px-6">
@@ -685,7 +691,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
           {!sealed && (
           <div className="mb-5 flex flex-col gap-2.5">
             <p className="text-sm text-ink-dim" aria-live="polite">
-              {busy ? (progress ?? td("ctaWorking")) : ready ? td("ctaReady") : td("ctaHint")}
+              {busy ? (progress ?? td("ctaWorking")) : pwShort ? td("ctaTooShort", { count: MIN_PASSWORD - pwLen, min: MIN_PASSWORD }) : ready ? td("ctaReady") : td("ctaHint")}
             </p>
             <Button
               ref={ctaRef}
