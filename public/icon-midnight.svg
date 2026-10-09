@@ -1,22 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#ffb27c"/>
-      <stop offset="1" stop-color="#e8763f"/>
-    </linearGradient>
-  </defs>
-  <rect width="64" height="64" rx="14" fill="url(#g)"/>
-  <g fill="#1c1319">
-    <g transform="translate(6.08 -1) scale(0.81)">
-      <path fill-rule="evenodd"
-            d="M18 29 L14.5 12 L27.5 19.5 Q32 18 36.5 19.5 L49.5 12 L46 29 Q50 34.5 50 40 Q50 54 32 54 Q14 54 14 40 Q14 34.5 18 29 Z
-               M22 39.5 a3.2 4.2 0 1 0 6.4 0 a3.2 4.2 0 1 0 -6.4 0 Z
-               M35.6 39.5 a3.2 4.2 0 1 0 6.4 0 a3.2 4.2 0 1 0 -6.4 0 Z
-               M19.5 23 L18 16 L23.5 20 Z  M44.5 23 L46 16 L40.5 20 Z
-               M29.6 46.5 L34.4 46.5 L32 49.8 Z"/>
-    </g>
-    <circle cx="22" cy="54" r="3.7"/>
-    <circle cx="32" cy="54" r="3.7"/>
-    <circle cx="42" cy="54" r="3.7"/>
+  <!-- ppush — chat en diffusion (B1), version favicon : peu de particules, plus grosses, lisibles à 16 px -->
+  <defs><clipPath id="h"><rect width="34" height="50"/></clipPath></defs>
+  <rect width="64" height="64" rx="14" fill="#07090D"/>
+  <g fill="#E4E9F0">
+    <g clip-path="url(#h)"><path transform="translate(6.08 -1) scale(0.81)" fill-rule="evenodd" d="M18 29 L14.5 12 L27.5 19.5 Q32 18 36.5 19.5 L49.5 12 L46 29 Q50 34.5 50 40 Q50 54 32 54 Q14 54 14 40 Q14 34.5 18 29 Z M22 39.5 a3.2 4.2 0 1 0 6.4 0 a3.2 4.2 0 1 0 -6.4 0 Z M35.6 39.5 a3.2 4.2 0 1 0 6.4 0 a3.2 4.2 0 1 0 -6.4 0 Z M19.5 23 L18 16 L23.5 20 Z M44.5 23 L46 16 L40.5 20 Z M29.6 46.5 L34.4 46.5 L32 49.8 Z"/></g>
+    <circle cx="20" cy="54.5" r="4.4"/><circle cx="31.5" cy="54.5" r="4.4"/>
+    <circle cx="37.1" cy="15" r="2.39" opacity="0.96"/><circle cx="39.4" cy="19.8" r="2.33" opacity="0.93"/><circle cx="46.5" cy="22" r="2.09" opacity="0.84"/><circle cx="36.9" cy="25.9" r="2.4" opacity="0.96"/><circle cx="44.7" cy="31.5" r="2.14" opacity="0.86"/><circle cx="39.1" cy="37.1" r="2.33" opacity="0.93"/><circle cx="44.3" cy="36.7" r="2.13" opacity="0.86"/>
   </g>
+  <circle cx="45.5" cy="55.5" r="3.6" fill="#FF7A59"/>
 </svg>
