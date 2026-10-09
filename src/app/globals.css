@@ -240,29 +240,7 @@ h1, h2, h3, h4 {
 }
 @media (prefers-reduced-motion: reduce) { .sidereal-halo i { animation: none; opacity: 0.4; } }
 
-/* Advanced options: the window "condenses" (blur and slight zoom → sharp),
-   the backdrop darkens and blurs. Enter AND exit animation thanks to
-   @starting-style + transition-behavior: allow-discrete. */
-.adv-dialog {
-  opacity: 0;
-  transform: translateY(8px) scale(1.03);
-  filter: blur(6px);
-  transition: opacity 0.22s ease, transform 0.26s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.22s ease,
-    overlay 0.26s allow-discrete, display 0.26s allow-discrete;
-}
-.adv-dialog[open] { opacity: 1; transform: none; filter: none; }
-@starting-style {
-  .adv-dialog[open] { opacity: 0; transform: translateY(8px) scale(1.03); filter: blur(6px); }
-}
-.adv-dialog::backdrop {
-  background: rgba(3, 5, 8, 0);
-  backdrop-filter: blur(0);
-  transition: background 0.26s ease, backdrop-filter 0.26s ease, overlay 0.26s allow-discrete, display 0.26s allow-discrete;
-}
-.adv-dialog[open]::backdrop { background: rgba(3, 5, 8, 0.62); backdrop-filter: blur(4px); }
-@starting-style {
-  .adv-dialog[open]::backdrop { background: rgba(3, 5, 8, 0); backdrop-filter: blur(0); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .adv-dialog, .adv-dialog::backdrop { transition: none; }
-}
+/* "Morphing" windows (src/components/morph-dialog.tsx): the motion is
+   driven in JS (Web Animations); only the backdrop and drop shadow live here. */
+.morph-dialog { box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.7); transform-origin: 0 0; }
+.morph-dialog::backdrop { background: rgba(3, 5, 8, 0.62); backdrop-filter: blur(4px); }

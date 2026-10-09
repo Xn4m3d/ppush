@@ -171,7 +171,8 @@
     "progressEncrypting": "Chiffrement du fichier…",
     "progressEncryptingPct": "Chiffrement du fichier… {pct} %",
     "progressUploading": "Envoi du fichier chiffré…",
-    "progressCreating": "Création du lien…"
+    "progressCreating": "Création du lien…",
+    "passwordPlaceholder": "Tapez, collez ou générez ici le mot de passe"
   },
   "generator": {
     "summary": "Options du générateur",
@@ -215,7 +216,12 @@
     "symbolNone": "aucun",
     "symbolRandom": "aléatoire",
     "symbolPick": "Terminer par {c}",
-    "fieldChars": "{count, plural, one {# caractère} other {# caractères}}"
+    "fieldChars": "{count, plural, one {# caractère} other {# caractères}}",
+    "settingsTitle": "Réglages du générateur",
+    "preview": "Aperçu",
+    "previewEmpty": "Cliquez sur Générer pour voir le résultat.",
+    "close": "Fermer",
+    "done": "Terminé"
   },
   "fileDrop": {
     "prompt": "Glissez un fichier ici ou cliquez pour parcourir",

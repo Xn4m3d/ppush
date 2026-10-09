@@ -20,6 +20,7 @@ import { formatBytes, formatDelay } from "@/lib/format";
 import type { Locale } from "@/i18n/locale";
 import { Button, Input, Textarea, Toggle, ErrorText, cls } from "./ui";
 import { CopyButton } from "./copy-button";
+import { MorphDialog, requestMorphClose } from "./morph-dialog";
 import { DiffusionScene } from "./diffusion/scene";
 import { SiderealHalo } from "./diffusion/mini-cloud";
 import { AgeTimeline, DurationDial, ReadsPips, useWheel } from "./diffusion/controls";
@@ -131,7 +132,8 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
   const keyRef = useRef<HTMLSpanElement>(null);
   const zoneRef = useRef<HTMLElement>(null);
   const ctaRef = useRef<HTMLButtonElement>(null);
-  const advRef = useRef<HTMLDialogElement>(null);
+  const advBtn = useRef<HTMLButtonElement>(null);
+  const [advOpen, setAdvOpen] = useState(false);
   const scene = useRef<DiffusionScene | null>(null);
   const previewKey = useRef<Promise<CryptoKey | null> | null>(null);
   const seq = useRef(0);
@@ -549,8 +551,9 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
                   type="text"
                   value={secret}
                   onChange={(e) => changeSecret(e.target.value)}
-                  placeholder="••••••••••••"
-                  className={cls("relative z-[1] min-h-14 font-mono text-[17px] sm:text-[17px]", !showSecret && "[-webkit-text-security:disc]")}
+                  placeholder={t("passwordPlaceholder")}
+                  // masked only when there is content: the placeholder stays readable
+                  className={cls("relative z-[1] min-h-14 font-mono text-[17px] sm:text-[17px] placeholder:font-sans placeholder:text-[15px]", !showSecret && secret && "[-webkit-text-security:disc]")}
                   autoComplete="off"
                   autoCorrect="off"
                   autoCapitalize="off"
@@ -564,6 +567,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
                 <GeneratorOptions
                   gen={gen}
                   charCount={[...texts.PASSWORD].length}
+                  preview={texts.PASSWORD}
                   onGen={changeGen}
                   onGenerate={() => void runGenerate(gen)}
                   canSave={defaults.tier === "user"}
@@ -653,8 +657,10 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
                 Escape, the focus trap and the backdrop. The button tells how many
                 options differ from the default. */}
             <button
+              ref={advBtn}
               type="button"
-              onClick={() => advRef.current?.showModal()}
+              aria-haspopup="dialog"
+              onClick={() => setAdvOpen(true)}
               className="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-line bg-bg/60 px-4 text-sm text-ink-dim transition-colors hover:border-line-soft hover:text-ink cursor-pointer"
             >
               <span>{t("advanced")}</span>
@@ -662,19 +668,12 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
                 {advChanged > 0 ? td("advChanged", { count: advChanged }) : td("advDefault")}
               </span>
             </button>
-            <dialog
-              ref={advRef}
-              aria-labelledby="adv-title"
-              onClick={(e) => { if (e.target === e.currentTarget) e.currentTarget.close(); }}
-              // Enter in a window field: close it without submitting the form
-              onKeyDown={(e) => { if (e.key === "Enter" && e.target instanceof HTMLInputElement) { e.preventDefault(); e.currentTarget.close(); } }}
-              className="adv-dialog m-auto w-[min(560px,calc(100vw-32px))] max-h-[calc(100dvh-48px)] overflow-auto rounded-2xl border border-line bg-bg p-0 text-ink"
-            >
+            <MorphDialog open={advOpen} onClose={() => setAdvOpen(false)} anchorRef={advBtn} labelledBy="adv-title" className="w-[min(560px,calc(100vw-32px))]">
               <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">
                 <h2 id="adv-title" className="text-lg font-bold">{t("advanced")}</h2>
-                <button type="button" onClick={() => advRef.current?.close()} aria-label={td("advClose")} className="grid size-9 place-items-center rounded-lg text-ink-dim hover:bg-panel hover:text-ink cursor-pointer">✕</button>
+                <button type="button" onClick={(e) => requestMorphClose(e.currentTarget)} aria-label={td("advClose")} className="grid size-9 place-items-center rounded-lg text-ink-dim hover:bg-panel hover:text-ink cursor-pointer">✕</button>
               </div>
-              <div className="space-y-3 px-4 py-4">
+              <div className="min-h-0 flex-1 space-y-3 overflow-auto px-4 py-4">
                 <label className="block space-y-1.5 px-1">
                   <span className="text-[15px] font-semibold text-ink">{t("passphraseLabel")}</span>
                   <Input
@@ -698,9 +697,9 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
                 )}
               </div>
               <div className="flex justify-end border-t border-line px-5 py-3.5">
-                <Button type="button" onClick={() => advRef.current?.close()} className="min-h-11 px-6">{td("advDone")}</Button>
+                <Button type="button" onClick={(e) => requestMorphClose(e.currentTarget)} className="min-h-11 px-6">{td("advDone")}</Button>
               </div>
-            </dialog>
+            </MorphDialog>
 
             <ErrorText>{error}</ErrorText>
           </fieldset>
@@ -796,6 +795,7 @@ const WEAK_BITS = 60;
 function GeneratorOptions({
   gen,
   charCount,
+  preview,
   onGen,
   onGenerate,
   canSave,
@@ -805,6 +805,8 @@ function GeneratorOptions({
   gen: GenPrefs;
   /** Length of the password currently in the field (typed or generated). */
   charCount: number;
+  /** Current field content, shown in the window (which hides the field). */
+  preview: string;
   onGen: (g: GenPrefs) => void;
   onGenerate: () => void;
   canSave: boolean;
@@ -813,6 +815,7 @@ function GeneratorOptions({
 }) {
   const t = useTranslations("generator");
   const [open, setOpen] = useState(false);
+  const settingsBtn = useRef<HTMLButtonElement>(null);
   const set = (patch: Partial<GenPrefs>) => onGen({ ...gen, ...patch });
   const charBits = Math.round(gen.length * Math.log2(passwordAlphabetSize(gen)));
   const wordBits = Math.round(passphraseBits(WORDLIST_SIZE[gen.lang], { words: gen.words, digitCount: gen.digitCount, symbol: gen.symbol, symbolPool: END_SYMBOLS }));
@@ -913,17 +916,36 @@ function GeneratorOptions({
           {charCount > 0 && <span className="text-ink-dim"> · {t("fieldChars", { count: charCount })}</span>}
         </span>
         <button
+          ref={settingsBtn}
           type="button"
-          aria-expanded={open}
-          onClick={() => setOpen(!open)}
-          className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2.5 text-[13px] text-ink-dim hover:bg-bg hover:text-ink cursor-pointer"
+          aria-haspopup="dialog"
+          onClick={() => setOpen(true)}
+          className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line-soft bg-bg px-3 text-[13px] font-medium text-ink transition-colors hover:border-ink-faint cursor-pointer"
         >
           {t("settings")}
-          <span aria-hidden className={cls("text-[10px] transition-transform", open && "rotate-180")}>▼</span>
+          <span aria-hidden className="text-ink-faint">⋯</span>
         </button>
       </div>
-      {open && (
-      <div className="space-y-1 border-t border-line px-2 pt-3">
+      {/* The settings "grow out" of the button (morphing modal); a live
+          preview stands in for the field, which is hidden meanwhile. */}
+      <MorphDialog open={open} onClose={() => setOpen(false)} anchorRef={settingsBtn} labelledBy="gen-title" className="w-[min(560px,calc(100vw-32px))]">
+        <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">
+          <h2 id="gen-title" className="text-lg font-bold">{t("settingsTitle")}</h2>
+          <button type="button" onClick={(e) => requestMorphClose(e.currentTarget)} aria-label={t("close")} className="grid size-9 place-items-center rounded-lg text-ink-dim hover:bg-panel hover:text-ink cursor-pointer">✕</button>
+        </div>
+        <div className="border-b border-line bg-panel px-5 py-3.5">
+          <p className="eyebrow mb-1">{t("preview")}</p>
+          <p className={cls("m-0 break-all font-mono text-lg", preview ? "text-ink" : "text-ink-faint")}>{preview || t("previewEmpty")}</p>
+          <p className={cls("mt-1 font-mono text-xs tabular-nums", bits < WEAK_BITS ? "text-warn" : "text-ink-faint")}>
+            {gen.mode === "words" ? t("summaryWords", { count: gen.words, bits: wordBits }) : t("summaryStats", { length: gen.length, bits: charBits })}
+            {charCount > 0 && <span className="text-ink-dim"> · {t("fieldChars", { count: charCount })}</span>}
+          </p>
+        </div>
+      <div className="min-h-0 flex-1 space-y-1 overflow-auto px-3 pb-2 pt-3">
+        <div className="grid grid-cols-2 gap-1.5 px-2 pb-3" role="group" aria-label={t("summary")}>
+          <button type="button" aria-pressed={gen.mode === "words"} onClick={() => set({ mode: "words" })} className={cls(chip(gen.mode === "words"), "py-1.5")}>{t("modeWords")}</button>
+          <button type="button" aria-pressed={gen.mode === "chars"} onClick={() => set({ mode: "chars" })} className={cls(chip(gen.mode === "chars"), "py-1.5")}>{t("modeChars")}</button>
+        </div>
 
         {gen.mode === "chars" ? (
           <>
@@ -968,9 +990,9 @@ function GeneratorOptions({
         )}
         {bits < WEAK_BITS && <p className="px-2 text-xs text-warn">{gen.mode === "words" ? t("weakWords") : t("weakChars")}</p>}
 
-        {/* the action bar follows scrolling: generate (and save) without
-            scrolling back up to the field, wherever the options are */}
-        <div className="sticky bottom-0 z-[5] -mx-2 mt-2 flex flex-wrap items-center gap-2 rounded-b-xl border-t border-line bg-bg/95 px-4 py-2.5 backdrop-blur">
+      </div>
+        {/* fixed window footer: generate and save stay within reach */}
+        <div className="flex flex-wrap items-center gap-2 border-t border-line px-5 py-3.5">
           <Button type="button" onClick={onGenerate} className="min-h-10">
             <Dices className="size-4" />
             {t("generateNow")}
@@ -983,9 +1005,11 @@ function GeneratorOptions({
           <span className={cls("text-xs", saveState === "error" ? "text-danger" : "text-ok")} aria-live="polite">
             {saveState === "saved" ? t("savedDefault") : saveState === "error" ? t("saveDefaultError") : ""}
           </span>
+          <Button type="button" variant="ghost" onClick={(e) => requestMorphClose(e.currentTarget)} className="ml-auto min-h-10">
+            {t("done")}
+          </Button>
         </div>
-      </div>
-      )}
+      </MorphDialog>
     </div>
   );
 }
