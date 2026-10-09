@@ -88,6 +88,9 @@ export default async function RootLayout({
             LOCAL hour) BEFORE first paint. Priority cookie > account preference > auto. */}
         <script
           nonce={nonce}
+          // the browser blanks the nonce attribute once read (CSP anti-exfiltration):
+          // the DOM ↔ client difference is expected, not a real mismatch
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var m=document.cookie.match(/(?:^|; )theme=([^;]+)/);var c=m?decodeURIComponent(m[1]):"";var u=${JSON.stringify(ut ?? "")};var re=/^(midnight|mecha|auto)$/;var p=re.test(c)?c:re.test(u)?u:"midnight";var h=new Date().getHours();var t=(p==="midnight"||p==="mecha")?p:((h>=${DAY_START}&&h<${DAY_END})?"mecha":"midnight");document.documentElement.dataset.theme=t;var f=document.querySelector("link[rel~='icon']");if(f)f.href=(t==='mecha')?'/icon-mecha.svg':'/icon-midnight.svg';}catch(e){}})();`,
           }}

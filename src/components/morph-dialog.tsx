@@ -1,6 +1,9 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode, type RefObject } from "react";
+import { useEffect, useRef, useSyncExternalStore, type ReactNode, type RefObject } from "react";
+import { createPortal } from "react-dom";
+
+const noop = () => () => {};
 
 // light spring: barely overshoots the target, then settles ("Apple" feel)
 const SPRING = "cubic-bezier(0.32, 1.12, 0.42, 1)";
@@ -124,7 +127,11 @@ export function MorphDialog({
     if (!open && ref.current?.open && !closing.current) close();
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return (
+  // rendered into <body> through a portal: the window can be triggered from
+  // a heading or a paragraph without nesting a <dialog> in it (invalid HTML)
+  const isClient = useSyncExternalStore(noop, () => true, () => false);
+  if (!isClient) return null;
+  return createPortal(
     <dialog
       ref={ref}
       aria-labelledby={labelledBy}
@@ -138,7 +145,8 @@ export function MorphDialog({
         {children}
       </div>
       <CloseBridge onRequest={close} dialog={ref} />
-    </dialog>
+    </dialog>,
+    document.body
   );
 }
 

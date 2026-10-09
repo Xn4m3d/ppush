@@ -17,6 +17,8 @@
     "privacy": "Politique de confidentialité",
     "homeDescription": "Partagez un mot de passe, un texte ou un fichier via un lien chiffré de bout en bout qui s'autodétruit. Zéro-knowledge : le serveur ne voit jamais votre secret.",
     "aboutDescription": "Le fonctionnement de ppush : chiffrement zéro-knowledge dans le navigateur, liens autodestructibles, limites de vues et suivi. Données hébergées en France via Cloudflare.",
+    "why": "À quoi sert ppush ?",
+    "whyDescription": "Transmettre un mot de passe, un code ou un document confidentiel sans qu'il reste dans vos e-mails ou vos conversations. Simple, gratuit, sans compte.",
     "apiDocsDescription": "API REST de ppush : créez et gérez par programmation des liens secrets chiffrés de bout en bout et autodestructibles à l'aide de jetons d'accès personnels.",
     "legalDescription": "Mentions légales de ppush : éditeur, hébergement, conformité RGPD et LCEN, durées de conservation et contact du service de partage sécurisé de secrets.",
     "privacyDescription": "Politique de confidentialité de ppush : données traitées, bases légales, durées de conservation et vos droits. Secrets chiffrés de bout en bout, illisibles par le serveur.",
@@ -34,6 +36,8 @@
   },
   "header": {
     "tagline": "partage sécurisé de secrets",
+    "why": "À quoi sert ce site ?",
+    "whyShort": "C’est quoi ?",
     "login": "Connexion",
     "logout": "Se déconnecter",
     "nav": {
@@ -56,7 +60,7 @@
     "buildTooltip": "Version en ligne en production"
   },
   "home": {
-    "title": "Envoyez un secret qui <em>s'efface</em> après lecture.",
+    "title": "Chiffrer, c’est fabriquer de l’<em>entropie</em>.",
     "subtitle": "Le lien porte la clé, le serveur ne la voit jamais. À la dernière vue — ou à l'échéance — il ne reste plus rien à voler.",
     "anonBadge": "Sans compte",
     "anonLimits": "Limitations : dispo {days} jours max · {views} vues · fichier max {fileMb} Mo",
@@ -73,7 +77,7 @@
     "anonCtaNote": "Aucun mot de passe requis — une passkey suffit."
   },
   "diffusion": {
-    "lede": "Il est chiffré ici, dans votre navigateur. <b>Le nuage, c'est ce que notre serveur reçoit</b> : du bruit, sans la clé.",
+    "lede": "Un bon chiffrement transforme votre texte en désordre pur : sans la clé, impossible d'en tirer quoi que ce soit, même pour nous. <b>Le nuage que vous voyez, c'est exactement ça.</b>",
     "zoneSend": "Ce que reçoit le serveur",
     "zoneGone": "Plus rien sur le serveur",
     "zoneLink": "Votre lien de partage",
@@ -123,6 +127,35 @@
     "advDone": "Terminé",
     "ctaReadyMobile": "Prêt. Ajustez la durée et les lectures plus bas si besoin, puis cliquez.",
     "ctaHintMobile": "Saisissez ou générez votre secret ci-dessus, puis cliquez sur le bouton."
+  },
+  "entropy": {
+    "link": "Qu'est-ce que l'entropie ?",
+    "title": "L'entropie, en deux minutes",
+    "s1t": "Le hasard se mesure",
+    "s1": "L'entropie mesure l'imprévisibilité, en <b>bits</b>. Chaque bit en plus double le nombre de possibilités qu'un attaquant doit essayer : 10 bits, c'est environ mille essais ; 40 bits, mille milliards.",
+    "s2t": "Ce que fait le chiffrement",
+    "s2": "ppush mélange votre secret avec une clé de <b>256 bits</b> tirée au hasard (AES-256-GCM). Le résultat n'a plus aucune structure : sans la clé, c'est du bruit. Essayer toutes les clés prendrait des milliards de milliards de fois l'âge de l'univers.",
+    "s3t": "Pourquoi votre mot de passe compte aussi",
+    "s3": "La clé protège le transport. Mais le mot de passe que vous partagez servira ailleurs : sa force dépend de sa propre entropie, celle qu'affiche le générateur.",
+    "tableCaption": "Temps pour tout essayer, à 100 milliards d'essais par seconde",
+    "r1": "2 mots + 2 chiffres + symbole",
+    "r1v": "~36 bits",
+    "r1t": "moins d'une seconde",
+    "r2": "4 mots + 2 chiffres + symbole",
+    "r2v": "~62 bits",
+    "r2t": "environ deux ans",
+    "r3": "6 mots + 2 chiffres + symbole",
+    "r3v": "~88 bits",
+    "r3t": "plus de cent millions d'années",
+    "tableNote": "C'est la vitesse d'une seule carte graphique grand public (RTX 4090) contre un mot de passe stocké en MD5, d'après les mesures publiques de hashcat. Un stockage moderne (bcrypt) ralentit l'attaque d'environ un demi-million de fois. La CNIL recommande au moins 80 bits pour un mot de passe utilisé seul.",
+    "s4t": "Et ppush dans tout ça ?",
+    "s4": "Notre serveur ne reçoit que l'entropie : le nuage. La clé reste dans votre lien, après le #, et ne nous est jamais envoyée. C'est pour cela que nous ne pouvons pas lire vos secrets, même si on nous le demandait.",
+    "done": "Compris",
+    "close": "Fermer",
+    "sources": "Sources",
+    "srcAnssi": "ANSSI, authentification multifacteur et mots de passe (2021)",
+    "srcCnil": "CNIL, délibération n° 2022-100 sur les mots de passe",
+    "srcHashcat": "hashcat, mesures sur RTX 4090"
   },
   "tabs": {
     "PASSWORD": "Mot de passe",

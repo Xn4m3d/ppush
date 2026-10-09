@@ -21,6 +21,7 @@ import type { Locale } from "@/i18n/locale";
 import { Button, Input, Textarea, Toggle, ErrorText, cls } from "./ui";
 import { CopyButton } from "./copy-button";
 import { MorphDialog, requestMorphClose } from "./morph-dialog";
+import { EntropyExplainer } from "./entropy-explainer";
 import { DiffusionScene } from "./diffusion/scene";
 import { SiderealHalo } from "./diffusion/mini-cloud";
 import { AgeTimeline, DurationDial, ReadsPips, useWheel } from "./diffusion/controls";
@@ -481,9 +482,9 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
           <h1 className="hc-title text-[clamp(28px,3.3vw,42px)] font-bold leading-[1.04]">
             <HeroTitle />
           </h1>
-          <p className="hc-lede -mt-1 max-w-[46ch] text-base text-ink-dim">
+          <div className="hc-lede -mt-1 max-w-[46ch] text-base text-ink-dim">
             {td.rich("lede", { b: (c) => <b className="font-medium text-ink">{c}</b> })}
-          </p>
+          </div>
 
           <fieldset disabled={sealed} className={cls("flex min-w-0 flex-col gap-3.5 transition-opacity", sealed && "opacity-55")}>
             {/* Content type */}
@@ -808,7 +809,18 @@ function CtaBlock({
 /** Home title, with the highlighted word in the accent color. */
 function HeroTitle() {
   const t = useTranslations("home");
-  return <>{t.rich("title", { em: (c) => <em className="not-italic text-accent">{c}</em> })}</>;
+  return (
+    <>
+      {t.rich("title", {
+        em: (c) => (
+          <>
+            <em className="not-italic text-accent">{c}</em>
+            <EntropyExplainer variant="icon" />
+          </>
+        ),
+      })}
+    </>
+  );
 }
 
 const SEP_KEYS: Record<(typeof SEPARATORS)[number], "sepHyphen" | "sepSpace" | "sepDot" | "sepUnderscore"> = {
