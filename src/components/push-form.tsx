@@ -893,13 +893,13 @@ function ShareCard({
 }) {
   const t = useTranslations("success");
   const td = useTranslations("diffusion");
-  const locale = useLocale() as Locale;
   const [qr, setQr] = useState<string>("");
   const hash = created.url.indexOf("#");
   const address = created.url.slice(0, hash);
   const keyPart = created.url.slice(hash);
 
-  const delay = formatDelay(created.expireAfterMinutes * 60_000, locale);
+  // delay spelled out in the message ("2 days" rather than "2 d")
+  const delay = delayLabel;
   // "Note to send with the link": ready-to-copy text the sender attaches to the
   // link THEMSELVES (never sent automatically). Templates [link]/[delay]/[views]
   // (square brackets, not braces: avoid next-intl's ICU parser).
