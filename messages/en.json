@@ -116,7 +116,11 @@
     "ctaHint": "Set up how your secret is shared in the panel on the left, then click the button.",
     "ctaReady": "All set. Encryption happens in your browser, on click.",
     "ctaWorking": "Encrypting…",
-    "ctaTooShort": "Password too short: {count, plural, one {# more character} other {# more characters}} needed ({min} minimum)."
+    "ctaTooShort": "Password too short: {count, plural, one {# more character} other {# more characters}} needed ({min} minimum).",
+    "advChanged": "{count, plural, one {# option on} other {# options on}}",
+    "advDefault": "default",
+    "advClose": "Close",
+    "advDone": "Done"
   },
   "tabs": {
     "PASSWORD": "Password",
