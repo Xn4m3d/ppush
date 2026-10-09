@@ -115,7 +115,8 @@
     "anonStrip": "Avec un compte gratuit : savoir quand le lien est ouvert, historique, limites élargies. <link>Créer un compte</link>",
     "ctaHint": "Configurez le partage de votre secret dans le panneau de gauche, puis cliquez sur le bouton.",
     "ctaReady": "Tout est prêt. Le chiffrement se fait dans votre navigateur, au clic.",
-    "ctaWorking": "Chiffrement en cours…"
+    "ctaWorking": "Chiffrement en cours…",
+    "ctaTooShort": "Mot de passe trop court : encore {count, plural, one {# caractère} other {# caractères}} ({min} au minimum)."
   },
   "tabs": {
     "PASSWORD": "Mot de passe",
