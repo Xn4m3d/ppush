@@ -110,7 +110,7 @@
     "shareViews": "{views, plural, one {# read} other {# reads}} at most",
     "sharePass": "passphrase required to open",
     "shareNoKey": "nothing is readable without the key",
-    "recipientDetails": "Message ready to send with the link",
+    "recipientDetails": "Message ready to send to the recipient",
     "qrDetails": "QR code to scan",
     "anonStrip": "With a free account: know when the link is opened, history, higher limits. <link>Create an account</link>"
   },
@@ -198,12 +198,12 @@
     "qrHint": "Scannable directly from a phone",
     "warning": "⚠️ The decryption key lives in the link fragment (after the #): it was never sent to the server. Without the full link, the secret is unrecoverable — including by us.",
     "anonTip": "<strong>Tip:</strong> with a <link>free account</link>, you keep this link in your history and track who opened it, and when.",
-    "recipientLabel": "Note to send with the link",
-    "recipientHint": "Nothing is sent automatically — copy this and include it yourself when you share the link.",
-    "shareDefaultPassword": "'ppush.online' link info: the content shared with you is valid for [delay] or up to [views] views — whichever comes first. Always verify the origin of a message before clicking an internet link.",
-    "shareDefaultText": "'ppush.online' link info: the content shared with you is valid for [delay] or up to [views] views — whichever comes first. Always verify the origin of a message before clicking an internet link.",
-    "shareDefaultFile": "'ppush.online' link info: the content shared with you is valid for [delay] or up to [views] views — whichever comes first. Always verify the origin of a message before clicking an internet link.",
-    "shareDefaultUrl": "'ppush.online' link info: the content shared with you is valid for [delay] or up to [views] views — whichever comes first. Always verify the origin of a message before clicking an internet link.",
+    "recipientLabel": "Message for the recipient",
+    "recipientHint": "Nothing is sent automatically: copy this message, it already includes the link.",
+    "shareDefaultPassword": "Here is a password, shared securely: [link]\nThe link expires in [delay] and opens [views]× at most. Copy the password as soon as you open it: it won't be viewable afterwards.\nWeren't expecting this? Don't open the link, and let me know.",
+    "shareDefaultText": "Here is some confidential information, shared securely: [link]\nThe link expires in [delay] and opens [views]× at most. Copy it or write it down as soon as you open it: it won't be viewable afterwards.\nWeren't expecting this? Don't open the link, and let me know.",
+    "shareDefaultFile": "Here is a file, shared securely: [link]\nThe link expires in [delay] and opens [views]× at most. Download the file as soon as you open it: it won't be available afterwards.\nWeren't expecting this? Don't open the link, and let me know.",
+    "shareDefaultUrl": "Here is a confidential link, shared securely: [link]\nIt expires in [delay] and opens [views]× at most. Copy the address it contains as soon as you open it: it won't be viewable afterwards.\nWeren't expecting this? Don't open the link, and let me know.",
     "copyNotice": "Copy message"
   },
   "viewer": {

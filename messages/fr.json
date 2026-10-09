@@ -110,7 +110,7 @@
     "shareViews": "{views, plural, one {# lecture} other {# lectures}} au plus",
     "sharePass": "passphrase requise à l'ouverture",
     "shareNoKey": "rien n'est lisible sans la clé",
-    "recipientDetails": "Message prêt à envoyer avec le lien",
+    "recipientDetails": "Message prêt à envoyer au destinataire",
     "qrDetails": "QR code à scanner",
     "anonStrip": "Avec un compte gratuit : savoir quand le lien est ouvert, historique, limites élargies. <link>Créer un compte</link>"
   },
@@ -198,12 +198,12 @@
     "qrHint": "Scannable directement depuis un mobile",
     "warning": "⚠️ La clé de déchiffrement est dans le fragment du lien (après le #) : elle n'a jamais été transmise au serveur. Sans ce lien complet, le secret est irrécupérable — y compris par nous.",
     "anonTip": "<strong>Astuce :</strong> avec un <link>compte gratuit</link>, vous retrouvez ce lien dans votre historique et suivez ses consultations — qui l'a ouvert, et quand.",
-    "recipientLabel": "Note à envoyer avec le lien",
-    "recipientHint": "Rien n'est envoyé automatiquement — copiez ce texte et joignez-le vous-même quand vous partagez le lien.",
-    "shareDefaultPassword": "Information lien 'ppush.online' : le contenu qui vous a été transmis n'est valable que [delay] ou jusqu'à [views] consultations — au premier des deux atteint. Vérifiez toujours l'origine du message avant de cliquer sur un lien internet.",
-    "shareDefaultText": "Information lien 'ppush.online' : le contenu qui vous a été transmis n'est valable que [delay] ou jusqu'à [views] consultations — au premier des deux atteint. Vérifiez toujours l'origine du message avant de cliquer sur un lien internet.",
-    "shareDefaultFile": "Information lien 'ppush.online' : le contenu qui vous a été transmis n'est valable que [delay] ou jusqu'à [views] consultations — au premier des deux atteint. Vérifiez toujours l'origine du message avant de cliquer sur un lien internet.",
-    "shareDefaultUrl": "Information lien 'ppush.online' : le contenu qui vous a été transmis n'est valable que [delay] ou jusqu'à [views] consultations — au premier des deux atteint. Vérifiez toujours l'origine du message avant de cliquer sur un lien internet.",
+    "recipientLabel": "Message pour le destinataire",
+    "recipientHint": "Rien n'est envoyé automatiquement : copiez ce message, il contient déjà le lien.",
+    "shareDefaultPassword": "Voici un mot de passe, partagé de façon sécurisée : [link]\nLe lien expire dans [delay] et s'ouvre [views] fois au maximum. Copiez le mot de passe dès l'ouverture : il ne sera plus consultable ensuite.\nVous n'attendiez pas ce message ? N'ouvrez pas le lien et prévenez-moi.",
+    "shareDefaultText": "Voici une information confidentielle, partagée de façon sécurisée : [link]\nLe lien expire dans [delay] et s'ouvre [views] fois au maximum. Copiez-la ou notez-la dès l'ouverture : elle ne sera plus consultable ensuite.\nVous n'attendiez pas ce message ? N'ouvrez pas le lien et prévenez-moi.",
+    "shareDefaultFile": "Voici un fichier, partagé de façon sécurisée : [link]\nLe lien expire dans [delay] et s'ouvre [views] fois au maximum. Téléchargez le fichier dès l'ouverture : il ne sera plus disponible ensuite.\nVous n'attendiez pas ce message ? N'ouvrez pas le lien et prévenez-moi.",
+    "shareDefaultUrl": "Voici un lien confidentiel, partagé de façon sécurisée : [link]\nIl expire dans [delay] et s'ouvre [views] fois au maximum. Copiez l'adresse qu'il contient dès l'ouverture : elle ne sera plus consultable ensuite.\nVous n'attendiez pas ce message ? N'ouvrez pas le lien et prévenez-moi.",
     "copyNotice": "Copier le message"
   },
   "viewer": {
