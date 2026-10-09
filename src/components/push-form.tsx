@@ -116,6 +116,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
   const [lock, setLock] = useState<"dur" | "views" | null>(null);
   const [cipherLen, setCipherLen] = useState(0);
   const [age, setAge] = useState(0);
+  const [launching, setLaunching] = useState(false);
   const [touch, setTouch] = useState(false);
 
   // ---- visualisation ----
@@ -128,6 +129,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
   const idRef = useRef<HTMLSpanElement>(null);
   const keyRef = useRef<HTMLSpanElement>(null);
   const zoneRef = useRef<HTMLElement>(null);
+  const ctaRef = useRef<HTMLButtonElement>(null);
   const scene = useRef<DiffusionScene | null>(null);
   const previewKey = useRef<Promise<CryptoKey | null> | null>(null);
   const seq = useRef(0);
@@ -244,6 +246,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
     setNote("");
     setCreated(null);
     setFormed(false);
+    setLaunching(false);
     setError("");
     setProgress(null);
     setCipherLen(0);
@@ -340,6 +343,12 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
     }
 
     setBusy(true);
+    // the button dissolves into particles that stream into the cloud
+    if (ctaRef.current && scene.current) {
+      const r = scene.current.toHost(ctaRef.current.getBoundingClientRect());
+      scene.current.burst({ x0: r.x, x1: r.x + r.w, y0: r.y, y1: r.y + r.h });
+    }
+    setLaunching(true);
     try {
       // 1. ephemeral key generated locally — never leaves this browser
       const { key, keyB64 } = await generateKey();
@@ -398,6 +407,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "";
       setError(msg === "INSECURE_CONTEXT" ? t("errorInsecureContext") : msg || t("errorGeneric"));
+      setLaunching(false);
     } finally {
       setBusy(false);
       setProgress(null);
@@ -442,12 +452,13 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
   }));
 
   const sealed = !!created;
+  const ready = kind === "FILE" ? !!file : secret.trim().length > 0;
 
   return (
     <div ref={hostRef} className="relative mx-auto w-full max-w-6xl flex-1 px-4 pb-10 pt-6 sm:px-6">
       <canvas ref={canvasRef} aria-hidden className="pointer-events-none absolute inset-0 z-[3] h-full w-full" />
       <div className="grid gap-x-16 gap-y-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.1fr)]">
-        <form ref={formRef} onSubmit={submit} className="relative z-[2] flex min-w-0 flex-col gap-3.5 animate-fade-up">
+        <form id="pp-form" ref={formRef} onSubmit={submit} className="relative z-[2] flex min-w-0 flex-col gap-3.5 animate-fade-up">
           <h1 className="text-[clamp(28px,3.3vw,42px)] font-bold leading-[1.04]">
             <HeroTitle />
           </h1>
@@ -539,6 +550,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
                 </div>
                 <GeneratorOptions
                   gen={gen}
+                  charCount={[...texts.PASSWORD].length}
                   onGen={changeGen}
                   onGenerate={() => void runGenerate(gen)}
                   canSave={defaults.tier === "user"}
@@ -656,17 +668,6 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
             <ErrorText>{error}</ErrorText>
           </fieldset>
 
-          {!sealed && (
-            <Button type="submit" loading={busy} className="min-h-14 w-full text-base">
-              {progress ?? (
-                <>
-                  <Lock className="size-4" />
-                  {t("submit")}
-                </>
-              )}
-            </Button>
-          )}
-
           {defaults.tier === "anon" && !sealed && (
             <p className="text-[13px] text-ink-faint">
               {td.rich("anonStrip", {
@@ -678,6 +679,29 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
 
         {/* The cloud: what the server receives — then, once created, the link */}
         <section ref={zoneRef} aria-label={sealed ? td("zoneLink") : td("zoneSend")} className={cls("relative z-[4] flex min-w-0 flex-col", sealed ? "" : "min-h-[380px] lg:min-h-[460px]")}>
+          {/* The button lives above the cloud: disabled while there is nothing to
+              encrypt, then, on click, it dissolves into particles that
+              join the cloud — that is where the link will be written. */}
+          {!sealed && (
+          <div className="mb-5 flex flex-col gap-2.5">
+            <p className="text-sm text-ink-dim" aria-live="polite">
+              {busy ? (progress ?? td("ctaWorking")) : ready ? td("ctaReady") : td("ctaHint")}
+            </p>
+            <Button
+              ref={ctaRef}
+              type="submit"
+              form="pp-form"
+              disabled={!ready || busy}
+              className={cls(
+                "min-h-14 w-full text-base transition-[opacity,transform,filter,background-color] duration-500 disabled:bg-panel disabled:text-ink-faint disabled:opacity-100 disabled:border disabled:border-line",
+                launching && "scale-y-[0.2] opacity-0 blur-[2px]"
+              )}
+            >
+              <Lock className="size-4" />
+              {t("submit")}
+            </Button>
+          </div>
+          )}
           <div className="flex justify-between gap-3 eyebrow">
             <span>{sealed ? td("zoneLink") : age > 0.995 ? td("zoneGone") : td("zoneSend")}</span>
             <span className="text-accent">{td("algo")}</span>
@@ -734,6 +758,7 @@ const WEAK_BITS = 60;
 
 function GeneratorOptions({
   gen,
+  charCount,
   onGen,
   onGenerate,
   canSave,
@@ -741,6 +766,8 @@ function GeneratorOptions({
   onSave,
 }: {
   gen: GenPrefs;
+  /** Length of the password currently in the field (typed or generated). */
+  charCount: number;
   onGen: (g: GenPrefs) => void;
   onGenerate: () => void;
   canSave: boolean;
@@ -846,6 +873,7 @@ function GeneratorOptions({
           {gen.mode === "words"
             ? t("summaryWords", { count: gen.words, bits: wordBits })
             : t("summaryStats", { length: gen.length, bits: charBits })}
+          {charCount > 0 && <span className="text-ink-dim"> · {t("fieldChars", { count: charCount })}</span>}
         </span>
         <button
           type="button"

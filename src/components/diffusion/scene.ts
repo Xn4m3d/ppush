@@ -28,6 +28,8 @@ type Particle = {
   // fixed target (a letter of the link or secret): replaces the place in the cloud
   line: Pt | null;
   key: boolean; byte: number; hot: boolean; r: number;
+  /** Direct path from `from` to its place (button burst), without going through the field. */
+  direct?: boolean;
 };
 
 export type SceneMode = "live" | "forming" | "formed";
@@ -287,6 +289,7 @@ export class DiffusionScene {
   }
 
   private path(p: Particle, tg: Pt, e: number): Pt {
+    if (p.direct) return bez(this.curve(p.from, tg), e);
     if (this.o.direction === "out" && !p.line) {
       if (e < SPLIT) { const u = e / SPLIT; return { x: p.from.x + (this.Z.src.x - p.from.x) * u, y: p.from.y + (this.Z.src.y - p.from.y) * u }; }
       return bez(this.curve(this.Z.src, tg), (e - SPLIT) / (1 - SPLIT));
@@ -397,6 +400,26 @@ export class DiffusionScene {
       p.rideSp = 0.014 + Math.random() * 0.01; p.delay = this.reduce ? 0 : Math.random() * 22; p.key = false;
     }
     for (; j < live.length; j++) { live[j].dying = true; live[j].vy -= 0.4 + Math.random(); }
+  }
+
+  /**
+   * The send button dissolves: a burst of particles leaves the rect
+   * `r` (host coordinates) and joins the cloud, before the link is written.
+   */
+  burst(r: { x0: number; x1: number; y0: number; y1: number }, n = 180) {
+    if (this.mode !== "live") return;
+    this.energy = 1;
+    for (let i = 0; i < n; i++) {
+      const s = Math.random() * 1e9;
+      const e: Pt = { x: r.x0 + Math.random() * (r.x1 - r.x0), y: r.y0 + Math.random() * (r.y1 - r.y0) };
+      this.parts.push({
+        x: e.x, y: e.y, vx: 0, vy: 0, a: this.reduce ? 1 : 0.6, seed: Math.random() * 1000, dying: false,
+        delay: this.reduce ? 0 : Math.random() * 12,
+        ang: h32(s) * Math.PI * 2, rad: Math.min(1.2, Math.sqrt(-2 * Math.log(h32(s + 1) + 1e-6)) * 0.42),
+        ride: this.reduce ? 1 : 0, rideSp: 0.016 + Math.random() * 0.01, from: e,
+        line: null, key: false, byte: 140 + Math.floor(Math.random() * 115), hot: Math.random() < 0.55, r: 1, direct: true,
+      });
+    }
   }
 
   /** End of the shaping: particles fade out, the real text takes over. */

@@ -112,7 +112,10 @@
     "shareNoKey": "rien n'est lisible sans la clé",
     "recipientDetails": "Message prêt à envoyer au destinataire",
     "qrDetails": "QR code à scanner",
-    "anonStrip": "Avec un compte gratuit : savoir quand le lien est ouvert, historique, limites élargies. <link>Créer un compte</link>"
+    "anonStrip": "Avec un compte gratuit : savoir quand le lien est ouvert, historique, limites élargies. <link>Créer un compte</link>",
+    "ctaHint": "Configurez le partage de votre secret dans le panneau de gauche, puis cliquez sur le bouton.",
+    "ctaReady": "Tout est prêt. Le chiffrement se fait dans votre navigateur, au clic.",
+    "ctaWorking": "Chiffrement en cours…"
   },
   "tabs": {
     "PASSWORD": "Mot de passe",
@@ -206,7 +209,8 @@
     "endSymbol": "Caractère spécial à la fin",
     "symbolNone": "aucun",
     "symbolRandom": "aléatoire",
-    "symbolPick": "Terminer par {c}"
+    "symbolPick": "Terminer par {c}",
+    "fieldChars": "{count, plural, one {# caractère} other {# caractères}}"
   },
   "fileDrop": {
     "prompt": "Glissez un fichier ici ou cliquez pour parcourir",
