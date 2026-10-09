@@ -30,7 +30,18 @@ export async function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-line/60 bg-bg/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-        <Logo />
+        {/* link outside the logo: the logo is a link itself (no nested <a>) */}
+        <div className="flex min-w-0 items-center gap-3">
+          <Logo />
+          <Link
+            href="/why"
+            aria-label={t("why")}
+            className="whitespace-nowrap rounded-full border border-line px-3 py-1 text-xs text-ink-dim transition-colors hover:border-accent/40 hover:text-accent-soft"
+          >
+            <span className="sm:hidden">{t("whyShort")}</span>
+            <span className="hidden sm:inline">{t("why")}</span>
+          </Link>
+        </div>
         {user ? (
           <div className="flex items-center gap-1.5">
             <NavLinks isAdmin={user.role === "ADMIN"} recoveryPending={recoveryPending} />

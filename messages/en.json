@@ -17,6 +17,8 @@
     "privacy": "Privacy policy",
     "homeDescription": "Share a password, text or file as an end-to-end encrypted, self-destructing link. Zero-knowledge: the server never sees your secret, no account required.",
     "aboutDescription": "How ppush works: zero-knowledge encryption in your browser, self-destructing links, view limits and tracking. Data hosted in France, delivered via Cloudflare.",
+    "why": "What is ppush for?",
+    "whyDescription": "Pass on a password, a code or a confidential document without it lingering in your email or chats. Simple, free, no account needed.",
     "apiDocsDescription": "ppush REST API: create and manage end-to-end encrypted, self-destructing secret links programmatically using personal access tokens.",
     "legalDescription": "Legal notice for ppush: publisher, hosting, GDPR and LCEN compliance, data retention and contact for the secure secret-sharing service.",
     "privacyDescription": "ppush privacy policy: data processed, legal bases, retention periods and your rights. Secrets are end-to-end encrypted and never readable by the server.",
@@ -34,6 +36,8 @@
   },
   "header": {
     "tagline": "secure secret sharing",
+    "why": "What is this site for?",
+    "whyShort": "What’s this?",
     "login": "Sign in",
     "logout": "Sign out",
     "nav": {
@@ -56,7 +60,7 @@
     "buildTooltip": "Version running in production"
   },
   "home": {
-    "title": "Send a secret that <em>erases itself</em> once read.",
+    "title": "To encrypt is to make <em>entropy</em>.",
     "subtitle": "The link carries the key, the server never sees it. On the last view — or at expiry — there is nothing left to steal.",
     "anonBadge": "No account",
     "anonLimits": "Limits: up to {days} days · {views} views · {fileMb} MB max per file",
@@ -73,7 +77,7 @@
     "anonCtaNote": "No password needed — a passkey is enough."
   },
   "diffusion": {
-    "lede": "It is encrypted here, in your browser. <b>The cloud is what our server receives</b>: noise, without the key.",
+    "lede": "Good encryption turns your text into pure disorder: without the key, nothing can be drawn from it, not even by us. <b>The cloud you see is exactly that.</b>",
     "zoneSend": "What the server receives",
     "zoneGone": "Nothing left on the server",
     "zoneLink": "Your share link",
@@ -123,6 +127,35 @@
     "advDone": "Done",
     "ctaReadyMobile": "Ready. Adjust duration and reads below if needed, then tap.",
     "ctaHintMobile": "Type or generate your secret above, then tap the button."
+  },
+  "entropy": {
+    "link": "What is entropy?",
+    "title": "Entropy in two minutes",
+    "s1t": "Randomness can be measured",
+    "s1": "Entropy measures unpredictability, in <b>bits</b>. Each extra bit doubles the number of possibilities an attacker must try: 10 bits is about a thousand guesses; 40 bits, a trillion.",
+    "s2t": "What encryption does",
+    "s2": "ppush mixes your secret with a randomly drawn <b>256-bit</b> key (AES-256-GCM). The result has no structure left: without the key, it is noise. Trying every key would take billions of billions of times the age of the universe.",
+    "s3t": "Why your password matters too",
+    "s3": "The key protects the transfer. But the password you share will be used elsewhere: its strength depends on its own entropy, the one the generator shows.",
+    "tableCaption": "Time to try them all, at 100 billion guesses per second",
+    "r1": "2 words + 2 digits + symbol",
+    "r1v": "~36 bits",
+    "r1t": "under a second",
+    "r2": "4 words + 2 digits + symbol",
+    "r2v": "~62 bits",
+    "r2t": "about two years",
+    "r3": "6 words + 2 digits + symbol",
+    "r3v": "~88 bits",
+    "r3t": "over a hundred million years",
+    "tableNote": "That is the speed of a single consumer graphics card (RTX 4090) against a password stored as MD5, per hashcat's public benchmarks. Modern storage (bcrypt) slows the attack down about half a million times. CNIL (France's data protection authority) recommends at least 80 bits for a password used on its own.",
+    "s4t": "And where does ppush fit in?",
+    "s4": "Our server only receives the entropy: the cloud. The key stays in your link, after the #, and is never sent to us. That is why we cannot read your secrets, even if asked to.",
+    "done": "Got it",
+    "close": "Close",
+    "sources": "Sources",
+    "srcAnssi": "ANSSI, multi-factor authentication and passwords (2021, in French)",
+    "srcCnil": "CNIL, deliberation no. 2022-100 on passwords (in French)",
+    "srcHashcat": "hashcat, RTX 4090 benchmarks"
   },
   "tabs": {
     "PASSWORD": "Password",
