@@ -894,6 +894,7 @@ function ShareCard({
   const t = useTranslations("success");
   const td = useTranslations("diffusion");
   const [qr, setQr] = useState<string>("");
+  const [noticeOpen, setNoticeOpen] = useState(false);
   const hash = created.url.indexOf("#");
   const address = created.url.slice(0, hash);
   const keyPart = created.url.slice(hash);
@@ -948,20 +949,27 @@ function ShareCard({
         </div>
         <p className="border-t border-line pt-3 font-mono text-xs text-ink-faint">{sum}</p>
 
-        <details className="rounded-xl border border-line bg-bg/60">
-          <summary className="cursor-pointer select-none px-4 py-2.5 text-sm text-ink-dim hover:text-ink">{td("recipientDetails")}</summary>
-          <div className="space-y-2 border-t border-line px-4 pb-4 pt-3">
-            <div className="flex items-center justify-between gap-2">
-              <label htmlFor="recipient-notice" className="eyebrow">{t("recipientLabel")}</label>
+        {/* Copy without expanding first: the button copies the message AND expands the area,
+            so the sender sees what they just copied. */}
+        <details open={noticeOpen} onToggle={(e) => setNoticeOpen(e.currentTarget.open)} className="rounded-xl border border-line bg-bg/60">
+          <summary className="flex cursor-pointer select-none list-none items-center gap-2 py-1.5 pl-4 pr-2 text-sm text-ink-dim hover:text-ink [&::-webkit-details-marker]:hidden">
+            <span aria-hidden className={cls("text-[10px] transition-transform", noticeOpen && "rotate-90")}>▶</span>
+            <span className="flex-1">{td("recipientDetails")}</span>
+            {/* inside the summary: a closed details hides everything else. preventDefault
+                keeps this click from collapsing the area; the copy still happens. */}
+            <span onClick={(e) => { e.preventDefault(); setNoticeOpen(true); }}>
               <CopyButton value={recipientNotice} label={t("copyNotice")} />
-            </div>
+            </span>
+          </summary>
+          <div className="space-y-2 border-t border-line px-4 pb-4 pt-3">
+            <label htmlFor="recipient-notice" className="eyebrow">{t("recipientLabel")}</label>
             <Textarea
               id="recipient-notice"
               readOnly
-              rows={4}
+              rows={7}
               value={recipientNotice}
               onFocus={(e) => e.currentTarget.select()}
-              className="resize-none text-xs leading-relaxed"
+              className="resize-none text-[13px] leading-relaxed"
             />
             <p className="text-xs text-ink-faint">{t("recipientHint")}</p>
           </div>
