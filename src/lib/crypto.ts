@@ -280,14 +280,17 @@ function randomIndex(n: number): number {
 }
 
 export type PassphraseOptions = {
-  /** Number of words (3 to 12). */
+  /** Number of words (2 to 7). */
   words?: number;
   separator?: string;
   /** Capitalize each word (adds no entropy: it is for complexity rules). */
   capitalize?: boolean;
-  /** A digit appended to a randomly chosen word. */
-  digit?: boolean;
+  /** Number of digits (0 to 6), appended as one block to a randomly chosen word. */
+  digitCount?: number;
 };
+
+const clampWords = (n: number | undefined) => Math.min(Math.max(Math.trunc(n ?? 5) || 5, 2), 7);
+const clampDigits = (n: number | undefined) => Math.min(Math.max(Math.trunc(n ?? 0) || 0, 0), 6);
 
 /**
  * Words drawn uniformly from `list` (the Diceware method, but with the
@@ -295,18 +298,19 @@ export type PassphraseOptions = {
  * the size of the list, not from how odd they are: see `passphraseBits`.
  */
 export function generatePassphrase(list: readonly string[], o: PassphraseOptions = {}): string {
-  const count = Math.min(Math.max(Math.trunc(o.words ?? 6) || 6, 3), 12);
+  const count = clampWords(o.words);
   const words = Array.from({ length: count }, () => list[randomIndex(list.length)]);
   const out = o.capitalize ? words.map((w) => w.charAt(0).toUpperCase() + w.slice(1)) : words;
-  if (o.digit) {
+  const nd = clampDigits(o.digitCount);
+  if (nd > 0) {
     const i = randomIndex(count);
-    out[i] = out[i] + String(randomIndex(10));
+    out[i] = out[i] + Array.from({ length: nd }, () => String(randomIndex(10))).join("");
   }
   return out.join(o.separator ?? "-");
 }
 
-/** Entropy of a word passphrase: log2(list size) per word, plus the digit and its position. */
+/** Entropy of a word passphrase: log2(list size) per word, plus the digits and their position. */
 export function passphraseBits(listSize: number, o: PassphraseOptions = {}): number {
-  const count = Math.min(Math.max(Math.trunc(o.words ?? 6) || 6, 3), 12);
-  return count * Math.log2(listSize) + (o.digit ? Math.log2(10) + Math.log2(count) : 0);
+  const count = clampWords(o.words), nd = clampDigits(o.digitCount);
+  return count * Math.log2(listSize) + (nd > 0 ? nd * Math.log2(10) + Math.log2(count) : 0);
 }

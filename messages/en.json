@@ -192,8 +192,15 @@
     "langEn": "English",
     "capitalize": "Capitalize each word",
     "capitalizeHint": "For sites that require an uppercase letter; adds no security.",
-    "addDigit": "Add a digit",
-    "guaranteeWords": "Words drawn at random from {size, number}, using your browser's secure random generator. Easy to remember and to read out, hard to guess: ~{bits} bits. Lists: EFF (English) and C.-M. Duquesne (French), CC BY 3.0 license."
+    "guaranteeWords": "Words drawn at random from {size, number}, using your browser's secure random generator. Easy to remember and to read out, hard to guess: ~{bits} bits. Lists: EFF (English) and C.-M. Duquesne (French), CC BY 3.0 license.",
+    "digitCount": "Digits",
+    "digitCountValue": "{count, plural, =0 {none} one {# digit} other {# digits}}",
+    "weakWords": "Fairly weak: add a word or some digits.",
+    "weakChars": "Fairly weak: make it longer.",
+    "generateNow": "Generate",
+    "saveDefault": "Save as default",
+    "savedDefault": "Saved for your account.",
+    "saveDefaultError": "Couldn't save, try again."
   },
   "fileDrop": {
     "prompt": "Drag a file here or click to browse",
@@ -402,7 +409,14 @@
     "deleteAccountButton": "Delete my account permanently",
     "deleteAccountFinal": "This permanently erases your account and all your data. Continue?",
     "code2fa": "2FA code",
-    "deleteReauthHint": "For security, confirm with your credentials."
+    "deleteReauthHint": "For security, confirm with your credentials.",
+    "genTitle": "Password generator",
+    "genChars": "Random characters · {length} characters",
+    "genWords": "Words · {count} words",
+    "genStandard": "Standard setting: nothing saved.",
+    "genHint": "Set up the generator on the home page, then click “Save as default”.",
+    "genReset": "Back to the standard setting",
+    "genResetDone": "Standard setting restored."
   },
   "tokens": {
     "title": "API tokens",

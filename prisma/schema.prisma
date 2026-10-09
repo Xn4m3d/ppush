@@ -31,6 +31,8 @@ model User {
   // Auto-redirect of EXTERNAL URL pushes (opt-in; off by default, security).
   // Same-origin URLs (e.g. /reset-password) always open automatically.
   autoOpenUrls             Boolean @default(false)
+  // Default secret generator settings (sanitized JSON, see src/lib/generator-prefs.ts)
+  generatorPrefs           String?
   // Preferred theme: "auto" (day mecha / night midnight) | "midnight" | "mecha"
   // | null (= follows the cookie / auto default).
   theme                    String?
