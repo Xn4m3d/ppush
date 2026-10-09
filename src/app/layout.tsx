@@ -28,6 +28,8 @@ const azeret = Azeret_Mono({
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("meta");
+  // social preview per language: og.png (English, the default language) / og-fr.png
+  const og = (await getLocale()) === "fr" ? "/og-fr.png" : "/og.png";
   return {
     metadataBase: new URL(process.env.BASE_URL ?? "https://ppush.online"),
     title: { default: t("title"), template: t("titleTemplate") },
@@ -41,13 +43,13 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: "ppush",
       type: "website",
       locale: (await getLocale()) === "fr" ? "fr_FR" : "en_US",
-      images: [{ url: "/og.png", width: 1200, height: 630, alt: "ppush" }],
+      images: [{ url: og, width: 1200, height: 630, alt: "ppush" }],
     },
     twitter: {
       card: "summary_large_image",
       title: t("title"),
       description: t("description"),
-      images: ["/og.png"],
+      images: [og],
     },
   };
 }
