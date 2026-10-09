@@ -9,7 +9,7 @@ export async function Logo() {
   const t = await getTranslations("header");
   return (
     <HomeLink className="flex items-center gap-2.5 group">
-      <CatMark className="size-7 text-ink transition-transform group-hover:-rotate-6" />
+      <CatMark className="size-8 text-ink transition-transform group-hover:-rotate-6" />
       <span className="text-xl font-bold tracking-[-0.04em]">
         ppush<span className="text-accent">.</span>
         <span className="ml-2.5 hidden text-xs font-normal tracking-normal text-ink-faint sm:inline">
