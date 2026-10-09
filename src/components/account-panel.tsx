@@ -8,6 +8,7 @@ import { KeyRound, FileText, FileUp, Link2, Plus, Trash2, Save, TriangleAlert } 
 import { Button, Card, Field, Input, Textarea, Toggle, ErrorText, cls } from "./ui";
 import { CopyButton } from "./copy-button";
 import { isValidEmail } from "@/lib/validation";
+import type { GenPrefs } from "@/lib/generator-prefs";
 
 type Defaults = {
   defaultDays: number;
@@ -88,6 +89,53 @@ export function DefaultsPanel({ initial }: { initial: Defaults }) {
         <Save className="size-4" />
         {saved ? t("saved") : t("save")}
       </Button>
+    </Card>
+  );
+}
+
+/**
+ * Default generator setting: it is built on the home page (where
+ * its effect is visible); here it can be reviewed and reset to standard.
+ */
+export function GeneratorDefaultsPanel({ initial }: { initial: GenPrefs | null }) {
+  const t = useTranslations("account");
+  const tg = useTranslations("generator");
+  const tc = useTranslations("common");
+  const [prefs, setPrefs] = useState(initial);
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState("");
+
+  async function reset() {
+    setBusy(true);
+    setError("");
+    const res = await fetch("/api/account/generator", { method: "DELETE" }).catch(() => null);
+    if (res?.ok) {
+      setPrefs(null);
+      setDone(true);
+      try { localStorage.removeItem("ppush-gen"); } catch {}
+    } else setError(tc("error"));
+    setBusy(false);
+  }
+
+  const summary = !prefs
+    ? t("genStandard")
+    : prefs.mode === "words"
+      ? `${t("genWords", { count: prefs.words })} · ${tg("digitCountValue", { count: prefs.digitCount })} · ${prefs.lang === "fr" ? tg("langFr") : tg("langEn")}`
+      : t("genChars", { length: prefs.length });
+
+  return (
+    <Card className="p-6 space-y-3">
+      <h2 className="font-semibold">{t("genTitle")}</h2>
+      <p className="font-mono text-sm text-ink">{summary}</p>
+      <p className="text-sm text-ink-faint">{t("genHint")}</p>
+      <ErrorText>{error}</ErrorText>
+      {prefs && (
+        <Button variant="ghost" onClick={reset} loading={busy}>
+          {t("genReset")}
+        </Button>
+      )}
+      {done && !prefs && <p className="text-sm text-ok" aria-live="polite">{t("genResetDone")}</p>}
     </Card>
   );
 }

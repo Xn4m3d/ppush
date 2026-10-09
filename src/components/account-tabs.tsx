@@ -6,6 +6,7 @@ import { Card, cls } from "./ui";
 import { ThemeSwitcher } from "./theme-switcher";
 import {
   DefaultsPanel,
+  GeneratorDefaultsPanel,
   ShareMessagesPanel,
   ProfilePanel,
   PasswordPanel,
@@ -15,6 +16,7 @@ import {
 import { PasskeysPanel } from "./passkeys-panel";
 import { TotpPanel } from "./totp-panel";
 import type { ThemeChoice } from "@/lib/themes";
+import type { GenPrefs } from "@/lib/generator-prefs";
 
 type Defaults = {
   defaultDays: number;
@@ -29,6 +31,7 @@ type Tab = "pushes" | "account" | "security";
 /** Account settings, organized into sub-tabs: Pushes · Account · Security. */
 export function AccountTabs({
   defaults,
+  generator,
   shareInitial,
   shareDefaults,
   themeChoice,
@@ -39,6 +42,7 @@ export function AccountTabs({
   name,
 }: {
   defaults: Defaults;
+  generator: GenPrefs | null;
   shareInitial: ShareMessages;
   shareDefaults: ShareMessages;
   themeChoice: ThemeChoice;
@@ -78,6 +82,7 @@ export function AccountTabs({
       {tab === "pushes" && (
         <div className="space-y-6">
           <DefaultsPanel initial={defaults} />
+          <GeneratorDefaultsPanel initial={generator} />
           <ShareMessagesPanel initial={shareInitial} defaults={shareDefaults} />
         </div>
       )}
