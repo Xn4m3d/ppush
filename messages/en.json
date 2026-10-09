@@ -171,7 +171,8 @@
     "progressEncrypting": "Encrypting file…",
     "progressEncryptingPct": "Encrypting file… {pct} %",
     "progressUploading": "Uploading encrypted file…",
-    "progressCreating": "Creating the link…"
+    "progressCreating": "Creating the link…",
+    "passwordPlaceholder": "Type, paste or generate the password here"
   },
   "generator": {
     "summary": "Generator options",
@@ -215,7 +216,12 @@
     "symbolNone": "none",
     "symbolRandom": "random",
     "symbolPick": "End with {c}",
-    "fieldChars": "{count, plural, one {# character} other {# characters}}"
+    "fieldChars": "{count, plural, one {# character} other {# characters}}",
+    "settingsTitle": "Generator settings",
+    "preview": "Preview",
+    "previewEmpty": "Click Generate to see the result.",
+    "close": "Close",
+    "done": "Done"
   },
   "fileDrop": {
     "prompt": "Drag a file here or click to browse",
