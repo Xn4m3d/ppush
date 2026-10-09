@@ -202,7 +202,11 @@
     "savedDefault": "Réglage enregistré pour votre compte.",
     "saveDefaultError": "Enregistrement impossible, réessayez.",
     "recommended": "recommandé",
-    "settings": "Réglages"
+    "settings": "Réglages",
+    "endSymbol": "Caractère spécial à la fin",
+    "symbolNone": "aucun",
+    "symbolRandom": "aléatoire",
+    "symbolPick": "Terminer par {c}"
   },
   "fileDrop": {
     "prompt": "Glissez un fichier ici ou cliquez pour parcourir",
