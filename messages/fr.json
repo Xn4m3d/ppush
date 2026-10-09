@@ -116,7 +116,11 @@
     "ctaHint": "Configurez le partage de votre secret dans le panneau de gauche, puis cliquez sur le bouton.",
     "ctaReady": "Tout est prêt. Le chiffrement se fait dans votre navigateur, au clic.",
     "ctaWorking": "Chiffrement en cours…",
-    "ctaTooShort": "Mot de passe trop court : encore {count, plural, one {# caractère} other {# caractères}} ({min} au minimum)."
+    "ctaTooShort": "Mot de passe trop court : encore {count, plural, one {# caractère} other {# caractères}} ({min} au minimum).",
+    "advChanged": "{count, plural, one {# option active} other {# options actives}}",
+    "advDefault": "par défaut",
+    "advClose": "Fermer",
+    "advDone": "Terminé"
   },
   "tabs": {
     "PASSWORD": "Mot de passe",

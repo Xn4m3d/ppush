@@ -131,6 +131,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
   const keyRef = useRef<HTMLSpanElement>(null);
   const zoneRef = useRef<HTMLElement>(null);
   const ctaRef = useRef<HTMLButtonElement>(null);
+  const advRef = useRef<HTMLDialogElement>(null);
   const scene = useRef<DiffusionScene | null>(null);
   const previewKey = useRef<Promise<CryptoKey | null> | null>(null);
   const seq = useRef(0);
@@ -454,6 +455,12 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
   }));
 
   const sealed = !!created;
+  // advanced options that differ from the default (shown on the button)
+  const advChanged =
+    (passphrase ? 1 : 0) +
+    (retrievalStep !== defaults.retrievalStep ? 1 : 0) +
+    (deletable !== defaults.deletableByViewer ? 1 : 0) +
+    (note ? 1 : 0);
   // password: 5 characters minimum (browser-side check only:
   // the server only receives ciphertext and never knows the secret's length)
   const pwLen = [...secret].length;
@@ -642,20 +649,41 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
               </p>
             </div>
 
-            {/* Advanced options */}
-            <details className="group rounded-xl border border-line bg-bg/60">
-              <summary className="cursor-pointer select-none px-4 py-2.5 text-sm text-ink-dim transition-colors hover:text-ink">
-                {t("advanced")}
-              </summary>
-              <div className="space-y-3 border-t border-line px-3 pb-4 pt-3">
+            {/* Advanced options: a native modal window (<dialog>) that handles
+                Escape, the focus trap and the backdrop. The button tells how many
+                options differ from the default. */}
+            <button
+              type="button"
+              onClick={() => advRef.current?.showModal()}
+              className="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-line bg-bg/60 px-4 text-sm text-ink-dim transition-colors hover:border-line-soft hover:text-ink cursor-pointer"
+            >
+              <span>{t("advanced")}</span>
+              <span className={cls("font-mono text-xs", advChanged > 0 ? "text-accent" : "text-ink-faint")}>
+                {advChanged > 0 ? td("advChanged", { count: advChanged }) : td("advDefault")}
+              </span>
+            </button>
+            <dialog
+              ref={advRef}
+              aria-labelledby="adv-title"
+              onClick={(e) => { if (e.target === e.currentTarget) e.currentTarget.close(); }}
+              // Enter in a window field: close it without submitting the form
+              onKeyDown={(e) => { if (e.key === "Enter" && e.target instanceof HTMLInputElement) { e.preventDefault(); e.currentTarget.close(); } }}
+              className="adv-dialog m-auto w-[min(560px,calc(100vw-32px))] max-h-[calc(100dvh-48px)] overflow-auto rounded-2xl border border-line bg-bg p-0 text-ink"
+            >
+              <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">
+                <h2 id="adv-title" className="text-lg font-bold">{t("advanced")}</h2>
+                <button type="button" onClick={() => advRef.current?.close()} aria-label={td("advClose")} className="grid size-9 place-items-center rounded-lg text-ink-dim hover:bg-panel hover:text-ink cursor-pointer">✕</button>
+              </div>
+              <div className="space-y-3 px-4 py-4">
                 <label className="block space-y-1.5 px-1">
-                  <span className="eyebrow">{t("passphraseLabel")}</span>
+                  <span className="text-[15px] font-semibold text-ink">{t("passphraseLabel")}</span>
                   <Input
                     type="text"
                     value={passphrase}
                     onChange={(e) => setPassphrase(e.target.value)}
                     placeholder={t("passphrasePlaceholder")}
                     autoComplete="off"
+                    autoFocus
                   />
                   <span className="block text-xs text-ink-faint">{t("passphraseHint")}</span>
                 </label>
@@ -663,13 +691,16 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
                 <Toggle checked={deletable} onChange={setDeletable} label={t("deletableLabel")} hint={t("deletableHint")} />
                 {defaults.showNote && (
                   <label className="block space-y-1.5 px-1">
-                    <span className="eyebrow">{t("noteLabel")}</span>
+                    <span className="text-[15px] font-semibold text-ink">{t("noteLabel")}</span>
                     <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder={t("notePlaceholder")} maxLength={500} />
                     <span className="block text-xs text-ink-faint">{t("noteHint")}</span>
                   </label>
                 )}
               </div>
-            </details>
+              <div className="flex justify-end border-t border-line px-5 py-3.5">
+                <Button type="button" onClick={() => advRef.current?.close()} className="min-h-11 px-6">{td("advDone")}</Button>
+              </div>
+            </dialog>
 
             <ErrorText>{error}</ErrorText>
           </fieldset>
