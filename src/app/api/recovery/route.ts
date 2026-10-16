@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { config } from "@/lib/config";
-import { json, apiError, badOrigin, handleError } from "@/lib/api";
+import { json, apiError, badOrigin, handleError, readJson } from "@/lib/api";
 import { apiT } from "@/lib/i18n-api";
 import { clientIp, rateLimit } from "@/lib/ratelimit";
 import { verifyTurnstile } from "@/lib/turnstile";
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
       return apiError(t("recoveryTooMany"), 429);
     }
 
-    const { email, message, contact, turnstileToken } = schema.parse(await req.json());
+    const { email, message, contact, turnstileToken } = schema.parse(await readJson(req, 16_384));
 
     if (config.turnstileSiteKey && !(await verifyTurnstile(turnstileToken, ip))) {
       return apiError(t("captchaFailed"), 400);

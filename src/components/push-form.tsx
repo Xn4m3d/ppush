@@ -23,11 +23,22 @@ import { Button, Input, Textarea, Toggle, ErrorText, cls } from "./ui";
 import { CopyButton } from "./copy-button";
 import { MorphDialog, requestMorphClose } from "./morph-dialog";
 import { EntropyExplainer } from "./entropy-explainer";
+import { Turnstile, type TurnstileHandle } from "./turnstile";
 import { DiffusionScene } from "./diffusion/scene";
 import { SiderealHalo } from "./diffusion/mini-cloud";
 import { AgeTimeline, DurationDial, ReadsPips, useWheel } from "./diffusion/controls";
 
 type Kind = "PASSWORD" | "TEXT" | "FILE" | "URL";
+
+/** The server turned on its anti-spam shield: Turnstile must be solved. */
+class CaptchaNeeded extends Error {}
+
+/** base64 in chunks: `String.fromCharCode(...bytes)` overflows the stack beyond ~100 KB. */
+function toBase64(bytes: Uint8Array): string {
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
 
 // Expiry steps (in minutes): fixed sub-day steps + days up to the
 // tier's cap. The ruler moves from step to step (non-linear).
@@ -66,6 +77,10 @@ type Defaults = {
   maxFileDays: number;
   maxViews: number;
   maxFileSizeMb: number;
+  /** Max size of the encrypted content (text, password, URL), in KB. */
+  maxTextKb: number;
+  /** Turnstile key: only shown if the server turns on its anti-spam shield. */
+  turnstileSiteKey?: string;
   showNote: boolean;
   // "Note to send with the link" template per push type (custom or default).
   shareTemplates: Record<Kind, string>;
@@ -130,6 +145,14 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
   const [cipherLen, setCipherLen] = useState(0);
   const [age, setAge] = useState(0);
   const [launching, setLaunching] = useState(false);
+  // anti-spam shield (server): Turnstile required, single-use token
+  const [captchaNeeded, setCaptchaNeeded] = useState(false);
+  const captchaToken = useRef<string | null>(null);
+  const captchaRef = useRef<TurnstileHandle>(null);
+  const takeCaptcha = () => { const tk = captchaToken.current; captchaToken.current = null; return tk; };
+  // retried from the Turnstile callback, which keeps its first closure
+  const submitRef = useRef<() => Promise<void>>(async () => {});
+  useEffect(() => { submitRef.current = () => submit(); });
   const [touch, setTouch] = useState(false);
 
   // ---- visualisation ----
@@ -372,8 +395,9 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
     setAgeHold(age + e.deltaY * (e.deltaMode === 1 ? 16 : 1) * 0.0011, false);
   });
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
+  async function submit(e?: React.FormEvent) {
+    e?.preventDefault();
+    if (busy) return;
     setError("");
 
     if (kind === "FILE" && !file) return setError(t("errorEmptyFile"));
@@ -386,6 +410,10 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
       } catch {
         return setError(t("errorInvalidUrl"));
       }
+    }
+    // margin for the encrypted envelope (IV, tag, metadata): the server has the final say
+    if (kind !== "FILE" && new TextEncoder().encode(secret).length > defaults.maxTextKb * 1024 - 256) {
+      return setError(t("errorTextTooBig", { kb: defaults.maxTextKb, anon: String(defaults.tier === "anon") }));
     }
     if (kind === "FILE" && file && file.size > defaults.maxFileSizeMb * 1024 * 1024) {
       return setError(t("errorFileTooBig", { mb: defaults.maxFileSizeMb }));
@@ -412,8 +440,14 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
           setProgress(t("progressEncryptingPct", { pct: Math.round((done / total) * 100) }))
         );
         setProgress(t("progressUploading"));
-        const up = await fetch("/api/blobs", { method: "POST", body: encrypted });
+        const token = takeCaptcha();
+        const up = await fetch("/api/blobs", {
+          method: "POST",
+          body: encrypted,
+          headers: token ? { "x-turnstile-token": token } : undefined,
+        });
         const upData = await up.json();
+        if (up.status === 428 && upData.captcha) throw new CaptchaNeeded(upData.error);
         if (!up.ok) throw new Error(upData.error ?? t("errorUpload"));
         blobPath = upData.blobPath;
         payloadBytes = await encryptPayload(key, {
@@ -433,7 +467,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           kind,
-          ciphertext: btoa(String.fromCharCode(...payloadBytes)),
+          ciphertext: toBase64(payloadBytes),
           blobPath,
           passphrase: passphrase || undefined,
           expireAfterMinutes: minutes,
@@ -441,10 +475,13 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
           retrievalStep,
           deletableByViewer: deletable,
           note: note || undefined,
+          turnstileToken: takeCaptcha() ?? undefined,
         }),
       });
       const data = await res.json();
+      if (res.status === 428 && data.captcha) throw new CaptchaNeeded(data.error);
       if (!res.ok) throw new Error(data.error ?? t("errorCreate"));
+      setCaptchaNeeded(false);
 
       setAge(0);
       setFormed(false);
@@ -456,6 +493,11 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "";
+      if (err instanceof CaptchaNeeded) {
+        // shield on: show Turnstile (or re-arm it, the token only works once)
+        if (captchaNeeded) captchaRef.current?.reset();
+        setCaptchaNeeded(true);
+      }
       setError(msg === "INSECURE_CONTEXT" ? t("errorInsecureContext") : msg || t("errorGeneric"));
       setLaunching(false);
     } finally {
@@ -766,6 +808,10 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
               </div>
             </MorphDialog>
 
+            {captchaNeeded && defaults.turnstileSiteKey && (
+              // token obtained → resend automatically
+              <Turnstile ref={captchaRef} siteKey={defaults.turnstileSiteKey} onToken={(tk) => { if (tk) { captchaToken.current = tk; void submitRef.current(); } }} />
+            )}
             <ErrorText>{error}</ErrorText>
           </fieldset>
 

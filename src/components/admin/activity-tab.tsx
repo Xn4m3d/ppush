@@ -50,6 +50,7 @@ export function ActivityTab({ refreshKey }: { refreshKey: number }) {
       USER_LOGOUT: t("actUserLogout"),
       USER_DELETE: t("actUserDelete"),
       PUSH_TAKEDOWN: t("actPushTakedown"),
+      REPORT_STATUS: t("actReportStatus"),
       RECOVERY_HANDLE: t("actRecoveryHandle"),
       RECOVERY_REJECT: t("actRecoveryReject"),
     })[a] ?? a;

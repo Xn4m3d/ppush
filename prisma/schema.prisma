@@ -234,3 +234,22 @@ model DailyStat {
   views      Int    @default(0)
   signups    Int    @default(0)
 }
+
+// A visitor reporting a link for abuse (phishing, malware, illegal
+// content…). The server can't read the content: the report is about
+// the link, the admin decides on the takedown from the panel.
+model AbuseReport {
+  id        String    @id @default(cuid())
+  slug      String
+  pushId    String?
+  reason    String // PHISHING | MALWARE | ILLEGAL | SPAM | OTHER
+  comment   String?
+  ip        String?
+  status    String    @default("PENDING") // PENDING | HANDLED | DISMISSED
+  createdAt DateTime  @default(now())
+  handledAt DateTime?
+  handledBy String? // email of the admin who handled it
+
+  @@index([status, createdAt])
+  @@index([slug])
+}

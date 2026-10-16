@@ -5,7 +5,7 @@ import {
   createSession,
   setSessionCookie,
 } from "@/lib/auth";
-import { json, apiError, badOrigin, handleError } from "@/lib/api";
+import { json, apiError, badOrigin, handleError, readJson } from "@/lib/api";
 import { apiT } from "@/lib/i18n-api";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
 import { issueTotpTicket } from "@/lib/totp-tickets";
@@ -24,7 +24,7 @@ export async function POST(req: Request) {
       return apiError(t("loginTooMany"), 429);
     }
 
-    const { email, password } = schema.parse(await req.json());
+    const { email, password } = schema.parse(await readJson(req, 16_384));
     const user = await prisma.user.findUnique({
       where: { email: email.toLowerCase().trim() },
     });

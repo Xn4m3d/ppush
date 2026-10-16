@@ -6,7 +6,7 @@ import {
   createSession,
   setSessionCookie,
 } from "@/lib/auth";
-import { json, apiError, badOrigin, handleError } from "@/lib/api";
+import { json, apiError, badOrigin, handleError, readJson } from "@/lib/api";
 import { apiT } from "@/lib/i18n-api";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
 import { verifyTurnstile } from "@/lib/turnstile";
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
       return apiError(t("loginTooMany"), 429);
     }
 
-    const { email, name, password, turnstileToken } = schema(t).parse(await req.json());
+    const { email, name, password, turnstileToken } = schema(t).parse(await readJson(req, 16_384));
 
     // Anti-bot: Turnstile verification (no-op if not configured server-side).
     if (!(await verifyTurnstile(turnstileToken, ip))) {

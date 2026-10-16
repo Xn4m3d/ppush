@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { AuthenticationResponseJSON } from "@simplewebauthn/server";
 import { prisma } from "@/lib/db";
 import { createSession, setSessionCookie } from "@/lib/auth";
-import { json, apiError, badOrigin, handleError } from "@/lib/api";
+import { json, apiError, badOrigin, handleError, readJson } from "@/lib/api";
 import { apiT } from "@/lib/i18n-api";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
 import {
@@ -49,7 +49,7 @@ export async function PUT(req: Request) {
     if (!rateLimit(`pk-login:${ip}`, 30, 5 * 60_000)) {
       return apiError(t("loginTooMany"), 429);
     }
-    const { flowId, response } = verifySchema.parse(await req.json());
+    const { flowId, response } = verifySchema.parse(await readJson(req, 65_536));
     const assertion = response as AuthenticationResponseJSON;
 
     const challenge = takeChallenge(`login:${flowId}`);

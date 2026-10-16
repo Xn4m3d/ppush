@@ -51,6 +51,11 @@ export function PrivacyContentEn() {
             the full IP is only accessible to the administrator.
           </li>
           <li>
+            <strong className="text-ink">Abuse reports</strong>: the reported
+            link, the reason, an optional comment and the reporter&apos;s IP
+            address — to handle abuse and deter malicious reports.
+          </li>
+          <li>
             <strong className="text-ink">Secret content</strong>: end-to-end
             encrypted, never accessible to the publisher, permanently erased on
             expiry.
@@ -77,6 +82,11 @@ export function PrivacyContentEn() {
         <ul className="list-inside list-disc space-y-1.5">
           <li>Sign-in logs: <strong className="text-ink">12 months</strong>.</li>
           <li>Audit-log IP addresses: <strong className="text-ink">12 months</strong>.</li>
+          <li>
+            Abuse reports: IP address anonymized after{" "}
+            <strong className="text-ink">12 months</strong>, report deleted once
+            handled and that period has passed.
+          </li>
           <li>
             Account data (email, name, passkeys, tokens, sessions):{" "}
             <strong className="text-ink">erased as soon as the account is deleted</strong>.
