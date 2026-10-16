@@ -6,6 +6,8 @@ import { useTranslations } from "next-intl";
 import { LogOut, Plus, History, UserCircle, Users } from "lucide-react";
 import { type ReactNode } from "react";
 import { cls } from "./ui";
+import { stripLocale } from "@/i18n/locale";
+import { useLocalePath } from "@/i18n/use-locale-path";
 
 const links = [
   { href: "/", key: "new", icon: Plus },
@@ -26,10 +28,12 @@ function fireHomeReset() {
 
 /** Clickable logo: back home + form reset. */
 export function HomeLink({ className, children }: { className?: string; children: ReactNode }) {
-  const pathname = usePathname();
+  // path without the language prefix: /fr and / are both the home page
+  const pathname = stripLocale(usePathname());
+  const lp = useLocalePath();
   return (
     <Link
-      href="/"
+      href={lp("/")}
       className={className}
       onClick={(e) => {
         if (pathname === "/") {
@@ -44,7 +48,8 @@ export function HomeLink({ className, children }: { className?: string; children
 }
 
 export function NavLinks({ isAdmin, recoveryPending = 0 }: { isAdmin: boolean; recoveryPending?: number }) {
-  const pathname = usePathname();
+  const pathname = stripLocale(usePathname());
+  const lp = useLocalePath();
   const t = useTranslations("header.nav");
   const all = isAdmin
     ? [...links, { href: "/admin", key: "admin", icon: Users } as const]
@@ -58,7 +63,7 @@ export function NavLinks({ isAdmin, recoveryPending = 0 }: { isAdmin: boolean; r
         return (
           <Link
             key={href}
-            href={href}
+            href={lp(href)}
             onClick={(e) => {
               if (href === "/" && pathname === "/") {
                 e.preventDefault();
@@ -92,11 +97,12 @@ export function NavLinks({ isAdmin, recoveryPending = 0 }: { isAdmin: boolean; r
 export function LogoutButton() {
   const router = useRouter();
   const t = useTranslations("header");
+  const lp = useLocalePath();
   return (
     <button
       onClick={async () => {
         await fetch("/api/auth/logout", { method: "POST" });
-        router.push("/login");
+        router.push(lp("/login"));
         router.refresh();
       }}
       className="ml-1 grid size-9 place-items-center rounded-xl text-ink-faint transition-colors hover:bg-panel hover:text-danger cursor-pointer"

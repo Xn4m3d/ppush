@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { DEFAULT_LOCALE, LOCALE_COOKIE, LOCALE_HEADER, LOCALES } from "./i18n/locale";
 
 /**
  * Per-request Content-Security-Policy with a nonce. Lets us drop 'unsafe-inline'
@@ -39,8 +40,27 @@ export function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("content-security-policy", csp);
+  // the language header must only come from here, never from the client
+  requestHeaders.delete(LOCALE_HEADER);
 
-  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  // /fr/...: same page as /..., forced to French (one indexable URL per language)
+  const { pathname } = request.nextUrl;
+  const m = pathname.match(/^\/([a-z]{2})(\/.*)?$/);
+  const prefixed = m && m[1] !== DEFAULT_LOCALE && (LOCALES as readonly string[]).includes(m[1]) ? m[1] : null;
+
+  let response: NextResponse;
+  if (prefixed) {
+    requestHeaders.set(LOCALE_HEADER, prefixed);
+    const url = request.nextUrl.clone();
+    url.pathname = m![2] || "/";
+    response = NextResponse.rewrite(url, { request: { headers: requestHeaders } });
+    // the rest of the visit (unprefixed links, redirects) stays in French
+    if (request.cookies.get(LOCALE_COOKIE)?.value !== prefixed) {
+      response.cookies.set(LOCALE_COOKIE, prefixed, { path: "/", maxAge: 31_536_000, sameSite: "lax" });
+    }
+  } else {
+    response = NextResponse.next({ request: { headers: requestHeaders } });
+  }
   response.headers.set("content-security-policy", csp);
   return response;
 }

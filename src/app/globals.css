@@ -264,9 +264,12 @@ h1, h2, h3, h4 {
 }
 @media (min-width: 1024px) and (max-height: 860px) {
   .hc-title { font-size: clamp(26px, 4.4vh, 40px); }
+  /* the "free account" strip repeats the limits link just above it */
+  .hc-anon { display: none; }
   .hc-gap { gap: clamp(8px, 1.4vh, 14px); }
   .hc-cloud { height: clamp(170px, 36vh, 330px); }
 }
 @media (min-width: 1024px) and (max-height: 720px) {
   .hc-lede, .hc-anon { display: none; }
+  .hc-title { font-size: clamp(24px, 4vh, 32px); }
 }

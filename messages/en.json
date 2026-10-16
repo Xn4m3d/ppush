@@ -1,8 +1,8 @@
 {
   "meta": {
-    "title": "ppush — secure secret sharing",
+    "title": "Share a password securely with a one-time link | ppush",
     "titleTemplate": "%s · ppush",
-    "description": "Share passwords, confidential text and files through end-to-end encrypted, self-destructing links.",
+    "description": "Share a password, text or file through an encrypted link that self-destructs after reading. Encrypted in your browser, free, no account needed.",
     "login": "Sign in",
     "register": "Create an account",
     "recover": "Account recovery",
@@ -15,7 +15,7 @@
     "apiDocs": "API documentation",
     "legal": "Legal notice",
     "privacy": "Privacy policy",
-    "homeDescription": "Share a password, text or file as an end-to-end encrypted, self-destructing link. Zero-knowledge: the server never sees your secret, no account required.",
+    "homeDescription": "Send a password or a confidential document through a one-time link, end-to-end encrypted in your browser. It erases itself once read: nothing lingers in your email or chats.",
     "aboutDescription": "How ppush works: zero-knowledge encryption in your browser, self-destructing links, view limits and tracking. Data hosted in France, delivered via Cloudflare.",
     "why": "What is ppush for?",
     "whyDescription": "Pass on a password, a code or a confidential document without it lingering in your email or chats. Simple, free, no account needed.",
@@ -61,7 +61,8 @@
   },
   "home": {
     "title": "Encryption turns your secret into <em>entropy</em>.",
-    "anonBadge": "No account"
+    "anonBadge": "No account",
+    "kicker": "Password sharing, encrypted in your browser"
   },
   "diffusion": {
     "lede": "Good encryption turns your text into pure disorder: without the key, it means nothing, not even to us. <b>The cloud you see is exactly that.</b>",

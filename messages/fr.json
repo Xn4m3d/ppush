@@ -1,8 +1,8 @@
 {
   "meta": {
-    "title": "ppush — partage sécurisé de secrets",
+    "title": "Partager un mot de passe en toute sécurité | ppush",
     "titleTemplate": "%s · ppush",
-    "description": "Partagez mots de passe, textes confidentiels et fichiers via des liens chiffrés de bout en bout qui s'autodétruisent.",
+    "description": "Partagez un mot de passe, un texte ou un fichier par un lien chiffré qui s’autodétruit après lecture. Chiffré dans votre navigateur, gratuit, sans compte.",
     "login": "Connexion",
     "register": "Créer un compte",
     "recover": "Récupération d'accès",
@@ -15,7 +15,7 @@
     "apiDocs": "Documentation API",
     "legal": "Mentions légales",
     "privacy": "Politique de confidentialité",
-    "homeDescription": "Partagez un mot de passe, un texte ou un fichier via un lien chiffré de bout en bout qui s'autodétruit. Zéro-knowledge : le serveur ne voit jamais votre secret.",
+    "homeDescription": "Envoyez un mot de passe ou un document confidentiel par un lien à usage unique, chiffré de bout en bout dans votre navigateur. Il s’efface après lecture : rien ne traîne dans vos e-mails ou vos messages.",
     "aboutDescription": "Le fonctionnement de ppush : chiffrement zéro-knowledge dans le navigateur, liens autodestructibles, limites de vues et suivi. Données hébergées en France via Cloudflare.",
     "why": "À quoi sert ppush ?",
     "whyDescription": "Transmettre un mot de passe, un code ou un document confidentiel sans qu'il reste dans vos e-mails ou vos conversations. Simple, gratuit, sans compte.",
@@ -61,7 +61,8 @@
   },
   "home": {
     "title": "Chiffrer, c’est fabriquer de l’<em>entropie</em>.",
-    "anonBadge": "Sans compte"
+    "anonBadge": "Sans compte",
+    "kicker": "Partage de mots de passe, chiffré dans votre navigateur"
   },
   "diffusion": {
     "lede": "Un bon chiffrement transforme votre texte en désordre pur : sans la clé, il ne veut plus rien dire, même pour nous. <b>Le nuage que vous voyez, c’est exactement ça.</b>",

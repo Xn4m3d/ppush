@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CircleHelp } from "lucide-react";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
+import { localePath } from "@/i18n/locale";
 import { currentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { CatMark } from "./cat";
@@ -25,6 +26,7 @@ export async function Logo({ compact = false }: { compact?: boolean } = {}) {
 export async function Header() {
   const user = await currentUser();
   const t = await getTranslations("header");
+  const locale = await getLocale();
   const recoveryPending =
     user?.role === "ADMIN"
       ? await prisma.recoveryRequest.count({ where: { status: "PENDING" } })
@@ -39,7 +41,7 @@ export async function Header() {
               a plain icon, hidden below 380 px; signed out, "What’s this?"
               except on very narrow screens */}
           <Link
-            href="/why"
+            href={localePath(locale, "/why")}
             aria-label={t("why")}
             title={t("why")}
             className={`${user ? "hidden min-[380px]:inline-flex" : "inline-flex"} shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-line px-2 py-1 text-xs text-ink-dim transition-colors hover:border-accent/40 hover:text-accent-soft sm:px-3`}
@@ -56,7 +58,7 @@ export async function Header() {
           </div>
         ) : (
           <Link
-            href="/login"
+            href={localePath(locale, "/login")}
             className="rounded-[10px] border border-line px-4 py-2 text-sm text-ink-dim transition-colors hover:border-line-soft hover:text-ink"
           >
             {t("login")}

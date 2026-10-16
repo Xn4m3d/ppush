@@ -9,6 +9,7 @@ import { startAuthentication, startRegistration } from "@simplewebauthn/browser"
 import { Button, Input, Field, Card, ErrorText } from "./ui";
 import { Turnstile, type TurnstileHandle } from "./turnstile";
 import { isValidEmail } from "@/lib/validation";
+import { useLocalePath } from "@/i18n/use-locale-path";
 
 export function AuthForm({
   mode,
@@ -18,6 +19,7 @@ export function AuthForm({
   turnstileSiteKey?: string;
 }) {
   const t = useTranslations("auth");
+  const lp = useLocalePath();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -65,7 +67,7 @@ export function AuthForm({
         setError(data.error ?? t("passkeyError"));
         return;
       }
-      router.push("/");
+      router.push(lp("/"));
       router.refresh();
     } catch {
       setError(t("passkeyError"));
@@ -106,7 +108,7 @@ export function AuthForm({
         setPending(true);
         return;
       }
-      router.push("/");
+      router.push(lp("/"));
       router.refresh();
     } catch {
       setError(t("passkeyError"));
@@ -144,7 +146,7 @@ export function AuthForm({
         setTotpTicket(data.ticket);
         return;
       }
-      router.push("/");
+      router.push(lp("/"));
       router.refresh();
     } catch {
       setError(t("serverUnreachable"));
@@ -172,7 +174,7 @@ export function AuthForm({
         }
         return;
       }
-      router.push("/");
+      router.push(lp("/"));
       router.refresh();
     } catch {
       setError(t("serverUnreachable"));
@@ -346,7 +348,7 @@ export function AuthForm({
       {mode === "login" && (
         <div className="mt-5 text-center">
           <Link
-            href="/recover"
+            href={lp("/recover")}
             className="text-xs text-ink-faint underline-offset-2 transition-colors hover:text-ink-dim hover:underline"
           >
             {t("troubleSignIn")}
@@ -358,7 +360,7 @@ export function AuthForm({
         <div className="mt-6 text-center">
           <p className="text-sm text-ink-faint">{t("noAccount")}</p>
           <Link
-            href="/register"
+            href={lp("/register")}
             className="mt-2 inline-flex items-center gap-2 rounded-xl border border-accent/40 bg-accent/10 px-5 py-2.5 text-sm font-medium text-accent-soft transition-all hover:-translate-y-0.5 hover:border-accent/60 hover:bg-accent/20"
           >
             <Sparkles className="size-4" />
@@ -368,7 +370,7 @@ export function AuthForm({
       ) : (
         <p className="mt-6 text-center text-sm text-ink-faint">
           {t("haveAccount")}{" "}
-          <Link href="/login" className="text-accent-soft hover:underline">
+          <Link href={lp("/login")} className="text-accent-soft hover:underline">
             {t("signin")}
           </Link>
         </p>

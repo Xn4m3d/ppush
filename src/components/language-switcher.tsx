@@ -1,13 +1,15 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
-import { LOCALES, LOCALE_COOKIE } from "@/i18n/locale";
+import { LOCALES, LOCALE_COOKIE, localePath, stripLocale } from "@/i18n/locale";
 import { cls } from "./ui";
 
-/** EN · FR — sets the language cookie then re-renders everything server-side. */
+/**
+ * EN · FR — sets the language cookie and opens the same page at that language's
+ * URL (`/fr/…` or unprefixed): on a prefixed URL the language is set
+ * by the address, so a plain reload would not be enough.
+ */
 export function LanguageSwitcher() {
-  const router = useRouter();
   const locale = useLocale();
 
   return (
@@ -18,7 +20,8 @@ export function LanguageSwitcher() {
           <button
             onClick={() => {
               document.cookie = `${LOCALE_COOKIE}=${l}; path=/; max-age=31536000; samesite=lax`;
-              router.refresh();
+              const { pathname, search, hash } = window.location;
+              window.location.assign(localePath(l, stripLocale(pathname)) + search + hash);
             }}
             className={cls(
               "uppercase transition-colors cursor-pointer",

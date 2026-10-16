@@ -5,6 +5,7 @@ import Link from "next/link";
 import { KeyRound, CheckCircle2, XCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button, Input, Field, Card } from "./ui";
+import { useLocalePath } from "@/i18n/use-locale-path";
 
 type State = "checking" | "invalid" | "form" | "done";
 
@@ -15,6 +16,7 @@ type State = "checking" | "invalid" | "form" | "done";
  */
 export function ResetForm() {
   const t = useTranslations("reset");
+  const lp = useLocalePath();
   const tokenRef = useRef("");
   const [state, setState] = useState<State>("checking");
   const [email, setEmail] = useState<string | null>(null);
@@ -122,7 +124,7 @@ export function ResetForm() {
           <CheckCircle2 className="mx-auto size-9 text-ok" />
           <h1 className="text-xl font-semibold tracking-tight">{t("successTitle")}</h1>
           <p className="text-sm text-ink-dim">{t("successBody")}</p>
-          <Link href="/login" className="inline-block pt-1">
+          <Link href={lp("/login")} className="inline-block pt-1">
             <Button>{t("toLogin")}</Button>
           </Link>
         </div>

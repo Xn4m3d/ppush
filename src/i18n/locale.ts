@@ -8,6 +8,25 @@ export const LOCALES = ["en", "fr"] as const;
 export type Locale = (typeof LOCALES)[number];
 export const DEFAULT_LOCALE: Locale = "en";
 export const LOCALE_COOKIE = "lang";
+/**
+ * Language set by the URL: the middleware serves `/fr/...` by rewriting to
+ * `/...` and sets this header. It takes precedence over the cookie and the browser, so
+ * that each language has its own indexable URLs (Google sends no
+ * Accept-Language: without a prefix, it only ever saw English).
+ */
+export const LOCALE_HEADER = "x-ppush-locale";
+
+/** Path in a language: English (default) unprefixed, the others under `/<code>`. */
+export function localePath(locale: string, path: string): string {
+  if (locale === DEFAULT_LOCALE || !isLocale(locale)) return path;
+  return path === "/" ? `/${locale}` : `/${locale}${path}`;
+}
+
+/** Removes the language prefix from a path (`/fr/about` → `/about`, `/fr` → `/`). */
+export function stripLocale(path: string): string {
+  const m = path.match(/^\/([a-z]{2})(\/.*)?$/);
+  return m && isLocale(m[1]) && m[1] !== DEFAULT_LOCALE ? m[2] || "/" : path;
+}
 
 export function isLocale(v: string | undefined | null): v is Locale {
   return !!v && (LOCALES as readonly string[]).includes(v);

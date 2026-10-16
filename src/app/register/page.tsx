@@ -8,13 +8,14 @@ import { RegisterAside } from "@/components/register-aside";
 import { Logo } from "@/components/header";
 import { BackHome } from "@/components/back-home";
 import type { Locale } from "@/i18n/locale";
+import { pageAlternates } from "@/lib/seo";
 
 export async function generateMetadata() {
   const t = await getTranslations("meta");
   return {
     title: t("register"),
     description: t("registerDescription"),
-    alternates: { canonical: "/register" },
+    alternates: await pageAlternates("/register"),
   };
 }
 

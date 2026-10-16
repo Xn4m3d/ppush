@@ -3,6 +3,7 @@ import { BackHome } from "@/components/back-home";
 import type { Locale } from "@/i18n/locale";
 import { WhyContentEn } from "./content.en";
 import { WhyContentFr } from "./content.fr";
+import { pageAlternates } from "@/lib/seo";
 
 /**
  * "What is this site for?" — concrete use, no technical detail (that lives
@@ -18,7 +19,7 @@ export async function generateMetadata() {
   return {
     title: t("why"),
     description: t("whyDescription"),
-    alternates: { canonical: "/why" },
+    alternates: await pageAlternates("/why"),
   };
 }
 

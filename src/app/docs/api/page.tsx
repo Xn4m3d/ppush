@@ -4,6 +4,7 @@ import { BackHome } from "@/components/back-home";
 import type { Locale } from "@/i18n/locale";
 import { ApiDocsContentEn } from "./content.en";
 import { ApiDocsContentFr } from "./content.fr";
+import { pageAlternates } from "@/lib/seo";
 
 /**
  * Markup-rich docs → per-locale content in content.<locale>.tsx
@@ -19,7 +20,7 @@ export async function generateMetadata() {
   return {
     title: t("apiDocs"),
     description: t("apiDocsDescription"),
-    alternates: { canonical: "/docs/api" },
+    alternates: await pageAlternates("/docs/api"),
   };
 }
 

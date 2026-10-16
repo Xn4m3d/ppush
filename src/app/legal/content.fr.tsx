@@ -3,7 +3,7 @@ import { Scale } from "lucide-react";
 import { legal } from "@/lib/legal";
 import { LegalHeader, LegalSection } from "@/components/legal-blocks";
 
-/** Legal notice & ToS — French. Mirror: content.en.tsx. */
+/** Mentions légales & CGU — français. Miroir : content.en.tsx. */
 export function LegalContentFr() {
   return (
     <>
@@ -38,7 +38,7 @@ export function LegalContentFr() {
           d’intermédiaire technique (réseau de diffusion / tunnel). Par
           conception, aucun contenu en clair n’y transite : le chiffrement est de
           bout en bout (voir la{" "}
-          <Link href="/privacy" className="text-accent-soft hover:underline">
+          <Link href="/fr/privacy" className="text-accent-soft hover:underline">
             politique de confidentialité
           </Link>
           ).
@@ -83,7 +83,7 @@ export function LegalContentFr() {
             que la <strong className="text-ink">loi l’impose à tout hébergeur</strong>{" "}
             (LCEN art. 6), conservation que le RGPD soustrait au droit à l’effacement
             (art. 17-3-b) — puis purgé. Détails dans la{" "}
-            <a href="/privacy" className="text-accent-soft hover:underline">
+            <a href="/fr/privacy" className="text-accent-soft hover:underline">
               politique de confidentialité
             </a>
             .
@@ -120,11 +120,11 @@ export function LegalContentFr() {
 
       <p className="text-sm text-ink-faint">
         Voir aussi la{" "}
-        <Link href="/privacy" className="text-accent-soft hover:underline">
+        <Link href="/fr/privacy" className="text-accent-soft hover:underline">
           politique de confidentialité
         </Link>{" "}
         et la page{" "}
-        <Link href="/about" className="text-accent-soft hover:underline">
+        <Link href="/fr/about" className="text-accent-soft hover:underline">
           À propos
         </Link>
         .

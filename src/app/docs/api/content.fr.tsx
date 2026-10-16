@@ -23,7 +23,7 @@ export function ApiDocsContentFr() {
           <H2 id="auth">Authentification</H2>
           <p className="text-sm text-ink-dim">
             Générez un token personnel dans{" "}
-            <Link href="/account" className="text-accent-soft hover:underline">
+            <Link href="/fr/account" className="text-accent-soft hover:underline">
               Compte → Tokens API
             </Link>{" "}
             (affiché une seule fois), puis passez-le en en-tête :
@@ -225,11 +225,11 @@ Fichiers (blob) : chunks de 8 Mio, chacun encadré :
         <p className="flex items-center justify-center gap-2 pt-4 text-sm text-ink-faint">
           <BookOpenText className="size-4" />
           Voir aussi{" "}
-          <Link href="/about" className="text-accent-soft hover:underline">
+          <Link href="/fr/about" className="text-accent-soft hover:underline">
             la page À propos
           </Link>{" "}
           et{" "}
-          <Link href="/account" className="text-accent-soft hover:underline">
+          <Link href="/fr/account" className="text-accent-soft hover:underline">
             la gestion des tokens
           </Link>
           .
