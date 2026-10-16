@@ -4,8 +4,8 @@
  * A single canvas covers the work area (form + cloud). The cloud IS
  * a view of the encrypted content: each point's position is derived from the
  * ciphertext bytes. On send, particles leave the input field and
- * join the cloud; when the link is created, the cloud writes the address and the
- * key comes from the field (it never went through the server). On
+ * join the cloud; when the link is created, the cloud's particles
+ * fly off and compose the whole link, address and key. On
  * reception, the cloud condenses back into readable characters.
  *
  * No data is sent anywhere: this is display only. The
@@ -341,28 +341,36 @@ export class DiffusionScene {
   }
 
   /**
-   * Send: the cloud writes the address (`idEl`); the key (`keyEl`) comes from the
-   * field, described by `keyFrom` (client rect of the typed text).
+   * Send: the cloud's particles fly off and compose the whole link,
+   * the address (`idEl`) then the key (`keyEl`, in the accent color). If there
+   * aren't enough particles for every letter, the missing ones are born
+   * in the cloud — never in the field.
    */
-  seal(idEl: HTMLElement, keyEl: HTMLElement, keyFrom: { x0: number; x1: number; y0: number; y1: number } | null) {
+  seal(idEl: HTMLElement, keyEl: HTMLElement) {
     this.mode = "forming";
     this.age = this.ageTarget = 0;
     const idPts = this.glyphPoints(idEl), keyPts = this.glyphPoints(keyEl);
-    const pool = this.parts.filter((p): p is Particle => !!p && !p.dying && p.delay <= 0);
-    let j = 0;
-    for (const pt of idPts) { const p = pool[j++]; if (!p) break; p.line = pt; p.ride = 1; p.key = false; }
-    for (; j < pool.length; j++) pool[j].dying = true;
     this.parts.forEach((p) => { if (p && p.delay > 0) p.dying = true; });
+    const pool = this.parts.filter((p): p is Particle => !!p && !p.dying);
+    const targets = [...idPts.map((pt) => ({ pt, key: false })), ...keyPts.map((pt) => ({ pt, key: true }))];
+    let j = 0;
+    for (const { pt, key } of targets) {
+      const p = pool[j++];
+      if (!p) break;
+      p.line = pt; p.ride = 1; p.key = key;
+      if (key) { p.hot = true; p.byte = 255; }
+    }
+    for (; j < pool.length; j++) pool[j].dying = true;
+    // letters without a particle: spawn some in the cloud
     const Z = this.Z;
-    keyPts.forEach((pt, k) => {
-      const e: Pt = Z.stacked || !keyFrom
-        ? { x: Z.src.x, y: Z.src.y }
-        : { x: keyFrom.x0 + Math.random() * (keyFrom.x1 - keyFrom.x0), y: keyFrom.y0 + Math.random() * (keyFrom.y1 - keyFrom.y0) };
+    targets.slice(pool.length).forEach(({ pt, key }, k) => {
+      const ang = Math.random() * Math.PI * 2, rad = Math.sqrt(Math.random()) * 0.5;
+      const e: Pt = { x: Z.ccx + Math.cos(ang) * rad * Z.cw, y: Z.ccy + Math.sin(ang) * rad * Z.ch };
       this.parts.push({
         x: e.x, y: e.y, vx: 0, vy: 0, a: 0, seed: Math.random() * 1000, dying: false,
-        delay: this.reduce ? 0 : 14 + k * 0.12, ang: 0, rad: 0,
-        ride: this.reduce ? 1 : 0, rideSp: 0.017 + Math.random() * 0.008, from: e,
-        line: pt, key: true, byte: 255, hot: true, r: 1,
+        delay: this.reduce ? 0 : 4 + k * 0.08, ang, rad,
+        ride: 1, rideSp: 0, from: e,
+        line: pt, key, byte: key ? 255 : 128, hot: key, r: 1,
       });
     });
   }

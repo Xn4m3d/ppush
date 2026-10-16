@@ -217,7 +217,7 @@
     "lowercase": "Minuscules (a-z)",
     "uppercase": "Majuscules (A-Z)",
     "digits": "Chiffres (2-9)",
-    "symbols": "Symboles (!@#$%&*+-=?_)",
+    "symbols": "Symboles",
     "ambiguous": "Caractères ambigus",
     "ambiguousHint": "l, I, O, 0, 1 — exclus par défaut pour éviter les confusions à la lecture.",
     "guarantee": "Chaque type activé est garanti présent au moins une fois. Entropie : ~{bits} bits.",
@@ -249,14 +249,17 @@
     "settings": "Réglages",
     "endSymbol": "Caractère spécial à la fin",
     "symbolNone": "aucun",
-    "symbolRandom": "aléatoire",
-    "symbolPick": "Terminer par {c}",
+    "symbolRandom": "tiré parmi les symboles cochés",
+    "symbolPick": "Autoriser {c}",
     "fieldChars": "{count, plural, one {# caractère} other {# caractères}}",
     "settingsTitle": "Réglages du générateur",
     "preview": "Aperçu",
     "previewEmpty": "Cliquez sur Générer pour voir le résultat.",
     "close": "Fermer",
-    "done": "Terminé"
+    "done": "Terminé",
+    "symbolSetLabel": "Symboles autorisés",
+    "symbolSetCount": "{count, plural, one {# coché} other {# cochés}}",
+    "symbolSetHint": "Le tirage se fait uniquement parmi les symboles cochés. Un seul coché : c’est toujours lui."
   },
   "fileDrop": {
     "prompt": "Glissez un fichier ici ou cliquez pour parcourir",
@@ -939,5 +942,17 @@
     "sentBody": "Un administrateur l'examinera et vérifiera votre identité avant de revenir vers vous. Il n'y a pas d'email automatique — vous serez recontacté.",
     "sentReminder": "Gardez vos preuves d'identité à portée, et ne créez pas de demande en double.",
     "backToLogin": "Retour à la connexion"
+  },
+  "strength": {
+    "label": "Force du mot de passe",
+    "pending": "calcul de la force…",
+    "bitsExact": "{bits} bits",
+    "bitsEstimate": "≈ {bits} bits",
+    "weak": "faible",
+    "fair": "moyen",
+    "good": "bon",
+    "strong": "très bon",
+    "exactHint": "Entropie exacte : ce mot de passe sort du générateur sans retouche.",
+    "estimateHint": "Estimation : nombre d'essais qu'il faudrait à un attaquant qui connaît les mots courants, les prénoms, les dates et les suites clavier. Calculée dans votre navigateur."
   }
 }
