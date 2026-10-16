@@ -10,7 +10,7 @@ export function PrivacyContentEn() {
       <LegalHeader
         icon={ShieldCheck}
         title="Privacy policy"
-        updated={`Last updated: ${legal.updatedEn}`}
+        updated={`Last updated: ${legal.privacyUpdatedEn}`}
       />
 
       <LegalSection id="responsable" title="Data controller">
@@ -108,10 +108,43 @@ export function PrivacyContentEn() {
 
       <LegalSection id="cookies" title="Cookies">
         <p>
-          ppush only uses <strong className="text-ink">strictly necessary</strong>{" "}
-          cookies: a session cookie (authentication) and a language preference.{" "}
-          <strong className="text-ink">No analytics cookies, no advertising
-          trackers</strong> — which is why no consent banner is required.
+          ppush sets <strong className="text-ink">no analytics cookies, no
+          advertising trackers and no social media trackers</strong>. On your
+          first visit, ppush itself writes nothing to your device; only
+          Cloudflare security cookies may be set right away. Here is the full
+          list:
+        </p>
+        <ul className="list-inside list-disc space-y-1.5">
+          <li>
+            <code className="font-mono text-xs text-ink">ppush_session</code> (cookie):
+            keeps you signed in to your account. Set when you sign in, removed
+            when you sign out or after 14 days at most.
+          </li>
+          <li>
+            <code className="font-mono text-xs text-ink">lang</code> and{" "}
+            <code className="font-mono text-xs text-ink">theme</code> (cookies): the
+            language and theme you picked in the footer. Kept for 12 months.
+          </li>
+          <li>
+            <code className="font-mono text-xs text-ink">ppush-gen</code> (browser
+            local storage): your password generator settings, saved when you
+            change them. Never sent to the server; you can erase it by clearing
+            the site&apos;s browsing data.
+          </li>
+          <li>
+            Cloudflare security cookies (for example{" "}
+            <code className="font-mono text-xs text-ink">__cf_bm</code>): set by our
+            network provider to tell visitors from bots and protect the service
+            from abuse. They are not used to follow you across sites.
+          </li>
+        </ul>
+        <p>
+          These are either <strong className="text-ink">strictly necessary</strong>{" "}
+          for the service (session, security) or tied to a{" "}
+          <strong className="text-ink">customization you asked for</strong>{" "}
+          (language, theme, generator). They are therefore exempt from consent
+          under the EU ePrivacy rules (in France, article 82 of the Data Protection
+          Act and the CNIL guidelines), which is why no banner is shown.
         </p>
       </LegalSection>
 
