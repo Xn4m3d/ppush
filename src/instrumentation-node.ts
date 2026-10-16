@@ -30,6 +30,15 @@ export async function startBackgroundTasks() {
         },
         data: { ip: null, userAgent: null },
       });
+      // Abuse reports: IP anonymized on the same schedule, and reports
+      // that were handled or dismissed deleted (no further use).
+      await prisma.abuseReport.updateMany({
+        where: { createdAt: { lt: cutoff }, ip: { not: null } },
+        data: { ip: null },
+      });
+      await prisma.abuseReport.deleteMany({
+        where: { createdAt: { lt: cutoff }, status: { not: "PENDING" } },
+      });
       // Same for the admin action log (same connection data).
       await prisma.adminAudit.updateMany({
         where: { createdAt: { lt: cutoff }, ip: { not: null } },

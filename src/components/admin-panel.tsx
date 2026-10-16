@@ -10,6 +10,7 @@ import { UsersTab } from "./admin/users-tab";
 import { PushesTab } from "./admin/pushes-tab";
 import { ActivityTab } from "./admin/activity-tab";
 import { RecoveryTab } from "./admin/recovery-tab";
+import { ReportsTab } from "./admin/reports-tab";
 import { TipsTab } from "./admin/tips-tab";
 import type { Locale } from "@/i18n/locale";
 
@@ -37,9 +38,10 @@ type Stats = {
   };
   storage: { usedBytes: number; availableBytes: number };
   recovery: { pending: number };
+  reports: { pending: number };
 };
 
-type Tab = "overview" | "accounts" | "requests" | "pushes" | "activity" | "tips";
+type Tab = "overview" | "accounts" | "requests" | "reports" | "pushes" | "activity" | "tips";
 
 export function AdminPanel({ selfId }: { selfId: string }) {
   const t = useTranslations("admin");
@@ -71,6 +73,7 @@ export function AdminPanel({ selfId }: { selfId: string }) {
     ["overview", t("tabOverview")],
     ["accounts", t("tabAccounts")],
     ["requests", t("tabRequests"), pendingRecovery],
+    ["reports", t("tabReports"), stats?.reports.pending ?? 0],
     ["pushes", t("tabPushes")],
     ["activity", t("tabActivity")],
     ["tips", t("tabTips")],
@@ -155,6 +158,7 @@ export function AdminPanel({ selfId }: { selfId: string }) {
       {tab === "requests" && (
         <RecoveryTab refreshKey={refreshKey} bump={bump} onOpenAccount={openAccount} />
       )}
+      {tab === "reports" && <ReportsTab refreshKey={refreshKey} bump={bump} />}
       {tab === "pushes" && <PushesTab refreshKey={refreshKey} bump={bump} />}
       {tab === "activity" && <ActivityTab refreshKey={refreshKey} />}
       {tab === "tips" && <TipsTab refreshKey={refreshKey} bump={bump} />}

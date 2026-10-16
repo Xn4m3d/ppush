@@ -1,13 +1,15 @@
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireUser, resolveAuth, hashPassword } from "@/lib/auth";
-import { json, apiError, badOrigin, handleError } from "@/lib/api";
+import { json, apiError, badOrigin, handleError, readJson, gateError } from "@/lib/api";
 import { apiT } from "@/lib/i18n-api";
 import { randomToken } from "@/lib/tokens";
-import { config, pushLimits } from "@/lib/config";
+import { pushLimits } from "@/lib/config";
 import { audit, ownerPushView } from "@/lib/pushes";
 import { blobSize } from "@/lib/files";
 import { clientIp, rateLimit } from "@/lib/ratelimit";
+import { accept, anonGate, clearIp, userGate } from "@/lib/guard";
+import { verifyTurnstile } from "@/lib/turnstile";
 import { bumpDailyStat } from "@/lib/stats";
 
 const createSchema = z.object({
@@ -28,6 +30,8 @@ const createSchema = z.object({
   retrievalStep: z.boolean().default(true),
   deletableByViewer: z.boolean().default(true),
   note: z.string().max(500).optional(),
+  /** Turnstile token, only required while the anti-spam shield is on. */
+  turnstileToken: z.string().max(4096).optional(),
 });
 
 export async function POST(req: Request) {
@@ -53,7 +57,18 @@ export async function POST(req: Request) {
       return apiError(t("pushUserLimit"), 429);
     }
 
-    const body = createSchema.parse(await req.json());
+    // capped read: encrypted text in base64 (×4/3) + JSON envelope
+    const maxBody = Math.ceil(pushLimits(tier).maxTextKb * 1024 * 1.4) + 16_384;
+    const body = createSchema.parse(await readJson(req, maxBody));
+
+    // garde-fous globaux (inondation, disque) — cf. src/lib/guard.ts
+    let gate = user ? userGate() : anonGate("push", ip);
+    if (gate === "captcha" && body.turnstileToken && (await verifyTurnstile(body.turnstileToken, ip))) {
+      clearIp(ip);
+      gate = "ok";
+    }
+    if (gate !== "ok") return gateError(gate, req);
+
     const lim = pushLimits(tier, body.kind);
     const anon = String(!user); // drives the "no account" suffix of messages
 
@@ -71,8 +86,8 @@ export async function POST(req: Request) {
     }
 
     const ciphertext = Buffer.from(body.ciphertext, "base64");
-    if (ciphertext.length > config.maxTextSizeKb * 1024) {
-      return apiError(t("payloadTooBig", { kb: config.maxTextSizeKb }), 413);
+    if (ciphertext.length > lim.maxTextKb * 1024) {
+      return apiError(t("payloadTooBig", { kb: lim.maxTextKb, anon }), 413);
     }
 
     let fileSize: number | null = null;
@@ -122,6 +137,7 @@ export async function POST(req: Request) {
       ip,
       userAgent: req.headers.get("user-agent") ?? undefined,
     });
+    accept("push", !user);
     await bumpDailyStat("pushes");
     if (!user) await bumpDailyStat("pushesAnon");
     if (source === "API") await bumpDailyStat("pushesApi");

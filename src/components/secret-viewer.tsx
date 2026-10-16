@@ -16,6 +16,7 @@ import type { Locale } from "@/i18n/locale";
 import { Button, Input, ErrorText, CondenseLoader, cls } from "./ui";
 import { CopyButton } from "./copy-button";
 import { DiffusionScene } from "./diffusion/scene";
+import { ReportAbuse } from "./report-abuse";
 
 type Meta = {
   slug: string;
@@ -369,6 +370,7 @@ export function SecretViewer({ slug, autoOpen = false }: { slug: string; autoOpe
           <p className="mt-6 text-sm text-ink-faint">
             {tr.rich("footCta", { link: (c) => <Link href="/" className="font-medium text-ink-dim underline underline-offset-2 hover:text-ink">{c}</Link> })}
           </p>
+          <ReportAbuse slug={slug} />
         </div>
         <section aria-label={tr("zoneAria")} className="relative z-[4] order-first flex min-h-[200px] min-w-0 flex-col lg:order-none lg:min-h-[460px]">
           <div className="flex justify-between gap-3 eyebrow">

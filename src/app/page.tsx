@@ -1,7 +1,7 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { parseGenPrefs } from "@/lib/generator-prefs";
 import { currentUser } from "@/lib/auth";
-import { config, clamp } from "@/lib/config";
+import { config, clamp, pushLimits } from "@/lib/config";
 import { Header } from "@/components/header";
 import { PushForm } from "@/components/push-form";
 
@@ -37,6 +37,8 @@ export default async function HomePage() {
         maxFileDays: u.maxFileDays,
         maxViews: u.maxViews,
         maxFileSizeMb: u.maxFileMb,
+        maxTextKb: pushLimits("user").maxTextKb,
+        turnstileSiteKey: config.turnstileSiteKey || undefined,
         showNote: true,
         shareTemplates,
         generator: parseGenPrefs(user.generatorPrefs, await getLocale()),
@@ -51,6 +53,8 @@ export default async function HomePage() {
         maxFileDays: a.maxFileDays,
         maxViews: a.maxViews,
         maxFileSizeMb: a.maxFileMb,
+        maxTextKb: pushLimits("anon").maxTextKb,
+        turnstileSiteKey: config.turnstileSiteKey || undefined,
         showNote: false,
         shareTemplates,
       };

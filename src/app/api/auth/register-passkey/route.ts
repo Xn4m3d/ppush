@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { RegistrationResponseJSON } from "@simplewebauthn/server";
 import { prisma } from "@/lib/db";
 import { isAllowedEmail, createSession, setSessionCookie } from "@/lib/auth";
-import { json, apiError, badOrigin, handleError } from "@/lib/api";
+import { json, apiError, badOrigin, handleError, readJson } from "@/lib/api";
 import { apiT, type ApiTranslator } from "@/lib/i18n-api";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
 import { verifyTurnstile } from "@/lib/turnstile";
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     if (!rateLimit(`register:${ip}`, 5, 15 * 60_000)) {
       return apiError(t("loginTooMany"), 429);
     }
-    const { email, name, turnstileToken } = startSchema(t).parse(await req.json());
+    const { email, name, turnstileToken } = startSchema(t).parse(await readJson(req, 65_536));
     if (!(await verifyTurnstile(turnstileToken, ip))) {
       return apiError(t("captchaFailed"), 400);
     }
@@ -84,7 +84,7 @@ export async function PUT(req: Request) {
     if (!rateLimit(`register:${ip}`, 8, 15 * 60_000)) {
       return apiError(t("loginTooMany"), 429);
     }
-    const { flowId, response } = verifySchema.parse(await req.json());
+    const { flowId, response } = verifySchema.parse(await readJson(req, 65_536));
     const ticket = takeSignup(flowId);
     if (!ticket) return apiError(t("passkeyExpired"), 400);
 

@@ -28,6 +28,7 @@ export async function GET(req: Request) {
       views,
       storage,
       recoveryPending,
+      reportsPending,
       pushesApiActive,
       sourceRows,
       topApiTokenRows,
@@ -47,6 +48,7 @@ export async function GET(req: Request) {
       prisma.auditEvent.count({ where: { kind: "VIEW" } }),
       storageStatus(),
       prisma.recoveryRequest.count({ where: { status: "PENDING" } }),
+      prisma.abuseReport.count({ where: { status: "PENDING" } }),
       prisma.push.count({
         where: { source: "API", payloadDeleted: false, expiresAt: { gt: now } },
       }),
@@ -94,6 +96,7 @@ export async function GET(req: Request) {
       },
       storage: { usedBytes: storage.usedBytes, availableBytes: storage.availableBytes },
       recovery: { pending: recoveryPending },
+      reports: { pending: reportsPending },
     });
   } catch (err) {
     return handleError(err, req);

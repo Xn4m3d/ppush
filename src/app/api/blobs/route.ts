@@ -1,9 +1,11 @@
 import { requireUser } from "@/lib/auth";
-import { json, apiError, badOrigin, handleError } from "@/lib/api";
+import { json, apiError, badOrigin, handleError, gateError } from "@/lib/api";
 import { apiT, requestLocale } from "@/lib/i18n-api";
 import { writeBlob, TooLargeError } from "@/lib/files";
 import { config } from "@/lib/config";
 import { clientIp, rateLimit } from "@/lib/ratelimit";
+import { accept, anonGate, clearIp, userGate } from "@/lib/guard";
+import { verifyTurnstile } from "@/lib/turnstile";
 import {
   storageStatus,
   storageFullMessage,
@@ -36,6 +38,17 @@ export async function POST(req: Request) {
     }
     if (!req.body) return apiError(t("missingBody"), 400);
 
+    // global safeguards (flooding, disk) — the body is binary, so the
+    // optional Turnstile token comes in a header
+    const ip = clientIp(req);
+    let gate = user ? userGate() : anonGate("blob", ip);
+    const captcha = req.headers.get("x-turnstile-token");
+    if (gate === "captcha" && captcha && (await verifyTurnstile(captcha.slice(0, 4096), ip))) {
+      clearIp(ip);
+      gate = "ok";
+    }
+    if (gate !== "ok") return gateError(gate, req);
+
     const maxBytes = capMb * 1024 * 1024 + 2 * 1024 * 1024; // encryption margin
 
     // Storage fair-use: explained refusal when the dedicated space is full
@@ -62,6 +75,7 @@ export async function POST(req: Request) {
     try {
       const { relPath, size } = await writeBlob(req.body, limit);
       invalidateStorageCache();
+      accept("blob", !user);
       return json({ blobPath: relPath, size }, 201);
     } catch (err) {
       if (err instanceof TooLargeError && limit < maxBytes) {

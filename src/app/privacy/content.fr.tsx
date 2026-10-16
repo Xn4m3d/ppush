@@ -52,6 +52,12 @@ export function PrivacyContentFr() {
             retiré) ; l’IP complète n’est accessible qu’à l’administrateur.
           </li>
           <li>
+            <strong className="text-ink">Signalements d’abus</strong> : lien
+            signalé, motif, commentaire facultatif et adresse IP de l’auteur du
+            signalement — pour traiter les abus et éviter les signalements
+            malveillants.
+          </li>
+          <li>
             <strong className="text-ink">Contenus des secrets</strong> : chiffrés
             de bout en bout, jamais accessibles à l’éditeur, définitivement
             effacés à l’expiration.
@@ -78,6 +84,11 @@ export function PrivacyContentFr() {
         <ul className="list-inside list-disc space-y-1.5">
           <li>Journaux de connexion : <strong className="text-ink">12 mois</strong>.</li>
           <li>Adresses IP du journal d’audit : <strong className="text-ink">12 mois</strong>.</li>
+          <li>
+            Signalements d’abus : adresse IP anonymisée au bout de{" "}
+            <strong className="text-ink">12 mois</strong>, signalement supprimé
+            une fois traité et ce délai passé.
+          </li>
           <li>
             Données de compte (email, nom, passkeys, jetons, sessions) :{" "}
             <strong className="text-ink">effacées dès la suppression du compte</strong>.

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { createSession, setSessionCookie } from "@/lib/auth";
-import { json, apiError, badOrigin, handleError } from "@/lib/api";
+import { json, apiError, badOrigin, handleError, readJson } from "@/lib/api";
 import { apiT } from "@/lib/i18n-api";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
 import { checkTotpTicket, consumeTotpTicket } from "@/lib/totp-tickets";
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
       return apiError(t("loginTooMany"), 429);
     }
 
-    const { ticket, code } = schema.parse(await req.json());
+    const { ticket, code } = schema.parse(await readJson(req, 16_384));
     const userId = checkTotpTicket(ticket);
     if (!userId) {
       return json({ error: t("totpTicketExpired"), code: "ticket_expired" }, 401);

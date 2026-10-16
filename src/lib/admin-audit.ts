@@ -19,7 +19,8 @@ export type AdminAction =
   | "USER_DELETE"
   | "PUSH_TAKEDOWN"
   | "RECOVERY_HANDLE"
-  | "RECOVERY_REJECT";
+  | "RECOVERY_REJECT"
+  | "REPORT_STATUS";
 
 export async function adminLog(
   actor: Pick<User, "id" | "email">,

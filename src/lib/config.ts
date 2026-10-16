@@ -28,6 +28,32 @@ export const config = {
   /** Max size of an encrypted text/password/URL payload, in KB (hard cap, all tiers). */
   maxTextSizeKb: int("MAX_TEXT_SIZE_KB", 1024),
 
+  /**
+   * Global anti-flooding safeguards (src/lib/guard.ts). The per-IP limits
+   * of ratelimit.ts are not enough against many addresses: these thresholds
+   * count ALL creations in the hour and protect the disk.
+   */
+  guard: {
+    /** Max size of an encrypted text WITHOUT an account, in KB (accounts: maxTextSizeKb). */
+    anonMaxTextKb: int("ANON_MAX_TEXT_KB", 100),
+    /** Anonymous creations per hour beyond which Turnstile becomes mandatory. */
+    shieldAnonPushesPerHour: int("SHIELD_ANON_PUSHES_PER_HOUR", 60),
+    shieldAnonBlobsPerHour: int("SHIELD_ANON_BLOBS_PER_HOUR", 15),
+    /** Beyond this, no anonymous creation until the next hour. */
+    closeAnonPushesPerHour: int("CLOSE_ANON_PUSHES_PER_HOUR", 300),
+    closeAnonBlobsPerHour: int("CLOSE_ANON_BLOBS_PER_HOUR", 60),
+    /** Ceiling on all creations (accounts included) per hour. */
+    closeAllPushesPerHour: int("CLOSE_ALL_PUSHES_PER_HOUR", 2000),
+    /** How long the shield stays on once triggered, in minutes. */
+    shieldMinutes: int("SHIELD_MINUTES", 30),
+    /** Minimum free space (MB): below it, no anonymous creation… */
+    diskMinFreeAnonMb: int("DISK_MIN_FREE_ANON_MB", 2048),
+    /** …then no creation at all. */
+    diskMinFreeMb: int("DISK_MIN_FREE_MB", 512),
+    /** Notification d'alerte (topic ntfy, ex. https://ntfy.example/ppush). Vide = journaux seulement. */
+    alertNtfyUrl: process.env.ALERT_NTFY_URL ?? "",
+  },
+
   /** Session lifetime, in days. */
   sessionDays: int("SESSION_DAYS", 14),
 
@@ -71,15 +97,20 @@ export const config = {
   },
 };
 
-/** Effective caps (days / views / file size) for a tier + push kind. */
+/** Effective limits (days / views / file size / text size) for a tier + push type. */
 export function pushLimits(tier: Tier, kind?: PushKind) {
   const isFile = kind === "FILE";
   if (tier === "anon") {
     const a = config.limits.anon;
-    return { maxDays: isFile ? a.maxFileDays : a.maxDays, maxViews: a.maxViews, maxFileMb: a.maxFileMb };
+    return {
+      maxDays: isFile ? a.maxFileDays : a.maxDays,
+      maxViews: a.maxViews,
+      maxFileMb: a.maxFileMb,
+      maxTextKb: Math.min(config.guard.anonMaxTextKb, config.maxTextSizeKb),
+    };
   }
   const u = config.limits.user;
-  return { maxDays: isFile ? u.maxFileDays : u.maxDays, maxViews: u.maxViews, maxFileMb: u.maxFileMb };
+  return { maxDays: isFile ? u.maxFileDays : u.maxDays, maxViews: u.maxViews, maxFileMb: u.maxFileMb, maxTextKb: config.maxTextSizeKb };
 }
 
 export function clamp(n: number, min: number, max: number): number {

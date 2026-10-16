@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { verifyPassword } from "@/lib/auth";
-import { json, apiError, badOrigin, handleError } from "@/lib/api";
+import { json, apiError, badOrigin, handleError, readJson } from "@/lib/api";
 import { apiT } from "@/lib/i18n-api";
 import { audit, isExpired, withLazyExpiry, expirePush } from "@/lib/pushes";
 import { rateLimit, clientIp } from "@/lib/ratelimit";
@@ -45,7 +45,7 @@ export async function POST(req: Request, { params }: Params) {
       if (!rateLimit(`passphrase:${slug}:${ip}`, 5, 10 * 60_000)) {
         return apiError(t("passphraseTooMany"), 429);
       }
-      const { passphrase } = schema.parse(await req.json().catch(() => ({})));
+      const { passphrase } = schema.parse(await readJson(req, 16_384).catch(() => ({})));
       if (!passphrase || !(await verifyPassword(push.passphraseHash, passphrase))) {
         await audit(push.id, "FAILED_PASSPHRASE", { ip, userAgent });
         return apiError(t("wrongPassphrase"), 401);
