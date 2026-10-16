@@ -73,7 +73,7 @@ export function NavLinks({ isAdmin, recoveryPending = 0 }: { isAdmin: boolean; r
             )}
           >
             <Icon className="size-4" />
-            <span className="hidden sm:inline">{t(key)}</span>
+            <span className="hidden md:inline">{t(key)}</span>
             {showBadge && (
               <span
                 className="absolute -right-0.5 -top-0.5 grid min-w-[1.1rem] place-items-center rounded-full bg-warn px-1 text-[10px] font-bold leading-tight text-black tabular-nums"

@@ -1,18 +1,20 @@
 import Link from "next/link";
+import { CircleHelp } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { currentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { CatMark } from "./cat";
 import { HomeLink, LogoutButton, NavLinks } from "./header-client";
 
-export async function Logo() {
+/** `compact`: tagline only on large screens (busy bar when signed in). */
+export async function Logo({ compact = false }: { compact?: boolean } = {}) {
   const t = await getTranslations("header");
   return (
     <HomeLink className="flex items-center gap-2.5 group">
       <CatMark className="size-8 text-ink transition-transform group-hover:-rotate-6" />
       <span className="text-xl font-bold tracking-[-0.04em]">
         ppush<span className="text-accent">.</span>
-        <span className="ml-2.5 hidden text-xs font-normal tracking-normal text-ink-faint sm:inline">
+        <span className={`ml-2.5 hidden whitespace-nowrap text-xs font-normal tracking-normal text-ink-faint ${compact ? "lg:inline" : "sm:inline"}`}>
           {t("tagline")}
         </span>
       </span>
@@ -32,22 +34,24 @@ export async function Header() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         {/* link outside the logo: the logo is a link itself (no nested <a>) */}
         <div className="flex min-w-0 items-center gap-3">
-          <Logo />
+          <Logo compact={!!user} />
+          {/* little room on mobile: signed in (navigation icons on the right),
+              a plain icon, hidden below 380 px; signed out, "What’s this?"
+              except on very narrow screens */}
           <Link
             href="/why"
             aria-label={t("why")}
-            className="whitespace-nowrap rounded-full border border-line px-3 py-1 text-xs text-ink-dim transition-colors hover:border-accent/40 hover:text-accent-soft"
+            title={t("why")}
+            className={`${user ? "hidden min-[380px]:inline-flex" : "inline-flex"} shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-line px-2 py-1 text-xs text-ink-dim transition-colors hover:border-accent/40 hover:text-accent-soft sm:px-3`}
           >
-            <span className="sm:hidden">{t("whyShort")}</span>
-            <span className="hidden sm:inline">{t("why")}</span>
+            <CircleHelp aria-hidden className="size-3.5" />
+            <span className={user ? "hidden" : "hidden min-[380px]:inline sm:hidden"}>{t("whyShort")}</span>
+            <span className={user ? "hidden xl:inline" : "hidden sm:inline"}>{t("why")}</span>
           </Link>
         </div>
         {user ? (
           <div className="flex items-center gap-1.5">
             <NavLinks isAdmin={user.role === "ADMIN"} recoveryPending={recoveryPending} />
-            <span className="mx-2 hidden text-xs text-ink-faint md:inline">
-              {user.email}
-            </span>
             <LogoutButton />
           </div>
         ) : (
