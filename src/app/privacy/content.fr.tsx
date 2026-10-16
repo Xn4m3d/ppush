@@ -129,7 +129,7 @@ export function PrivacyContentFr() {
             Conservés 12 mois.
           </li>
           <li>
-            <code className="font-mono text-xs text-ink">ppush-gen</code> (stockage
+            <code className="font-mono text-xs text-ink">ppush-generator</code> (stockage
             local du navigateur) : vos réglages du générateur de mots de passe,
             enregistrés quand vous les modifiez. Jamais transmis au serveur ; vous
             pouvez l’effacer avec les données de navigation du site.
