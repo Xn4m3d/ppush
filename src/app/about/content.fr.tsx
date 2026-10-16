@@ -73,7 +73,7 @@ export function AboutContentFr({ showRegister }: { showRegister: boolean }) {
       <div className="mt-14 space-y-12">
         <Section id="fonctionnement" icon={EyeOff} title="Zéro-knowledge : le serveur ne peut pas lire vos secrets">
           <p>
-            Quand vous créez un push, votre navigateur génère une clé de
+            Quand vous créez un lien, votre navigateur génère une clé de
             chiffrement aléatoire et chiffre le secret <em>localement</em>{" "}
             (AES-256-GCM). Seule la version chiffrée est envoyée au serveur. La
             clé, elle, est placée dans la partie du lien située après le{" "}
@@ -111,7 +111,7 @@ export function AboutContentFr({ showRegister }: { showRegister: boolean }) {
             <TriangleAlert className="mt-0.5 size-4 shrink-0 text-danger" />
             <span>
               Vous pouvez <strong className="text-ink">supprimer votre compte et
-              tout son contenu</strong> (pushes, sessions, passkeys, tokens){" "}
+              tout son contenu</strong> (liens, sessions, passkeys, tokens){" "}
               <strong className="text-ink">immédiatement et définitivement</strong>,
               sans délai ni intervention de notre part — puis{" "}
               <strong className="text-ink">recréer un compte à neuf</strong>. Seule
@@ -141,7 +141,7 @@ export function AboutContentFr({ showRegister }: { showRegister: boolean }) {
         <Section id="faq" icon={FileQuestion} title="Questions fréquentes">
           <Faq q="Comment partager un mot de passe correctement ?">
             <p>
-              Créez le push, copiez le lien, transmettez-le au destinataire.
+              Créez le lien et transmettez-le au destinataire.
               Pour un secret sensible : limitez à <strong>1 vue</strong>, ajoutez une{" "}
               <strong>passphrase</strong> et communiquez-la par un <em>autre</em> canal
               (téléphone, de vive voix). Ainsi, même si le lien est intercepté,
@@ -152,20 +152,20 @@ export function AboutContentFr({ showRegister }: { showRegister: boolean }) {
             <p>
               Non — et c&apos;est voulu. La clé de déchiffrement n&apos;existe que dans le
               lien : ni le serveur ni les administrateurs ne la connaissent.
-              Recréez simplement un push.
+              Il suffit d&apos;en créer un nouveau.
             </p>
           </Faq>
           <Faq q="Le destinataire a vu « ce secret a expiré », pourquoi ?">
             <p>
-              Le push a atteint sa limite de vues ou sa date d&apos;expiration, ou il
+              Le lien a atteint sa limite de vues ou sa date d&apos;expiration, ou il
               a été détruit (par vous ou par le destinataire). Vérifiez le
               journal d&apos;audit dans votre <Link href="/pushes" className="text-accent-soft hover:underline">historique</Link> :
               chaque consultation y est tracée avec date et adresse IP. Si une
               vue a été consommée par un inconnu, le lien a fuité en route —
-              recréez un push avec passphrase.
+              créez-en un nouveau, avec une passphrase.
             </p>
           </Faq>
-          <Faq q="Quels types de contenus puis-je pousser ?">
+          <Faq q="Que puis-je partager ?">
             <p>
               Mots de passe, textes libres (configurations, clés SSH, notes),
               fichiers (jusqu&apos;à {config.limits.anon.maxFileMb} Mo sans compte,{" "}
@@ -184,7 +184,7 @@ export function AboutContentFr({ showRegister }: { showRegister: boolean }) {
               fichiers — si le service est saturé, le message d&apos;erreur vous
               indique combien d&apos;espace sera libéré et quand (au plus tard),
               pour réessayer au bon moment. Vous pouvez aussi faire expirer vos
-              propres pushes fichiers depuis votre{" "}
+              propres liens de fichiers depuis votre{" "}
               <Link href="/pushes" className="text-accent-soft hover:underline">
                 historique
               </Link>{" "}
@@ -316,7 +316,7 @@ export function AboutContentFr({ showRegister }: { showRegister: boolean }) {
               n&apos;est qu&apos;un relais réseau chiffré : vos données restent en France.
             </li>
             <li>
-              Journal d&apos;audit par push : créations, consultations, tentatives
+              Journal d&apos;audit par lien : créations, consultations, tentatives
               de passphrase erronées, expirations.
             </li>
             <li>
@@ -343,7 +343,7 @@ export function AboutContentFr({ showRegister }: { showRegister: boolean }) {
               className="inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-[var(--on-accent)] shadow-[0_4px_20px_-4px_var(--accent-glow)] transition-all hover:bg-accent-soft"
             >
               <Lock className="size-4" />
-              Créer un push
+              Partager un secret
             </Link>
             {showRegister && (
               <Link

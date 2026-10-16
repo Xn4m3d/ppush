@@ -18,17 +18,19 @@ const SOURCES = [
  * short explanation (window morphing out of it). Ties the slogan to
  * the generator's strength indicator: the site explains rather than imposes.
  * The table's orders of magnitude are computed for the French list
- * (~12.6 bits/word) at 10^11 guesses/s (one RTX 4090 against MD5).
+ * (~12.6 bits/word) at 10^11 guesses/s per card (RTX 4090 against MD5),
+ * for one card and for 100 rented cards.
  */
 export function EntropyExplainer({ variant = "link" }: { variant?: "link" | "icon" }) {
   const t = useTranslations("entropy");
   const [open, setOpen] = useState(false);
   const link = useRef<HTMLButtonElement>(null);
   const b = (c: React.ReactNode) => <b className="font-semibold text-ink">{c}</b>;
+  // [label, bits, 1 card, tone, 100 cards, tone] — r1 = the generator's default setting
   const rows = [
-    ["r1", "r1v", "r1t", "text-warn"],
-    ["r2", "r2v", "r2t", "text-ink"],
-    ["r3", "r3v", "r3t", "text-ok"],
+    ["r1", "r1v", "r1t", "text-warn", "r1f", "text-danger"],
+    ["r2", "r2v", "r2t", "text-ink", "r2f", "text-warn"],
+    ["r3", "r3v", "r3t", "text-ok", "r3f", "text-ok"],
   ] as const;
 
   return (
@@ -76,17 +78,27 @@ export function EntropyExplainer({ variant = "link" }: { variant?: "link" | "ico
           <figure className="m-0 rounded-xl border border-line bg-panel px-4 py-2.5">
             <figcaption className="eyebrow mb-2">{t("tableCaption")}</figcaption>
             <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-[11px] text-ink-faint">
+                  <th className="pb-1 pr-3 font-normal">{t("colPhrase")}</th>
+                  <th className="pb-1 pr-3 font-normal">{t("colBits")}</th>
+                  <th className="pb-1 pr-3 text-right font-normal">{t("colOne")}</th>
+                  <th className="pb-1 text-right font-normal">{t("colFarm")}</th>
+                </tr>
+              </thead>
               <tbody>
-                {rows.map(([l, v, d, tone]) => (
-                  <tr key={l} className="border-t border-line first:border-t-0">
+                {rows.map(([l, v, d, tone, f, ftone]) => (
+                  <tr key={l} className="border-t border-line">
                     <td className="py-1 pr-3 text-ink">{t(l)}</td>
-                    <td className="py-1 pr-3 font-mono text-xs text-ink-faint tabular-nums">{t(v)}</td>
-                    <td className={`py-1 text-right font-semibold ${tone}`}>{t(d)}</td>
+                    <td className="whitespace-nowrap py-1 pr-3 font-mono text-xs text-ink-faint tabular-nums">{t(v)}</td>
+                    <td className={`py-1 pr-3 text-right font-semibold ${tone}`}>{t(d)}</td>
+                    <td className={`py-1 text-right font-semibold ${ftone}`}>{t(f)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
             <p className="mt-2 text-xs text-ink-faint">{t("tableNote")}</p>
+            <p className="mt-1.5 text-xs text-ink-dim">{t.rich("tableAdvice", { b })}</p>
             <p className="mt-1.5 text-xs text-ink-faint">
               {t("sources")} :{" "}
               {SOURCES.map(({ key, href }, i) => (

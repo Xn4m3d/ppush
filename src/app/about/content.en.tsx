@@ -73,7 +73,7 @@ export function AboutContentEn({ showRegister }: { showRegister: boolean }) {
       <div className="mt-14 space-y-12">
         <Section id="fonctionnement" icon={EyeOff} title="Zero-knowledge: the server cannot read your secrets">
           <p>
-            When you create a push, your browser generates a random encryption
+            When you create a link, your browser generates a random encryption
             key and encrypts the secret <em>locally</em> (AES-256-GCM). Only
             the encrypted version is sent to the server. The key lives in the
             part of the link after the{" "}
@@ -110,7 +110,7 @@ export function AboutContentEn({ showRegister }: { showRegister: boolean }) {
             <TriangleAlert className="mt-0.5 size-4 shrink-0 text-danger" />
             <span>
               You can <strong className="text-ink">delete your account and all its
-              content</strong> (pushes, sessions, passkeys, tokens){" "}
+              content</strong> (links, sessions, passkeys, tokens){" "}
               <strong className="text-ink">immediately and permanently</strong>,
               with no delay and no intervention from us — then{" "}
               <strong className="text-ink">create a fresh account</strong>. The only
@@ -140,7 +140,7 @@ export function AboutContentEn({ showRegister }: { showRegister: boolean }) {
         <Section id="faq" icon={FileQuestion} title="Frequently asked questions">
           <Faq q="How do I share a password properly?">
             <p>
-              Create the push, copy the link, send it to the recipient. For a
+              Create the link and send it to the recipient. For a
               sensitive secret: limit it to <strong>1 view</strong>, add a{" "}
               <strong>passphrase</strong> and share it over a <em>different</em> channel
               (phone, in person). That way, even if the link is intercepted,
@@ -151,20 +151,20 @@ export function AboutContentEn({ showRegister }: { showRegister: boolean }) {
             <p>
               No — by design. The decryption key only exists in the link:
               neither the server nor the administrators know it. Simply create
-              a new push.
+              a new one.
             </p>
           </Faq>
           <Faq q="The recipient saw “this secret has expired”, why?">
             <p>
-              The push reached its view limit or its expiry date, or it was
+              The link reached its view limit or its expiry date, or it was
               destroyed (by you or by the recipient). Check the audit log in
               your <Link href="/pushes" className="text-accent-soft hover:underline">history</Link>:
               every view is traced with date and IP address. If a view was
               consumed by a stranger, the link leaked in transit — create a
-              new push with a passphrase.
+              new one, with a passphrase.
             </p>
           </Faq>
-          <Faq q="What kinds of content can I push?">
+          <Faq q="What can I share?">
             <p>
               Passwords, free text (configurations, SSH keys, notes), files
               (up to {config.limits.anon.maxFileMb} MB without an account,{" "}
@@ -181,7 +181,7 @@ export function AboutContentEn({ showRegister }: { showRegister: boolean }) {
               active files. Space frees up automatically as files expire — if
               the service is full, the error message tells you how much space
               will be freed and when (at the latest), so you can retry at the
-              right time. You can also expire your own file pushes from your{" "}
+              right time. You can also expire your own file links from your{" "}
               <Link href="/pushes" className="text-accent-soft hover:underline">
                 history
               </Link>{" "}
@@ -309,7 +309,7 @@ export function AboutContentEn({ showRegister }: { showRegister: boolean }) {
               France.
             </li>
             <li>
-              Per-push audit log: creations, views, wrong passphrase attempts,
+              Per-link audit log: creations, views, wrong passphrase attempts,
               expirations.
             </li>
             <li>
@@ -336,7 +336,7 @@ export function AboutContentEn({ showRegister }: { showRegister: boolean }) {
               className="inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-[var(--on-accent)] shadow-[0_4px_20px_-4px_var(--accent-glow)] transition-all hover:bg-accent-soft"
             >
               <Lock className="size-4" />
-              Create a push
+              Share a secret
             </Link>
             {showRegister && (
               <Link
