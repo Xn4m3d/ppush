@@ -12,6 +12,7 @@ import { SourceLink } from "@/components/source-link";
 import { StructuredData } from "@/components/structured-data";
 import { Ambient } from "@/components/ambient";
 import "./globals.css";
+import { localePath } from "@/i18n/locale";
 
 /* Two families: Geologica for headings and text (geometric, tight in
    heavy weights), Azeret Mono for everything technical — secrets, links,
@@ -101,19 +102,19 @@ export default async function RootLayout({
           {children}
           <footer className="border-t border-line/60 py-5 text-center text-xs text-ink-faint">
             <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
-              <a href="/about" className="transition-colors hover:text-ink-dim">
+              <a href={localePath(locale, "/about")} className="transition-colors hover:text-ink-dim">
                 {t("about")}
               </a>
               <span aria-hidden>·</span>
-              <a href="/legal" className="transition-colors hover:text-ink-dim">
+              <a href={localePath(locale, "/legal")} className="transition-colors hover:text-ink-dim">
                 {t("legal")}
               </a>
               <span aria-hidden>·</span>
-              <a href="/privacy" className="transition-colors hover:text-ink-dim">
+              <a href={localePath(locale, "/privacy")} className="transition-colors hover:text-ink-dim">
                 {t("privacy")}
               </a>
               <span aria-hidden>·</span>
-              <a href="/docs/api" className="transition-colors hover:text-ink-dim">
+              <a href={localePath(locale, "/docs/api")} className="transition-colors hover:text-ink-dim">
                 {t("api")}
               </a>
               <span aria-hidden>·</span>

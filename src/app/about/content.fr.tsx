@@ -50,19 +50,19 @@ export function AboutContentFr({ showRegister }: { showRegister: boolean }) {
             </a>
           ))}
           <Link
-            href="/docs/api"
+            href="/fr/docs/api"
             className="rounded-full border border-accent/30 bg-accent/10 px-3.5 py-1.5 text-accent-soft transition-colors hover:bg-accent/20"
           >
             Documentation API →
           </Link>
           <Link
-            href="/legal"
+            href="/fr/legal"
             className="rounded-full border border-line px-3.5 py-1.5 text-ink-dim transition-colors hover:border-accent/40 hover:text-accent-soft"
           >
             Mentions légales
           </Link>
           <Link
-            href="/privacy"
+            href="/fr/privacy"
             className="rounded-full border border-line px-3.5 py-1.5 text-ink-dim transition-colors hover:border-accent/40 hover:text-accent-soft"
           >
             Confidentialité
@@ -100,7 +100,7 @@ export function AboutContentFr({ showRegister }: { showRegister: boolean }) {
         <Section id="donnees" icon={UserCog} title="Vos données, votre contrôle">
           <p>
             Depuis{" "}
-            <Link href="/account" className="text-accent-soft hover:underline">
+            <Link href="/fr/account" className="text-accent-soft hover:underline">
               Mon compte
             </Link>
             , vous modifiez <strong className="text-ink">en libre accès</strong> et
@@ -127,11 +127,11 @@ export function AboutContentFr({ showRegister }: { showRegister: boolean }) {
             et la <strong className="text-ink">LCEN</strong> : données traitées,
             bases légales, durées de conservation, droits et contact sont
             détaillés dans les{" "}
-            <Link href="/legal" className="text-accent-soft hover:underline">
+            <Link href="/fr/legal" className="text-accent-soft hover:underline">
               Mentions légales
             </Link>{" "}
             et la{" "}
-            <Link href="/privacy" className="text-accent-soft hover:underline">
+            <Link href="/fr/privacy" className="text-accent-soft hover:underline">
               Politique de confidentialité
             </Link>
             .
@@ -159,7 +159,7 @@ export function AboutContentFr({ showRegister }: { showRegister: boolean }) {
             <p>
               Le lien a atteint sa limite de vues ou sa date d&apos;expiration, ou il
               a été détruit (par vous ou par le destinataire). Vérifiez le
-              journal d&apos;audit dans votre <Link href="/pushes" className="text-accent-soft hover:underline">historique</Link> :
+              journal d&apos;audit dans votre <Link href="/fr/pushes" className="text-accent-soft hover:underline">historique</Link> :
               chaque consultation y est tracée avec date et adresse IP. Si une
               vue a été consommée par un inconnu, le lien a fuité en route —
               créez-en un nouveau, avec une passphrase.
@@ -185,7 +185,7 @@ export function AboutContentFr({ showRegister }: { showRegister: boolean }) {
               indique combien d&apos;espace sera libéré et quand (au plus tard),
               pour réessayer au bon moment. Vous pouvez aussi faire expirer vos
               propres liens de fichiers depuis votre{" "}
-              <Link href="/pushes" className="text-accent-soft hover:underline">
+              <Link href="/fr/pushes" className="text-accent-soft hover:underline">
                 historique
               </Link>{" "}
               pour récupérer du quota immédiatement.
@@ -221,7 +221,7 @@ export function AboutContentFr({ showRegister }: { showRegister: boolean }) {
               mot de passe — plus rapide et <strong>résistant au hameçonnage</strong>.
               Vous pouvez enregistrer plusieurs passkeys et, si vous le souhaitez,
               définir aussi un mot de passe et la double authentification (TOTP)
-              depuis <Link href="/account" className="text-accent-soft hover:underline">Mon compte</Link>.
+              depuis <Link href="/fr/account" className="text-accent-soft hover:underline">Mon compte</Link>.
             </p>
           </Faq>
           <Faq q="J'ai oublié mon mot de passe / je n'arrive plus à me connecter. Envoyez-vous un lien par email ?">
@@ -235,7 +235,7 @@ export function AboutContentFr({ showRegister }: { showRegister: boolean }) {
             </p>
             <p>
               Si vous êtes bloqué, ouvrez la{" "}
-              <Link href="/recover" className="text-accent-soft hover:underline">
+              <Link href="/fr/recover" className="text-accent-soft hover:underline">
                 récupération d&apos;accès
               </Link>{" "}
               et décrivez vos preuves d&apos;identité. Un administrateur les
@@ -266,7 +266,7 @@ export function AboutContentFr({ showRegister }: { showRegister: boolean }) {
           <Faq q="Et si je perds mon application 2FA ?">
             <p>
               Ouvrez la{" "}
-              <Link href="/recover" className="text-accent-soft hover:underline">
+              <Link href="/fr/recover" className="text-accent-soft hover:underline">
                 récupération d&apos;accès
               </Link>{" "}
               : un administrateur peut réinitialiser votre double authentification
@@ -328,7 +328,7 @@ export function AboutContentFr({ showRegister }: { showRegister: boolean }) {
             </li>
             <li>
               API REST avec tokens personnels — voir la{" "}
-              <Link href="/docs/api" className="text-accent-soft hover:underline">
+              <Link href="/fr/docs/api" className="text-accent-soft hover:underline">
                 documentation API
               </Link>
               .
@@ -339,7 +339,7 @@ export function AboutContentFr({ showRegister }: { showRegister: boolean }) {
         <Section id="cta" icon={Timer} title="Prêt à partager un secret ?">
           <div className="flex flex-wrap gap-3">
             <Link
-              href="/"
+              href="/fr"
               className="inline-flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-[var(--on-accent)] shadow-[0_4px_20px_-4px_var(--accent-glow)] transition-all hover:bg-accent-soft"
             >
               <Lock className="size-4" />
@@ -347,7 +347,7 @@ export function AboutContentFr({ showRegister }: { showRegister: boolean }) {
             </Link>
             {showRegister && (
               <Link
-                href="/register"
+                href="/fr/register"
                 className="inline-flex items-center gap-2 rounded-xl border border-accent/40 bg-accent/10 px-5 py-2.5 text-sm font-medium text-accent-soft transition-all hover:border-accent/60 hover:bg-accent/20"
               >
                 <UserPlus className="size-4" />

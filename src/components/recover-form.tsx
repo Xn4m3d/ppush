@@ -7,6 +7,7 @@ import { LifeBuoy, ShieldCheck, Fingerprint, CheckCircle2 } from "lucide-react";
 import { Button, Card, Input, Textarea, Field, ErrorText } from "./ui";
 import { Turnstile, type TurnstileHandle } from "./turnstile";
 import { isValidEmail } from "@/lib/validation";
+import { useLocalePath } from "@/i18n/use-locale-path";
 
 /**
  * Public access-recovery request. ppush sends no automatic reset email (a
@@ -15,6 +16,7 @@ import { isValidEmail } from "@/lib/validation";
  */
 export function RecoverForm({ turnstileSiteKey }: { turnstileSiteKey?: string }) {
   const t = useTranslations("recover");
+  const lp = useLocalePath();
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [contact, setContact] = useState("");
@@ -68,7 +70,7 @@ export function RecoverForm({ turnstileSiteKey }: { turnstileSiteKey?: string })
         <p className="mt-2 text-sm text-ink-dim">{t("sentBody")}</p>
         <p className="mt-3 text-xs text-ink-faint">{t("sentReminder")}</p>
         <Link
-          href="/login"
+          href={lp("/login")}
           className="mt-6 inline-flex items-center justify-center rounded-xl border border-line px-5 py-2.5 text-sm text-ink-dim transition-colors hover:border-line-soft hover:text-ink"
         >
           {t("backToLogin")}
@@ -111,7 +113,7 @@ export function RecoverForm({ turnstileSiteKey }: { turnstileSiteKey?: string })
         <span>
           {t.rich("passkeyTip", {
             link: (chunks) => (
-              <Link href="/about#faq" className="text-accent-soft hover:underline">
+              <Link href={lp("/about") + "#faq"} className="text-accent-soft hover:underline">
                 {chunks}
               </Link>
             ),

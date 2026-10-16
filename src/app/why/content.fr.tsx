@@ -104,14 +104,14 @@ export function WhyContentFr() {
 
         <div className="flex flex-col items-center gap-4 border-t border-line/40 pt-10 text-center">
           <Link
-            href="/"
+            href="/fr"
             className="rounded-xl bg-accent px-6 py-3 font-semibold text-[var(--on-accent)] transition-colors hover:bg-accent-soft"
           >
             Partager un secret
           </Link>
           <p className="text-sm text-ink-faint">
             Curieux de savoir comment c’est protégé ?{" "}
-            <Link href="/about" className="text-accent-soft underline-offset-2 hover:underline">
+            <Link href="/fr/about" className="text-accent-soft underline-offset-2 hover:underline">
               Tout est expliqué dans À propos
             </Link>
           </p>

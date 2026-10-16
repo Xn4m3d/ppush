@@ -4,6 +4,7 @@ import { BackHome } from "@/components/back-home";
 import type { Locale } from "@/i18n/locale";
 import { LegalContentEn } from "./content.en";
 import { LegalContentFr } from "./content.fr";
+import { pageAlternates } from "@/lib/seo";
 
 const CONTENT: Record<Locale, React.ComponentType> = {
   en: LegalContentEn,
@@ -15,7 +16,7 @@ export async function generateMetadata() {
   return {
     title: t("legal"),
     description: t("legalDescription"),
-    alternates: { canonical: "/legal" },
+    alternates: await pageAlternates("/legal"),
   };
 }
 

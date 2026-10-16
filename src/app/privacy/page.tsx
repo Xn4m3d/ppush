@@ -4,6 +4,7 @@ import { BackHome } from "@/components/back-home";
 import type { Locale } from "@/i18n/locale";
 import { PrivacyContentEn } from "./content.en";
 import { PrivacyContentFr } from "./content.fr";
+import { pageAlternates } from "@/lib/seo";
 
 const CONTENT: Record<Locale, React.ComponentType> = {
   en: PrivacyContentEn,
@@ -15,7 +16,7 @@ export async function generateMetadata() {
   return {
     title: t("privacy"),
     description: t("privacyDescription"),
-    alternates: { canonical: "/privacy" },
+    alternates: await pageAlternates("/privacy"),
   };
 }
 

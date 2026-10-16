@@ -27,6 +27,7 @@ import { Turnstile, type TurnstileHandle } from "./turnstile";
 import { DiffusionScene } from "./diffusion/scene";
 import { SiderealHalo } from "./diffusion/mini-cloud";
 import { AgeTimeline, DurationDial, ReadsPips, useWheel } from "./diffusion/controls";
+import { useLocalePath } from "@/i18n/use-locale-path";
 
 type Kind = "PASSWORD" | "TEXT" | "FILE" | "URL";
 
@@ -100,8 +101,10 @@ const MIN_PASSWORD = 5;
 
 export function PushForm({ defaults }: { defaults: Defaults }) {
   const t = useTranslations("form");
+  const th = useTranslations("home");
   const td = useTranslations("diffusion");
   const tTabs = useTranslations("tabs");
+  const lp = useLocalePath();
   const locale = useLocale() as Locale;
   const [kind, setKind] = useState<Kind>("PASSWORD");
   // one value per type: switching from "Password" to "URL" does not copy
@@ -531,7 +534,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
           ? td.rich("limitsAnon", {
               delay: unit(maxDaysNow * 1440, false),
               views: defaults.maxViews,
-              link: (c) => <Link href="/register" className="text-ink-dim underline underline-offset-2 hover:text-ink">{c}</Link>,
+              link: (c) => <Link href={lp("/register")} className="text-ink-dim underline underline-offset-2 hover:text-ink">{c}</Link>,
             })
           : td("limitsUser");
 
@@ -563,9 +566,14 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
       <canvas ref={canvasRef} aria-hidden className="pointer-events-none absolute inset-0 z-[3] h-full w-full" />
       <div className="grid gap-x-16 gap-y-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.1fr)]">
         <form id="pp-form" ref={formRef} onSubmit={submit} className="hc-gap relative z-[2] flex min-w-0 flex-col gap-3.5 animate-fade-up">
-          <h1 className="hc-title text-[clamp(28px,3.3vw,42px)] font-bold leading-[1.04]">
-            <HeroTitle />
-          </h1>
+          {/* H1 = what the site does, with the words people search for; the slogan
+              keeps its title look but is just a paragraph */}
+          <div>
+            <h1 className="mb-1.5 text-[13px] font-medium tracking-normal text-accent-soft">{th("kicker")}</h1>
+            <p className="hc-title font-display text-[clamp(28px,3.3vw,42px)] font-bold leading-[1.04] tracking-[-0.035em] text-balance">
+              <HeroTitle />
+            </p>
+          </div>
           <div className="hc-lede -mt-1 max-w-[46ch] text-base text-ink-dim">
             {td.rich("lede", { b: (c) => <b className="font-medium text-ink">{c}</b> })}
           </div>
@@ -818,7 +826,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
           {defaults.tier === "anon" && !sealed && (
             <p className="hc-anon text-[13px] text-ink-faint">
               {td.rich("anonStrip", {
-                link: (c) => <Link href="/register" className="font-medium text-ink-dim underline underline-offset-2 hover:text-ink">{c}</Link>,
+                link: (c) => <Link href={lp("/register")} className="font-medium text-ink-dim underline underline-offset-2 hover:text-ink">{c}</Link>,
               })}
             </p>
           )}
@@ -1411,6 +1419,7 @@ function ShareCard({
 }) {
   const t = useTranslations("success");
   const td = useTranslations("diffusion");
+  const lp = useLocalePath();
   const [qr, setQr] = useState<string>("");
   const [noticeOpen, setNoticeOpen] = useState(false);
   const hash = created.url.indexOf("#");
@@ -1509,7 +1518,7 @@ function ShareCard({
             {t.rich("anonTip", {
               strong: (chunks) => <strong className="text-ink">{chunks}</strong>,
               link: (chunks) => (
-                <Link href="/register" className="font-medium text-ink-dim underline underline-offset-2 hover:text-ink">
+                <Link href={lp("/register")} className="font-medium text-ink-dim underline underline-offset-2 hover:text-ink">
                   {chunks}
                 </Link>
               ),

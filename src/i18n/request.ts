@@ -1,13 +1,16 @@
 import { cookies, headers } from "next/headers";
 import { getRequestConfig } from "next-intl/server";
-import { DEFAULT_LOCALE, LOCALE_COOKIE, isLocale, pickLocale } from "./locale";
+import { DEFAULT_LOCALE, LOCALE_COOKIE, LOCALE_HEADER, isLocale, pickLocale } from "./locale";
 
 export default getRequestConfig(async () => {
-  const jar = await cookies();
-  const fromCookie = jar.get(LOCALE_COOKIE)?.value;
-  const locale = isLocale(fromCookie)
-    ? fromCookie
-    : pickLocale((await headers()).get("accept-language"));
+  const h = await headers();
+  const fromUrl = h.get(LOCALE_HEADER); // /fr/... (set by the middleware)
+  const fromCookie = (await cookies()).get(LOCALE_COOKIE)?.value;
+  const locale = isLocale(fromUrl)
+    ? fromUrl
+    : isLocale(fromCookie)
+      ? fromCookie
+      : pickLocale(h.get("accept-language"));
 
   return {
     locale,

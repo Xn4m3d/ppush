@@ -190,11 +190,11 @@ export function PrivacyContentFr() {
           Chiffrement de bout en bout (AES-256-GCM, clé jamais transmise),
           mots de passe hachés en Argon2id, double authentification TOTP,
           sessions opaques hachées en base. Détails sur la page{" "}
-          <Link href="/about#technique" className="text-accent-soft hover:underline">
+          <Link href="/fr/about#technique" className="text-accent-soft hover:underline">
             À propos
           </Link>
           . Mentions légales :{" "}
-          <Link href="/legal" className="text-accent-soft hover:underline">
+          <Link href="/fr/legal" className="text-accent-soft hover:underline">
             /legal
           </Link>
           .

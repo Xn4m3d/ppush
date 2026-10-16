@@ -6,6 +6,7 @@ import { currentUser } from "@/lib/auth";
 import type { Locale } from "@/i18n/locale";
 import { AboutContentEn } from "./content.en";
 import { AboutContentFr } from "./content.fr";
+import { pageAlternates } from "@/lib/seo";
 
 /**
  * Markup-rich prose page → per-locale content in content.<locale>.tsx
@@ -21,7 +22,7 @@ export async function generateMetadata() {
   return {
     title: t("about"),
     description: t("aboutDescription"),
-    alternates: { canonical: "/about" },
+    alternates: await pageAlternates("/about"),
   };
 }
 

@@ -17,6 +17,7 @@ import { Button, Input, ErrorText, CondenseLoader, cls } from "./ui";
 import { CopyButton } from "./copy-button";
 import { DiffusionScene } from "./diffusion/scene";
 import { ReportAbuse } from "./report-abuse";
+import { useLocalePath } from "@/i18n/use-locale-path";
 
 type Meta = {
   slug: string;
@@ -53,6 +54,7 @@ export function SecretViewer({ slug, autoOpen = false }: { slug: string; autoOpe
   const t = useTranslations("viewer");
   const tr = useTranslations("receive");
   const tTabs = useTranslations("tabs");
+  const lp = useLocalePath();
   const [meta, setMeta] = useState<Meta | null>(null);
   const [stage, setStage] = useState<Stage>("loading");
   const [keyB64, setKeyB64] = useState("");
@@ -368,7 +370,7 @@ export function SecretViewer({ slug, autoOpen = false }: { slug: string; autoOpe
         <div className="relative z-[4] min-w-0">
           {left}
           <p className="mt-6 text-sm text-ink-faint">
-            {tr.rich("footCta", { link: (c) => <Link href="/" className="font-medium text-ink-dim underline underline-offset-2 hover:text-ink">{c}</Link> })}
+            {tr.rich("footCta", { link: (c) => <Link href={lp("/")} className="font-medium text-ink-dim underline underline-offset-2 hover:text-ink">{c}</Link> })}
           </p>
           <ReportAbuse slug={slug} />
         </div>

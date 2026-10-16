@@ -4,11 +4,12 @@ import { currentUser } from "@/lib/auth";
 import { config, clamp, pushLimits } from "@/lib/config";
 import { Header } from "@/components/header";
 import { PushForm } from "@/components/push-form";
+import { pageAlternates } from "@/lib/seo";
 
 export async function generateMetadata() {
   return {
     description: (await getTranslations("meta"))("homeDescription"),
-    alternates: { canonical: "/" },
+    alternates: await pageAlternates("/"),
   };
 }
 
