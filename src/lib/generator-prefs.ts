@@ -43,6 +43,14 @@ export type GenPrefs = {
   lang: "fr" | "en";
 };
 
+/**
+ * Key of the setting remembered in the browser. The old key was written on
+ * every visit (default setting included): it is erased and ignored,
+ * so everyone starts again from the current default.
+ */
+export const GEN_STORAGE_KEY = "ppush-generator";
+export const LEGACY_GEN_STORAGE_KEY = "ppush-gen";
+
 export const LIMITS = { length: [8, 64], words: [2, 7], digitCount: [0, 6] } as const;
 
 export function genDefaults(locale: string): GenPrefs {
@@ -57,7 +65,8 @@ export function genDefaults(locale: string): GenPrefs {
     symbols: true,
     ambiguous: false,
     symbolSet: DEFAULT_SYMBOL_SET,
-    words: 2,
+    // 3 words + 2 digits + symbol ≈ 50 bits: at least "fair"
+    words: 3,
     separator: "-",
     capitalize: true,
     digitCount: 2,

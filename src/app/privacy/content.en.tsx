@@ -126,7 +126,7 @@ export function PrivacyContentEn() {
             language and theme you picked in the footer. Kept for 12 months.
           </li>
           <li>
-            <code className="font-mono text-xs text-ink">ppush-gen</code> (browser
+            <code className="font-mono text-xs text-ink">ppush-generator</code> (browser
             local storage): your password generator settings, saved when you
             change them. Never sent to the server; you can erase it by clearing
             the site&apos;s browsing data.

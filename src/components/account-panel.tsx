@@ -8,7 +8,7 @@ import { KeyRound, FileText, FileUp, Link2, Plus, Trash2, Save, TriangleAlert } 
 import { Button, Card, Field, Input, Textarea, Toggle, ErrorText, cls } from "./ui";
 import { CopyButton } from "./copy-button";
 import { isValidEmail } from "@/lib/validation";
-import type { GenPrefs } from "@/lib/generator-prefs";
+import { GEN_STORAGE_KEY, type GenPrefs } from "@/lib/generator-prefs";
 
 type Defaults = {
   defaultDays: number;
@@ -113,7 +113,7 @@ export function GeneratorDefaultsPanel({ initial }: { initial: GenPrefs | null }
     if (res?.ok) {
       setPrefs(null);
       setDone(true);
-      try { localStorage.removeItem("ppush-gen"); } catch {}
+      try { localStorage.removeItem(GEN_STORAGE_KEY); } catch {}
     } else setError(tc("error"));
     setBusy(false);
   }

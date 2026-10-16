@@ -16,7 +16,7 @@ import {
 } from "@/lib/crypto";
 import { loadWordlist, WORDLIST_SIZE } from "@/lib/passphrase";
 import { loadStrength, strengthLevel, type StrengthLevel } from "@/lib/strength";
-import { genDefaults, parseGenPrefs, LIMITS, SEPARATORS, SYMBOL_CATALOG, type GenPrefs } from "@/lib/generator-prefs";
+import { genDefaults, parseGenPrefs, LIMITS, SEPARATORS, SYMBOL_CATALOG, GEN_STORAGE_KEY, LEGACY_GEN_STORAGE_KEY, type GenPrefs } from "@/lib/generator-prefs";
 import { formatBytes, formatDelay } from "@/lib/format";
 import type { Locale } from "@/i18n/locale";
 import { Button, Input, Textarea, Toggle, ErrorText, cls } from "./ui";
@@ -272,7 +272,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
   const changeGen = (g: GenPrefs) => {
     setGen(g);
     // only remembered when the visitor changes a setting (nothing written on a mere visit)
-    try { localStorage.setItem("ppush-gen", JSON.stringify(g)); } catch {}
+    try { localStorage.setItem(GEN_STORAGE_KEY, JSON.stringify(g)); } catch {}
     setGenSave("idle");
     if (revealing || (texts.PASSWORD && texts.PASSWORD === lastGenerated.current)) void runGenerate(g);
   };
@@ -317,7 +317,8 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
     if (defaults.generator) return;
     const raf = requestAnimationFrame(() => {
       try {
-        const saved = parseGenPrefs(localStorage.getItem("ppush-gen"), locale);
+        localStorage.removeItem(LEGACY_GEN_STORAGE_KEY);
+        const saved = parseGenPrefs(localStorage.getItem(GEN_STORAGE_KEY), locale);
         if (saved) setGen(saved);
       } catch {}
     });
@@ -890,8 +891,9 @@ const SEP_KEYS: Record<(typeof SEPARATORS)[number], "sepHyphen" | "sepSpace" | "
   ".": "sepDot",
   "_": "sepUnderscore",
 };
-// below this threshold, strength is flagged as weak (common reference: ~60 bits)
-const WEAK_BITS = 60;
+// below this threshold, strength is flagged as weak: same level as the
+// meter's "weak" (strengthLevel), so the two never disagree
+const WEAK_BITS = 40;
 
 /** Exact entropy of what the generator produces with these settings. */
 function genBits(g: GenPrefs): number {
