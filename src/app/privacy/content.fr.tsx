@@ -3,14 +3,14 @@ import { ShieldCheck } from "lucide-react";
 import { legal } from "@/lib/legal";
 import { LegalHeader, LegalSection } from "@/components/legal-blocks";
 
-/** Privacy policy (GDPR) — French. Mirror: content.en.tsx. */
+/** Politique de confidentialité (RGPD) — français. Miroir : content.en.tsx. */
 export function PrivacyContentFr() {
   return (
     <>
       <LegalHeader
         icon={ShieldCheck}
         title="Politique de confidentialité"
-        updated={`Dernière mise à jour : ${legal.updatedFr}`}
+        updated={`Dernière mise à jour : ${legal.privacyUpdatedFr}`}
       />
 
       <LegalSection id="responsable" title="Responsable de traitement">
@@ -110,12 +110,46 @@ export function PrivacyContentFr() {
 
       <LegalSection id="cookies" title="Cookies">
         <p>
-          ppush n’utilise que des cookies{" "}
-          <strong className="text-ink">strictement nécessaires</strong> : un cookie
-          de session (authentification) et une préférence de langue.{" "}
-          <strong className="text-ink">Aucun cookie de mesure d’audience, aucun
-          traceur publicitaire</strong> — c’est pourquoi aucune bannière de
-          consentement n’est nécessaire.
+          ppush ne dépose <strong className="text-ink">aucun cookie de mesure
+          d’audience, aucun traceur publicitaire et aucun traceur de réseau
+          social</strong>. À votre première visite, ppush lui-même n’écrit rien sur
+          votre appareil ; seuls les cookies de sécurité de Cloudflare peuvent y
+          être posés d’emblée. Voici la liste complète :
+        </p>
+        <ul className="list-inside list-disc space-y-1.5">
+          <li>
+            <code className="font-mono text-xs text-ink">ppush_session</code> (cookie) :
+            maintient votre connexion à votre compte. Posé quand vous vous
+            connectez, supprimé à la déconnexion ou au plus tard après 14 jours.
+          </li>
+          <li>
+            <code className="font-mono text-xs text-ink">lang</code> et{" "}
+            <code className="font-mono text-xs text-ink">theme</code> (cookies) : la
+            langue et le thème que vous avez choisis dans le pied de page.
+            Conservés 12 mois.
+          </li>
+          <li>
+            <code className="font-mono text-xs text-ink">ppush-gen</code> (stockage
+            local du navigateur) : vos réglages du générateur de mots de passe,
+            enregistrés quand vous les modifiez. Jamais transmis au serveur ; vous
+            pouvez l’effacer avec les données de navigation du site.
+          </li>
+          <li>
+            Cookies de sécurité de Cloudflare (par exemple{" "}
+            <code className="font-mono text-xs text-ink">__cf_bm</code>) : posés par
+            notre intermédiaire réseau pour distinguer les visiteurs des robots et
+            protéger le service contre les abus. Ils ne servent pas à vous suivre
+            d’un site à l’autre.
+          </li>
+        </ul>
+        <p>
+          Ces traceurs sont soit <strong className="text-ink">strictement
+          nécessaires</strong> au service (session, sécurité), soit liés à une{" "}
+          <strong className="text-ink">personnalisation que vous avez vous-même
+          demandée</strong> (langue, thème, générateur). Ils sont donc exemptés de
+          consentement (article 82 de la loi Informatique et Libertés, lignes
+          directrices de la CNIL), et c’est pourquoi aucune bannière ne vous est
+          présentée.
         </p>
       </LegalSection>
 
