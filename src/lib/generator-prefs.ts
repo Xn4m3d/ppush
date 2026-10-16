@@ -8,10 +8,20 @@
 export type GenMode = "chars" | "words";
 export const SEPARATORS = ["-", " ", ".", "_"] as const;
 export type Separator = (typeof SEPARATORS)[number];
-/** Symbols offered at the end of a word passphrase (easy to type on any keyboard). */
-export const END_SYMBOLS = ["!", "?", "#", "$", "%", "&", "*", "+", "=", "@"] as const;
-/** "none": no symbol; "random": drawn from END_SYMBOLS; otherwise the chosen symbol. */
-export type EndSymbol = "none" | "random" | (typeof END_SYMBOLS)[number];
+/**
+ * Symbols offered for selection (easy to type on any keyboard). The
+ * checked symbols (`symbolSet`) serve both modes: the alphabet of the random
+ * characters mode, and the draw of the passphrase's final character.
+ */
+export const SYMBOL_CATALOG = "!?#$%&*+-=@_.:~^";
+export const DEFAULT_SYMBOL_SET = "!?#$%&*+-=@_";
+/** "none": no final character; "random": drawn from `symbolSet` (a single checked one = always that one). */
+export type EndSymbol = "none" | "random";
+
+/** Keeps only catalog symbols, without duplicates, in catalog order. */
+export function normalizeSymbolSet(v: string): string {
+  return [...SYMBOL_CATALOG].filter((c) => v.includes(c)).join("");
+}
 
 export type GenPrefs = {
   mode: GenMode;
@@ -22,6 +32,8 @@ export type GenPrefs = {
   digits: boolean;
   symbols: boolean;
   ambiguous: boolean;
+  /** Allowed symbols (at least one), shared by both modes. */
+  symbolSet: string;
   // word passphrase
   words: number;
   separator: Separator;
@@ -44,6 +56,7 @@ export function genDefaults(locale: string): GenPrefs {
     digits: true,
     symbols: true,
     ambiguous: false,
+    symbolSet: DEFAULT_SYMBOL_SET,
     words: 2,
     separator: "-",
     capitalize: true,
@@ -72,9 +85,15 @@ export function sanitizeGenPrefs(raw: unknown, locale: string): GenPrefs {
     separator: (SEPARATORS as readonly unknown[]).includes(r.separator) ? (r.separator as Separator) : d.separator,
     capitalize: bool(r.capitalize, d.capitalize),
     digitCount: int(r.digitCount, LIMITS.digitCount, d.digitCount),
-    symbol: r.symbol === "none" || r.symbol === "random" || (END_SYMBOLS as readonly unknown[]).includes(r.symbol) ? (r.symbol as EndSymbol) : d.symbol,
+    symbolSet: typeof r.symbolSet === "string" && normalizeSymbolSet(r.symbolSet) ? normalizeSymbolSet(r.symbolSet) : d.symbolSet,
+    symbol: r.symbol === "none" || r.symbol === "random" ? r.symbol : d.symbol,
     lang: r.lang === "fr" || r.lang === "en" ? r.lang : d.lang,
   };
+  // old format: a fixed final symbol → "drawn from" that single symbol
+  if (typeof r.symbol === "string" && r.symbol.length === 1 && SYMBOL_CATALOG.includes(r.symbol)) {
+    out.symbol = "random";
+    out.symbolSet = r.symbol;
+  }
   // at least one character class enabled
   if (!out.lowercase && !out.uppercase && !out.digits && !out.symbols) out.lowercase = true;
   return out;

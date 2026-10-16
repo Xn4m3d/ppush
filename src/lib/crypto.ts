@@ -220,7 +220,12 @@ export type PasswordOptions = {
   symbols?: boolean;
   /** Include ambiguous characters (l, I, O, 0, 1) — excluded by default for readability. */
   ambiguous?: boolean;
+  /** Allowed symbols when `symbols` is on (default: DEFAULT_SYMBOLS). */
+  symbolChars?: string;
 };
+
+/** Symbols drawn by default (easy to type on any keyboard). */
+export const DEFAULT_SYMBOLS = "!?#$%&*+-=@_";
 
 function passwordClasses(opts: PasswordOptions): string[] {
   const {
@@ -229,12 +234,13 @@ function passwordClasses(opts: PasswordOptions): string[] {
     digits = true,
     symbols = true,
     ambiguous = false,
+    symbolChars = DEFAULT_SYMBOLS,
   } = opts;
   const classes: string[] = [];
   if (lowercase) classes.push("abcdefghijkmnopqrstuvwxyz" + (ambiguous ? "l" : ""));
   if (uppercase) classes.push("ABCDEFGHJKLMNPQRSTUVWXYZ" + (ambiguous ? "IO" : ""));
   if (digits) classes.push("23456789" + (ambiguous ? "01" : ""));
-  if (symbols) classes.push("!@#$%&*+-=?_");
+  if (symbols && symbolChars) classes.push(symbolChars);
   // never an empty alphabet
   if (classes.length === 0) classes.push("abcdefghijkmnopqrstuvwxyz");
   return classes;
@@ -287,7 +293,7 @@ export type PassphraseOptions = {
   capitalize?: boolean;
   /** Number of digits (0 to 6), appended as one block to a randomly chosen word. */
   digitCount?: number;
-  /** Final character: none (""/absent), a fixed symbol, or drawn from `symbolPool`. */
+  /** Final character: none (""/absent/"none"), a fixed symbol, or "random" = drawn from `symbolPool`. */
   symbol?: string;
   symbolPool?: readonly string[];
 };

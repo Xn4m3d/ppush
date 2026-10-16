@@ -15,7 +15,8 @@ import {
   passwordAlphabetSize,
 } from "@/lib/crypto";
 import { loadWordlist, WORDLIST_SIZE } from "@/lib/passphrase";
-import { genDefaults, parseGenPrefs, LIMITS, SEPARATORS, END_SYMBOLS, type GenPrefs } from "@/lib/generator-prefs";
+import { loadStrength, strengthLevel, type StrengthLevel } from "@/lib/strength";
+import { genDefaults, parseGenPrefs, LIMITS, SEPARATORS, SYMBOL_CATALOG, type GenPrefs } from "@/lib/generator-prefs";
 import { formatBytes, formatDelay } from "@/lib/format";
 import type { Locale } from "@/i18n/locale";
 import { Button, Input, Textarea, Toggle, ErrorText, cls } from "./ui";
@@ -111,6 +112,15 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
   const [gen, setGen] = useState<GenPrefs>(() => defaults.generator ?? genDefaults(locale));
   const [genSave, setGenSave] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const lastGenerated = useRef<string | null>(null);
+  // strength of the field content: exact if it comes untouched from the generator,
+  // otherwise estimated (zxcvbn) — each measure is tied to the value measured
+  const [generated, setGenerated] = useState<{ value: string; bits: number } | null>(null);
+  const [estimate, setEstimate] = useState<{ value: string; bits: number } | null>(null);
+  // animated typing of the generated password: one number per generation, any
+  // new generation (or typing, type change) interrupts the previous one
+  const revealRun = useRef(0);
+  const [revealing, setRevealing] = useState(false);
+  const stopReveal = () => { revealRun.current++; setRevealing(false); };
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
@@ -206,26 +216,65 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
   }, [kind, showSecret]);
 
   const changeSecret = (v: string) => {
+    if (revealing) stopReveal();
     setSecret(v);
     void preview(new TextEncoder().encode(v), "caret");
   };
 
+  // strength estimate of the typed password (dictionaries loaded on the 1st keystroke)
+  const typed = kind === "PASSWORD" && !revealing && texts.PASSWORD && texts.PASSWORD !== generated?.value ? texts.PASSWORD : "";
+  useEffect(() => {
+    if (!typed) return;
+    let live = true;
+    void loadStrength()
+      .then((measure) => { if (live) setEstimate({ value: typed, bits: measure(typed) }); })
+      .catch(() => {});
+    return () => { live = false; };
+  }, [typed]);
+
+  // up-to-date preview during typing (the loop outlives intermediate renders)
+  const previewRef = useRef(preview);
+  useEffect(() => { previewRef.current = preview; });
+
   const runGenerate = async (g: GenPrefs) => {
+    const run = ++revealRun.current;
     const v = g.mode === "words"
-      ? generatePassphrase(await loadWordlist(g.lang), { words: g.words, separator: g.separator, capitalize: g.capitalize, digitCount: g.digitCount, symbol: g.symbol, symbolPool: END_SYMBOLS })
-      : generatePassword(g.length, { lowercase: g.lowercase, uppercase: g.uppercase, digits: g.digits, symbols: g.symbols, ambiguous: g.ambiguous });
+      ? generatePassphrase(await loadWordlist(g.lang), { words: g.words, separator: g.separator, capitalize: g.capitalize, digitCount: g.digitCount, symbol: g.symbol, symbolPool: [...g.symbolSet] })
+      : generatePassword(g.length, { lowercase: g.lowercase, uppercase: g.uppercase, digits: g.digits, symbols: g.symbols, ambiguous: g.ambiguous, symbolChars: g.symbolSet });
+    if (run !== revealRun.current) return; // a more recent click took over
     lastGenerated.current = v;
-    setTexts((m) => ({ ...m, PASSWORD: v }));
+    setGenerated({ value: v, bits: genBits(g) });
     setShowSecret(true);
     scene.current?.clear();
-    void preview(new TextEncoder().encode(v), "all");
+    const enc = (t: string) => new TextEncoder().encode(t);
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setTexts((m) => ({ ...m, PASSWORD: v }));
+      void previewRef.current(enc(v), "all");
+      return;
+    }
+    // letters appear quickly, like typing: particles leave
+    // from the caret on each letter instead of sweeping the whole text at once
+    // (~450 ms in total whatever the length, 30 ms per letter at most)
+    setRevealing(true);
+    const chars = [...v];
+    const step = Math.min(30, 450 / chars.length);
+    for (let i = 1; i <= chars.length; i++) {
+      if (run !== revealRun.current) return;
+      const part = chars.slice(0, i).join("");
+      setTexts((m) => ({ ...m, PASSWORD: part }));
+      void previewRef.current(enc(part), "caret");
+      await new Promise((r) => setTimeout(r, step));
+    }
+    if (run === revealRun.current) setRevealing(false);
   };
   // options changed while the field holds a generated (and untouched)
   // secret: regenerate it right away so the setting's effect is visible
   const changeGen = (g: GenPrefs) => {
     setGen(g);
+    // only remembered when the visitor changes a setting (nothing written on a mere visit)
+    try { localStorage.setItem("ppush-gen", JSON.stringify(g)); } catch {}
     setGenSave("idle");
-    if (texts.PASSWORD && texts.PASSWORD === lastGenerated.current) void runGenerate(g);
+    if (revealing || (texts.PASSWORD && texts.PASSWORD === lastGenerated.current)) void runGenerate(g);
   };
   const saveGenDefault = async () => {
     setGenSave("saving");
@@ -246,6 +295,8 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
   };
 
   const reset = useCallback(() => {
+    revealRun.current++;
+    setRevealing(false);
     setTexts({ PASSWORD: "", TEXT: "", URL: "" });
     setFile(null);
     setPassphrase("");
@@ -272,9 +323,6 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
     });
     return () => cancelAnimationFrame(raf);
   }, [defaults.generator, locale]);
-  useEffect(() => {
-    try { localStorage.setItem("ppush-gen", JSON.stringify(gen)); } catch {}
-  }, [gen]);
 
   // The logo and the header "New" button emit `ppush:reset` to start over
   // from a blank form even when already on the home page (a same-route
@@ -295,7 +343,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
     sc.destroyedLabel = td("destroyed");
   }, [views, passphrase, age, td]);
 
-  // created: the cloud writes the address, the key comes from the field
+  // created: the cloud's particles compose the link (address + key)
   useEffect(() => {
     if (!created) return;
     const sc = scene.current;
@@ -303,18 +351,11 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
     const raf = requestAnimationFrame(() => {
       if (!sc || !idRef.current || !keyRef.current) return;
       sc.layout();
-      const el = fieldRef.current;
-      const from = el && kind !== "FILE"
-        ? sc.textSpan(el, kind === "PASSWORD" && !showSecret)
-        : dropRef.current
-          ? (() => { const r = sc.toHost(dropRef.current!.getBoundingClientRect()); return { x0: r.x + 20, x1: r.x + r.w - 20, y0: r.y + 20, y1: r.y + r.h - 20 }; })()
-          : null;
-      sc.seal(idRef.current, keyRef.current, from);
+      sc.seal(idRef.current, keyRef.current);
       if (!window.matchMedia(WIDE).matches) zoneRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       timer = setTimeout(() => { sc.settle(); setFormed(true); }, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1700);
     });
     return () => { cancelAnimationFrame(raf); if (timer) clearTimeout(timer); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [created]);
 
   // aging: wheel over the cloud; once released, back to the present
@@ -496,6 +537,12 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
                   aria-pressed={kind === k}
                   onClick={() => {
                     if (k === kind) return;
+                    // typing in progress: write the whole password before leaving the tab
+                    if (revealing) {
+                      stopReveal();
+                      const full = lastGenerated.current;
+                      if (full) setTexts((m) => ({ ...m, PASSWORD: full }));
+                    }
                     setKind(k);
                     setError("");
                     scene.current?.clear();
@@ -569,6 +616,15 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
                   data-form-type="other"
                 />
                 </div>
+                <StrengthMeter
+                  chars={[...texts.PASSWORD].length}
+                  measure={
+                    !texts.PASSWORD ? null
+                    : generated && (revealing || generated.value === texts.PASSWORD) ? { bits: generated.bits, exact: true }
+                    : estimate?.value === texts.PASSWORD ? { bits: estimate.bits, exact: false }
+                    : "pending"
+                  }
+                />
                 <GeneratorOptions
                   gen={gen}
                   charCount={[...texts.PASSWORD].length}
@@ -795,8 +851,13 @@ function CtaBlock({
         form="pp-form"
         disabled={disabled}
         className={cls(
-          "min-h-14 w-full text-base transition-[opacity,transform,filter,background-color] duration-500 disabled:bg-panel disabled:text-ink-faint disabled:opacity-100 disabled:border disabled:border-line",
-          launching && "scale-y-[0.2] opacity-0 blur-[2px]"
+          "min-h-14 w-full text-base transition-[opacity,transform,filter,background-color] duration-500",
+          // while sending, the button is also `disabled`: the "disabled" styles
+          // (more specific, :disabled) would keep it from disappearing → they are
+          // dropped and the dissolve is forced
+          launching
+            ? "pointer-events-none scale-y-[0.2] opacity-0! blur-[2px]"
+            : "disabled:bg-panel disabled:text-ink-faint disabled:opacity-100 disabled:border disabled:border-line"
         )}
       >
         <Lock className="size-4" />
@@ -832,6 +893,109 @@ const SEP_KEYS: Record<(typeof SEPARATORS)[number], "sepHyphen" | "sepSpace" | "
 // below this threshold, strength is flagged as weak (common reference: ~60 bits)
 const WEAK_BITS = 60;
 
+/** Exact entropy of what the generator produces with these settings. */
+function genBits(g: GenPrefs): number {
+  return Math.round(
+    g.mode === "words"
+      ? passphraseBits(WORDLIST_SIZE[g.lang], { words: g.words, digitCount: g.digitCount, symbol: g.symbol, symbolPool: [...g.symbolSet] })
+      : g.length * Math.log2(passwordAlphabetSize({ ...g, symbolChars: g.symbolSet }))
+  );
+}
+
+const LEVEL_TONE: Record<StrengthLevel, { text: string; bar: string; fill: number }> = {
+  weak: { text: "text-danger", bar: "bg-danger", fill: 1 },
+  fair: { text: "text-warn", bar: "bg-warn", fill: 2 },
+  good: { text: "text-ok", bar: "bg-ok", fill: 3 },
+  strong: { text: "text-ok", bar: "bg-ok", fill: 4 },
+};
+
+/**
+ * Strength of the password in the field, in real time: exact bits
+ * for an untouched generated password, an estimate (≈) otherwise. Color
+ * and meter follow the `strengthLevel` levels.
+ */
+function StrengthMeter({ chars, measure }: { chars: number; measure: { bits: number; exact: boolean } | "pending" | null }) {
+  const t = useTranslations("strength");
+  const tg = useTranslations("generator");
+  if (!measure) return null;
+  const bits = measure === "pending" ? null : Math.round(measure.bits);
+  const level = bits === null ? null : strengthLevel(bits);
+  const tone = level ? LEVEL_TONE[level] : null;
+  return (
+    <div
+      role="meter"
+      aria-label={t("label")}
+      aria-valuemin={0}
+      aria-valuemax={128}
+      aria-valuenow={bits ?? 0}
+      aria-valuetext={bits === null ? t("pending") : `${bits} bits, ${t(level!)}`}
+      title={measure === "pending" ? undefined : measure.exact ? t("exactHint") : t("estimateHint")}
+      className="-mt-1 flex items-center gap-2.5 px-1"
+    >
+      <span aria-hidden className="flex gap-1">
+        {[1, 2, 3, 4].map((i) => (
+          <span key={i} className={cls("h-1.5 w-6 rounded-full transition-colors duration-300", tone && i <= tone.fill ? tone.bar : "bg-line-soft")} />
+        ))}
+      </span>
+      <span className="font-mono text-xs tabular-nums text-ink-faint">
+        {bits === null ? (
+          t("pending")
+        ) : (
+          <>
+            <span className={cls("font-semibold", tone!.text)}>
+              {t(measure !== "pending" && measure.exact ? "bitsExact" : "bitsEstimate", { bits })} · {t(level!)}
+            </span>
+            {" · "}{tg("fieldChars", { count: chars })}
+          </>
+        )}
+      </span>
+    </div>
+  );
+}
+
+/**
+ * Choice of allowed symbols: several can be checked, uniform draw among
+ * the checked ones only (to rule out those a site rejects or that are
+ * awkward to type). At least one stays checked.
+ */
+function SymbolPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const t = useTranslations("generator");
+  const toggle = (c: string) => {
+    const next = value.includes(c) ? value.replace(c, "") : value + c;
+    if (next) onChange([...SYMBOL_CATALOG].filter((x) => next.includes(x)).join(""));
+  };
+  return (
+    <div className="px-2 pb-1.5" role="group" aria-label={t("symbolSetLabel")}>
+      <div className="mb-1.5 flex items-baseline justify-between gap-2">
+        <p className="text-[13px] font-medium text-ink-dim">{t("symbolSetLabel")}</p>
+        <p className="font-mono text-[11px] text-ink-faint">{t("symbolSetCount", { count: value.length })}</p>
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {[...SYMBOL_CATALOG].map((c) => {
+          const on = value.includes(c);
+          return (
+            <button
+              key={c}
+              type="button"
+              aria-pressed={on}
+              aria-label={t("symbolPick", { c })}
+              disabled={on && value.length === 1}
+              onClick={() => toggle(c)}
+              className={cls(
+                "min-h-8 w-8 rounded-md border font-mono text-sm transition-colors cursor-pointer disabled:cursor-not-allowed",
+                on ? "border-ink bg-ink text-bg" : "border-line bg-bg text-ink-faint/70 hover:border-line-soft hover:text-ink"
+              )}
+            >
+              {c}
+            </button>
+          );
+        })}
+      </div>
+      <p className="mt-1 text-[11px] text-ink-faint">{t("symbolSetHint")}</p>
+    </div>
+  );
+}
+
 function GeneratorOptions({
   gen,
   charCount,
@@ -857,9 +1021,9 @@ function GeneratorOptions({
   const [open, setOpen] = useState(false);
   const settingsBtn = useRef<HTMLButtonElement>(null);
   const set = (patch: Partial<GenPrefs>) => onGen({ ...gen, ...patch });
-  const charBits = Math.round(gen.length * Math.log2(passwordAlphabetSize(gen)));
-  const wordBits = Math.round(passphraseBits(WORDLIST_SIZE[gen.lang], { words: gen.words, digitCount: gen.digitCount, symbol: gen.symbol, symbolPool: END_SYMBOLS }));
-  const bits = gen.mode === "words" ? wordBits : charBits;
+  const charBits = genBits({ ...gen, mode: "chars" });
+  const wordBits = genBits({ ...gen, mode: "words" });
+  const bits = genBits(gen);
   const classKeys = ["lowercase", "uppercase", "digits", "symbols"] as const;
   const enabledCount = classKeys.filter((k) => gen[k]).length;
 
@@ -953,7 +1117,6 @@ function GeneratorOptions({
           {gen.mode === "words"
             ? t("summaryWords", { count: gen.words, bits: wordBits })
             : t("summaryStats", { length: gen.length, bits: charBits })}
-          {charCount > 0 && <span className="text-ink-dim"> · {t("fieldChars", { count: charCount })}</span>}
         </span>
         <button
           ref={settingsBtn}
@@ -996,6 +1159,7 @@ function GeneratorOptions({
               <Toggle checked={gen.digits} onChange={(v) => setClass("digits", v)} label={t("digits")} />
               <Toggle checked={gen.symbols} onChange={(v) => setClass("symbols", v)} label={t("symbols")} />
             </div>
+            {gen.symbols && <SymbolPicker value={gen.symbolSet} onChange={(v) => set({ symbolSet: v })} />}
             <Toggle checked={gen.ambiguous} onChange={(v) => set({ ambiguous: v })} label={t("ambiguous")} hint={t("ambiguousHint")} />
             <p className="px-2 pt-0.5 text-[11px] text-ink-faint">{t("guarantee", { bits: charBits })}</p>
           </>
@@ -1029,13 +1193,9 @@ function GeneratorOptions({
               <div className="flex flex-wrap gap-1">
                 <button type="button" aria-pressed={gen.symbol === "none"} onClick={() => set({ symbol: "none" })} className={chip(gen.symbol === "none")}>{t("symbolNone")}</button>
                 <button type="button" aria-pressed={gen.symbol === "random"} onClick={() => set({ symbol: "random" })} className={chip(gen.symbol === "random")}>{t("symbolRandom")}</button>
-                {END_SYMBOLS.map((c) => (
-                  <button key={c} type="button" aria-pressed={gen.symbol === c} aria-label={t("symbolPick", { c })} onClick={() => set({ symbol: c })} className={cls(chip(gen.symbol === c), "w-8 px-0 font-mono text-sm")}>
-                    {c}
-                  </button>
-                ))}
               </div>
             </div>
+            {gen.symbol === "random" && <SymbolPicker value={gen.symbolSet} onChange={(v) => set({ symbolSet: v })} />}
             <Toggle checked={gen.capitalize} onChange={(v) => set({ capitalize: v })} label={t("capitalize")} hint={t("capitalizeHint")} />
             <p className="px-2 pt-0.5 text-[11px] text-ink-faint">{t("guaranteeWords", { size: WORDLIST_SIZE[gen.lang], bits: wordBits })}</p>
           </>
@@ -1177,9 +1337,8 @@ function FileDrop({
 }
 
 /**
- * The link, written by the particles: the address comes from the cloud (that is
- * what is stored), the key comes from the field (it never went through the
- * server). The real text stays transparent until the shape is complete.
+ * The link, written by the cloud's particles (address then key, in accent).
+ * The real text stays transparent until the shape is complete.
  */
 function ShareCard({
   created,

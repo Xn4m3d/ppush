@@ -217,7 +217,7 @@
     "lowercase": "Lowercase (a-z)",
     "uppercase": "Uppercase (A-Z)",
     "digits": "Digits (2-9)",
-    "symbols": "Symbols (!@#$%&*+-=?_)",
+    "symbols": "Symbols",
     "ambiguous": "Ambiguous characters",
     "ambiguousHint": "l, I, O, 0, 1 — excluded by default to avoid misreadings.",
     "guarantee": "Each enabled type is guaranteed to appear at least once. Entropy: ~{bits} bits.",
@@ -249,14 +249,17 @@
     "settings": "Settings",
     "endSymbol": "Special character at the end",
     "symbolNone": "none",
-    "symbolRandom": "random",
-    "symbolPick": "End with {c}",
+    "symbolRandom": "drawn from the checked symbols",
+    "symbolPick": "Allow {c}",
     "fieldChars": "{count, plural, one {# character} other {# characters}}",
     "settingsTitle": "Generator settings",
     "preview": "Preview",
     "previewEmpty": "Click Generate to see the result.",
     "close": "Close",
-    "done": "Done"
+    "done": "Done",
+    "symbolSetLabel": "Allowed symbols",
+    "symbolSetCount": "{count} checked",
+    "symbolSetHint": "Only the checked symbols are drawn. With a single one checked, it is always that one."
   },
   "fileDrop": {
     "prompt": "Drag a file here or click to browse",
@@ -939,5 +942,17 @@
     "sentBody": "An administrator will review it and verify your identity before getting back to you. There is no automatic email — you'll be contacted.",
     "sentReminder": "Keep your proof of identity ready, and don't create a duplicate request.",
     "backToLogin": "Back to sign in"
+  },
+  "strength": {
+    "label": "Password strength",
+    "pending": "measuring strength…",
+    "bitsExact": "{bits} bits",
+    "bitsEstimate": "≈ {bits} bits",
+    "weak": "weak",
+    "fair": "fair",
+    "good": "good",
+    "strong": "strong",
+    "exactHint": "Exact entropy: this password comes straight from the generator, untouched.",
+    "estimateHint": "Estimate: the number of guesses an attacker who knows common words, names, dates and keyboard patterns would need. Computed in your browser."
   }
 }
