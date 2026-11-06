@@ -448,6 +448,8 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
         if (f && live) await sc.glide(f.left - g.left, f.top - g.top, 800);
         if (!live) return;
         sc.settle();
+        // the written link keeps some energy: flashes, sparks and a sweep of light under its text
+        sc.charge((linkRef.current?.lastElementChild as HTMLElement | null) ?? null);
       }
       setFormed(true);
       // phone: once written, the link comes fully on screen, below the top bar
