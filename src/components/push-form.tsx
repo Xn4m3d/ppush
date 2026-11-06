@@ -15,7 +15,7 @@ import {
   passwordAlphabetSize,
 } from "@/lib/crypto";
 import { loadWordlist, WORDLIST_SIZE } from "@/lib/passphrase";
-import { loadStrength, strengthLevel, type StrengthLevel } from "@/lib/strength";
+import { estimateStrength, strengthLevel, type StrengthLevel } from "@/lib/strength";
 import { genDefaults, parseGenPrefs, LIMITS, SEPARATORS, SYMBOL_CATALOG, GEN_STORAGE_KEY, LEGACY_GEN_STORAGE_KEY, type GenPrefs } from "@/lib/generator-prefs";
 import { formatBytes, formatDelay } from "@/lib/format";
 import type { Locale } from "@/i18n/locale";
@@ -233,15 +233,13 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
     void preview(new TextEncoder().encode(v), "caret");
   };
 
-  // strength estimate of the typed password (dictionaries loaded on the 1st keystroke)
+  // strength estimate of the typed password, in a worker (dictionaries loaded on the 1st keystroke);
+  // nothing is cancelled by the next keystroke: measures arrive in request order, and the one of an
+  // earlier state of the field stays shown (dimmed) until the one of the current content arrives
   const typed = kind === "PASSWORD" && !revealing && texts.PASSWORD && texts.PASSWORD !== generated?.value ? texts.PASSWORD : "";
   useEffect(() => {
     if (!typed) return;
-    let live = true;
-    void loadStrength()
-      .then((measure) => { if (live) setEstimate({ value: typed, bits: measure(typed) }); })
-      .catch(() => {});
-    return () => { live = false; };
+    void estimateStrength(typed).then((bits) => { if (bits !== null) setEstimate({ value: typed, bits }); });
   }, [typed]);
 
   // cloud density: exact (generator) or estimated (zxcvbn) bits of the field's content; between two
@@ -784,6 +782,8 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
                     !texts.PASSWORD ? null
                     : generated && (revealing || generated.value === texts.PASSWORD) ? { bits: generated.bits, exact: true }
                     : estimate?.value === texts.PASSWORD ? { bits: estimate.bits, exact: false }
+                    // measure of an earlier state of the same password (typing or deleting at the end of the field)
+                    : estimate && (texts.PASSWORD.startsWith(estimate.value) || estimate.value.startsWith(texts.PASSWORD)) ? { bits: estimate.bits, exact: false, stale: true }
                     : "pending"
                   }
                 />
@@ -1080,7 +1080,7 @@ const LEVEL_TONE: Record<StrengthLevel, { text: string; bar: string; fill: numbe
  * for an untouched generated password, an estimate (≈) otherwise. Color
  * and meter follow the `strengthLevel` levels.
  */
-function StrengthMeter({ chars, measure }: { chars: number; measure: { bits: number; exact: boolean } | "pending" | null }) {
+function StrengthMeter({ chars, measure }: { chars: number; measure: { bits: number; exact: boolean; stale?: boolean } | "pending" | null }) {
   const t = useTranslations("strength");
   const tg = useTranslations("generator");
   if (!measure) return null;
@@ -1095,8 +1095,10 @@ function StrengthMeter({ chars, measure }: { chars: number; measure: { bits: num
       aria-valuemax={128}
       aria-valuenow={bits ?? 0}
       aria-valuetext={bits === null ? t("pending") : `${bits} bits, ${t(level!)}`}
+      aria-busy={measure === "pending" || !!measure.stale}
       title={measure === "pending" ? undefined : measure.exact ? t("exactHint") : t("estimateHint")}
-      className="-mt-1 flex items-center gap-2.5 px-1"
+      // measure in progress: the previous one stays readable, dimmed
+      className={cls("-mt-1 flex items-center gap-2.5 px-1 transition-opacity duration-200", measure !== "pending" && measure.stale && "opacity-55")}
     >
       <span aria-hidden className="flex gap-1">
         {[1, 2, 3, 4].map((i) => (

@@ -1,74 +1,77 @@
 /**
- * Strength of a TYPED password, estimated by zxcvbn-ts: the number of guesses
- * an attacker who knows common words, first names,
- * keyboard patterns, dates and substitutions ("P@ssw0rd") would need. More
- * honest than length × log2(alphabet), which would give ~78 bits to
- * "Password123!".
+ * Strength of a TYPED password, page side. The estimate (zxcvbn, see
+ * `strength-measure.ts`) costs from a few tens of ms to more than a second
+ * per keystroke: it runs in a worker, never on the page's thread, so that
+ * typing and the cloud stay smooth. The worker (and its dictionaries,
+ * ~2 MB) only loads on the first keystroke.
  *
- * Computed 100% locally (the password never leaves the browser). The
- * dictionaries (~2 MB) are only loaded on the first keystroke.
- *
- * A GENERATED, untouched password needs no estimate: its
- * exact entropy is the generator's.
+ * One estimate at a time: while it runs, only the LATEST requested value
+ * waits for its turn; the ones it replaces resolve to `null`. Results thus
+ * arrive in request order, with no queue growing when typing fast. Without
+ * a worker (creation refused, script not found), the same rule applies to a
+ * computation on the page.
  */
 
-import { loadWordlist } from "./passphrase";
+type Job = { pw: string; id: number; done: (bits: number | null) => void };
 
-/** Beyond this, estimating costs a lot for nothing: strength is already maximal. */
-const MAX_LENGTH = 100;
-/** Minimum length of a patternless run to count it as randomness. */
-const MIN_RANDOM_RUN = 4;
+/** undefined: not created yet; null: unavailable, computed on the page */
+let worker: Worker | null | undefined;
+let running: Job | null = null;
+let waiting: Job | null = null;
+let ids = 0;
+let local: Promise<(pw: string) => number> | null = null;
 
-let loading: Promise<(pw: string) => number> | null = null;
-
-/** Returns a function password → estimated bits (log2 of the number of guesses). */
-export function loadStrength(): Promise<(pw: string) => number> {
-  loading ??= (async () => {
-    const [{ ZxcvbnFactory }, common, en, fr, ppFr, ppEn] = await Promise.all([
-      import("@zxcvbn-ts/core"),
-      import("@zxcvbn-ts/language-common"),
-      import("@zxcvbn-ts/language-en"),
-      import("@zxcvbn-ts/language-fr"),
-      loadWordlist("fr"),
-      loadWordlist("en"),
-    ]);
-    const z = new ZxcvbnFactory({
-      // keys are already suffixed by language (-common, -en, -fr): no
-      // collision; the generator's lists are added, otherwise one of the site's
-      // passphrases, once edited, would be overestimated (words unknown to zxcvbn)
-      dictionary: { ...common.dictionary, ...en.dictionary, ...fr.dictionary, "ppush-fr": ppFr, "ppush-en": ppEn },
-      graphs: common.adjacencyGraphs,
-      useLevenshteinDistance: true,
-    });
-    return (pw: string) => {
-      const s = pw.slice(0, MAX_LENGTH);
-      const r = z.check(s);
-      // zxcvbn counts 10 possibilities per character on runs where it
-      // recognizes no pattern ("bruteforce"): very cautious for a truly
-      // random string (16 randomly drawn characters → ~53 bits instead
-      // of ~105). Those runs are recounted on the alphabet actually
-      // used; recognized patterns keep zxcvbn's estimate. Short
-      // runs ("96-", "%" between two words) are structure,
-      // not randomness: they are left to zxcvbn so as not to overestimate.
-      const extra = r.sequence
-        .filter((m) => m.pattern === "bruteforce" && m.token.length >= MIN_RANDOM_RUN)
-        .reduce((sum, m) => sum + Math.max(0, m.token.length * Math.log2(alphabetSize(m.token)) - m.guessesLog10 * Math.log2(10)), 0);
-      return r.guessesLog10 * Math.log2(10) + extra;
-    };
-  })();
-  // a loading failure (network) must not block later attempts
-  loading.catch(() => { loading = null; });
-  return loading;
+function settle(id: number, bits: number | null) {
+  if (!running || running.id !== id) return;
+  const job = running;
+  running = null;
+  job.done(bits);
+  pump();
 }
 
-/** Alphabet size from the classes present (lowercase, uppercase, digits, others). */
-function alphabetSize(s: string): number {
-  let n = 0;
-  if (/[a-z]/.test(s)) n += 26;
-  if (/[A-Z]/.test(s)) n += 26;
-  if (/[0-9]/.test(s)) n += 10;
-  if (/[^a-zA-Z0-9]/.test(s)) n += 33;
-  return Math.max(n, 10);
+function getWorker(): Worker | null {
+  if (worker !== undefined) return worker;
+  try {
+    const w = new Worker(new URL("./strength.worker.ts", import.meta.url), { type: "module" });
+    w.addEventListener("message", (e: MessageEvent<{ id: number; bits: number | null }>) => settle(e.data.id, e.data.bits));
+    // script refused or not found: switch to the page, the current request is resumed there
+    w.addEventListener("error", () => {
+      w.terminate();
+      worker = null;
+      const job = running;
+      running = null;
+      if (job) { if (waiting) job.done(null); else waiting = job; }
+      pump();
+    });
+    worker = w;
+  } catch {
+    worker = null;
+  }
+  return worker;
+}
+
+function pump() {
+  if (running || !waiting) return;
+  const job = (running = waiting);
+  waiting = null;
+  const w = getWorker();
+  if (w) { w.postMessage({ id: job.id, pw: job.pw }); return; }
+  // on the page: after the current keystroke has rendered
+  setTimeout(() => {
+    local ??= import("./strength-measure").then((m) => m.createMeasure());
+    // a loading failure (network) must not block later attempts
+    local.catch(() => { local = null; });
+    local.then((measure) => settle(job.id, measure(job.pw))).catch(() => settle(job.id, null));
+  }, 0);
+}
+
+/** Estimated bits of `pw` (log2 of the number of guesses); `null` if a newer request replaced it or the estimate failed. */
+export function estimateStrength(pw: string): Promise<number | null> {
+  return new Promise((done) => {
+    waiting?.done(null);
+    waiting = { pw, id: ++ids, done };
+    pump();
+  });
 }
 
 export type StrengthLevel = "weak" | "fair" | "good" | "strong";
