@@ -12,6 +12,8 @@ COPY prisma ./prisma
 COPY public ./public
 COPY messages ./messages
 COPY src ./src
+# dependency patches, applied by `npm run build` (see patches/apply.mjs)
+COPY patches ./patches
 RUN npx prisma generate && npm run build
 
 # ---------- dépendances de production ----------

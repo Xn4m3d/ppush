@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // patched dependency files (published dist kept as is, see patches/apply.mjs)
+    "patches/@*/**",
   ]),
 ]);
 
