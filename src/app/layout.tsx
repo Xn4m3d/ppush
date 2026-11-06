@@ -15,8 +15,8 @@ import "./globals.css";
 import { localePath } from "@/i18n/locale";
 
 /* Two families: Geologica for headings and text (geometric, tight in
-   heavy weights), Azeret Mono for everything technical — secrets, links,
-   bytes, visualization labels. */
+heavy weights), Azeret Mono for everything technical — secrets, links,
+bytes, visualization labels. */
 const geologica = Geologica({
   variable: "--font-geologica",
   subsets: ["latin"],
@@ -86,7 +86,7 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         {/* Anti-flash script: applies the theme (auto → day/night based on the
-            LOCAL hour) BEFORE first paint. Priority cookie > account preference > auto. */}
+        LOCAL hour) BEFORE first paint. Priority cookie > account preference > auto. */}
         <script
           nonce={nonce}
           // the browser blanks the nonce attribute once read (CSP anti-exfiltration):
@@ -100,37 +100,38 @@ export default async function RootLayout({
         <StructuredData />
         <NextIntlClientProvider>
           {children}
-          <footer className="border-t border-line/60 py-5 text-center text-xs text-ink-faint">
-            <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
-              <a href={localePath(locale, "/about")} className="transition-colors hover:text-ink-dim">
-                {t("about")}
-              </a>
-              <span aria-hidden>·</span>
-              <a href={localePath(locale, "/legal")} className="transition-colors hover:text-ink-dim">
-                {t("legal")}
-              </a>
-              <span aria-hidden>·</span>
-              <a href={localePath(locale, "/privacy")} className="transition-colors hover:text-ink-dim">
-                {t("privacy")}
-              </a>
-              <span aria-hidden>·</span>
-              <a href={localePath(locale, "/docs/api")} className="transition-colors hover:text-ink-dim">
-                {t("api")}
-              </a>
-              <span aria-hidden>·</span>
-              <LanguageSwitcher />
-              <span aria-hidden>·</span>
-              <ThemeSwitcher current={choice} persist={!!user} />
-            </nav>
-            <p className="mt-2 inline-flex items-center gap-1.5">
-              {t("tagline")} <span aria-hidden className="inline-block size-1.5 rounded-full bg-accent" />
-            </p>
-            <p className="mt-1 flex flex-wrap items-center justify-center gap-1.5">
-              {t("network")} <span aria-hidden>·</span> {t("hostedIn")}{" "}
-              <FlagFr className="h-2.5 w-auto rounded-[2px]" />
-            </p>
-            <div className="mt-1.5">
-              <SourceLink />
+          {/* One line: links on the left, preferences on the right, the
+              credits below. On mobile, everything wraps naturally. */}
+          <footer className="border-t border-line/60 text-xs text-ink-faint">
+            <div className="wrap flex flex-wrap items-center justify-between gap-x-8 gap-y-3 py-5">
+              <nav className="flex flex-wrap items-center gap-x-5 gap-y-1.5">
+                <a href={localePath(locale, "/about")} className="transition-colors hover:text-ink-dim">
+                  {t("about")}
+                </a>
+                <a href={localePath(locale, "/legal")} className="transition-colors hover:text-ink-dim">
+                  {t("legal")}
+                </a>
+                <a href={localePath(locale, "/privacy")} className="transition-colors hover:text-ink-dim">
+                  {t("privacy")}
+                </a>
+                <a href={localePath(locale, "/docs/api")} className="transition-colors hover:text-ink-dim">
+                  {t("api")}
+                </a>
+                <SourceLink />
+              </nav>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                <LanguageSwitcher />
+                <ThemeSwitcher current={choice} persist={!!user} />
+              </div>
+              <p className="flex basis-full flex-wrap items-center gap-x-4 gap-y-1">
+                <span className="inline-flex items-center gap-1.5">
+                  {t("tagline")} <span aria-hidden className="inline-block size-1.5 rounded-full bg-accent" />
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  {t("network")} <span aria-hidden>·</span> {t("hostedIn")}
+                  <FlagFr className="h-2.5 w-auto rounded-[2px]" />
+                </span>
+              </p>
             </div>
           </footer>
         </NextIntlClientProvider>

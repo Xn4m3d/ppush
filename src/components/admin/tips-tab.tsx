@@ -47,7 +47,7 @@ export function TipsTab({ refreshKey, bump }: { refreshKey: number; bump: () => 
     if (next < 0 || next >= tips.length) return;
     const reordered = [...tips];
     [reordered[index], reordered[next]] = [reordered[next], reordered[index]];
-    setTips(reordered); // optimistic
+    setTips(reordered); // optimiste
     await fetch("/api/admin/tips", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -64,16 +64,16 @@ export function TipsTab({ refreshKey, bump }: { refreshKey: number; bump: () => 
         {t("tipsDesc")}
       </div>
 
-      {/* Add */}
+      {/* Ajout */}
       <Card className="space-y-3 p-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">{t("tipsAddTitle")}</p>
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block space-y-1.5">
-            <span className="text-[13px] font-medium text-ink-dim">{t("tipsEnLabel")}</span>
+            <span className="text-[0.8125rem] font-medium text-ink-dim">{t("tipsEnLabel")}</span>
             <Textarea value={newEn} onChange={(e) => setNewEn(e.target.value)} rows={2} maxLength={400} />
           </label>
           <label className="block space-y-1.5">
-            <span className="text-[13px] font-medium text-ink-dim">{t("tipsFrLabel")}</span>
+            <span className="text-[0.8125rem] font-medium text-ink-dim">{t("tipsFrLabel")}</span>
             <Textarea value={newFr} onChange={(e) => setNewFr(e.target.value)} rows={2} maxLength={400} />
           </label>
         </div>
@@ -190,11 +190,11 @@ function TipRow({
         <div className="min-w-0 flex-1 space-y-2">
           <div className="grid gap-2 sm:grid-cols-2">
             <label className="block space-y-1">
-              <span className="text-[11px] font-medium uppercase tracking-wide text-ink-faint">{t("tipsEnLabel")}</span>
+              <span className="text-[0.6875rem] font-medium uppercase tracking-wide text-ink-faint">{t("tipsEnLabel")}</span>
               <Textarea value={en} onChange={(e) => setEn(e.target.value)} rows={2} maxLength={400} className="text-sm" />
             </label>
             <label className="block space-y-1">
-              <span className="text-[11px] font-medium uppercase tracking-wide text-ink-faint">{t("tipsFrLabel")}</span>
+              <span className="text-[0.6875rem] font-medium uppercase tracking-wide text-ink-faint">{t("tipsFrLabel")}</span>
               <Textarea value={fr} onChange={(e) => setFr(e.target.value)} rows={2} maxLength={400} className="text-sm" />
             </label>
           </div>

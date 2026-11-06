@@ -480,7 +480,7 @@ function UserDrawer({
 
           {/* Verification basis/bases used — multi-select (cumulative, recommended) */}
           <div>
-            <p className="text-[13px] font-medium text-ink-dim">{t("verifiedByLabel")}</p>
+            <p className="text-[0.8125rem] font-medium text-ink-dim">{t("verifiedByLabel")}</p>
             <div className="mt-1.5 flex flex-wrap gap-2">
               {(
                 [

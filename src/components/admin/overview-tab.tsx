@@ -110,7 +110,7 @@ export function OverviewTab({ refreshKey }: { refreshKey: number }) {
         </div>
 
         {series.length > 0 && (
-          <p className="mt-2 flex items-center justify-between text-[11px] text-ink-faint">
+          <p className="mt-2 flex items-center justify-between text-[0.6875rem] text-ink-faint">
             <span>{fmt(series[0].date)}</span>
             <span className="uppercase tracking-wide">{granLabel}</span>
             <span>{fmt(series[series.length - 1].date)}</span>

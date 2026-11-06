@@ -33,13 +33,13 @@ export async function Header() {
       : 0;
   return (
     <header className="sticky top-0 z-40 border-b border-line/60 bg-bg/80 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+      <div className="wrap flex h-16 items-center justify-between gap-4">
         {/* link outside the logo: the logo is a link itself (no nested <a>) */}
         <div className="flex min-w-0 items-center gap-3">
           <Logo compact={!!user} />
           {/* little room on mobile: signed in (navigation icons on the right),
-              a plain icon, hidden below 380 px; signed out, "What’s this?"
-              except on very narrow screens */}
+          a plain icon, hidden below 380 px; signed out, "What’s this?"
+          except on very narrow screens */}
           <Link
             href={localePath(locale, "/why")}
             aria-label={t("why")}

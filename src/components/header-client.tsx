@@ -81,7 +81,7 @@ export function NavLinks({ isAdmin, recoveryPending = 0 }: { isAdmin: boolean; r
             <span className="hidden md:inline">{t(key)}</span>
             {showBadge && (
               <span
-                className="absolute -right-0.5 -top-0.5 grid min-w-[1.1rem] place-items-center rounded-full bg-warn px-1 text-[10px] font-bold leading-tight text-black tabular-nums"
+                className="absolute -right-0.5 -top-0.5 grid min-w-[1.1rem] place-items-center rounded-full bg-warn px-1 text-[0.625rem] font-bold leading-tight text-black tabular-nums"
                 title={t("recoveryPending", { count: recoveryPending })}
               >
                 {recoveryPending}

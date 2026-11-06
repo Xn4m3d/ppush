@@ -84,7 +84,7 @@ export function ReportAbuse({ slug }: { slug: string }) {
               ))}
             </div>
             <div className="space-y-1.5">
-              <label htmlFor="report-comment" className="text-[13px] font-medium text-ink-dim">{t("commentLabel")}</label>
+              <label htmlFor="report-comment" className="text-[0.8125rem] font-medium text-ink-dim">{t("commentLabel")}</label>
               <Textarea id="report-comment" value={comment} onChange={(e) => setComment(e.target.value)} rows={3} maxLength={500} placeholder={t("commentPlaceholder")} />
             </div>
             {state === "error" && <p className="text-sm text-danger">{error}</p>}

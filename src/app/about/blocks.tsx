@@ -22,7 +22,7 @@ export function Section({
         </span>
         {title}
       </h2>
-      <div className="mt-4 space-y-3 text-[15px] leading-relaxed text-ink-dim">
+      <div className="mt-4 space-y-3 text-[0.9375rem] leading-relaxed text-ink-dim">
         {children}
       </div>
     </section>

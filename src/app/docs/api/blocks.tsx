@@ -6,7 +6,7 @@ import { CopyButton } from "@/components/copy-button";
 export function Code({ children, copy }: { children: string; copy?: boolean }) {
   return (
     <div className="group relative">
-      <pre className="overflow-x-auto rounded-xl border border-line bg-bg-soft p-4 text-[13px] leading-relaxed text-ink-dim">
+      <pre className="overflow-x-auto rounded-xl border border-line bg-bg-soft p-4 text-[0.8125rem] leading-relaxed text-ink-dim">
         <code>{children}</code>
       </pre>
       {copy && (
