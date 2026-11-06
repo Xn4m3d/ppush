@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import QRCode from "qrcode";
 import { useLocale, useTranslations } from "next-intl";
@@ -330,6 +330,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
     setCreated(null);
     setFormed(false);
     gathered.current = null;
+    sendRun.current++;
     setError("");
     setProgress(null);
     setCipherLen(0);
@@ -369,6 +370,60 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
     sc.ageTarget = age;
     sc.destroyedLabel = td("destroyed");
   }, [views, passphrase, age, td]);
+
+  /**
+   * Phone (one column): scrolls the stage on screen, below the top
+   * bar, and resolves once the scroll is over (or at once if it is
+   * already there, on desktop, or without animation).
+   */
+  const showStage = () => new Promise<void>((resolve) => {
+    const z = zoneRef.current;
+    if (!z || window.matchMedia(WIDE).matches) return resolve();
+    const want = parseFloat(getComputedStyle(z).scrollMarginTop) || 0;
+    const top0 = z.getBoundingClientRect().top;
+    if (top0 >= want - 8 && top0 < window.innerHeight * 0.3) return resolve();
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    stageScrolling.current = true;
+    z.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    // arrival checked frame by frame ("scrollend" also fires when a scroll is interrupted):
+    // the stage is below the top bar, or nothing moves any more (page bottom), or the delay is over
+    const t0 = performance.now();
+    let last = NaN, still = 0;
+    const tick = () => {
+      const top = z.getBoundingClientRect().top;
+      still = Math.abs(top - last) < 0.5 ? still + 1 : 0;
+      last = top;
+      if ((Math.abs(top - want) < 3 && still >= 1) || still >= 4 || performance.now() - t0 > 1100) {
+        stageScrolling.current = false;
+        // a short pause once arrived, so the eye sees the cloud before it reacts
+        setTimeout(resolve, reduce ? 0 : 140);
+        return;
+      }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+
+  // at creation, the button block disappears above the stage: on a
+  // phone, the stage would move up by as much while the link is written — it is
+  // kept in place on screen (Safari has no scroll anchoring). The
+  // position is taken in the document: only the layout shift counts,
+  // not a scroll in progress, which is retargeted instead of interrupted
+  const stageTop = useRef<number | null>(null);
+  const stageScrolling = useRef(false);
+  // one number per send: a deferred gather (scroll on a phone) does not start after a failure
+  const sendRun = useRef(0);
+  useLayoutEffect(() => {
+    const before = stageTop.current;
+    stageTop.current = null;
+    if (!created || before === null || window.matchMedia(WIDE).matches) return;
+    const z = zoneRef.current;
+    if (!z) return;
+    const shift = z.getBoundingClientRect().top + window.scrollY - before;
+    if (Math.abs(shift) <= 1) return;
+    if (stageScrolling.current) z.scrollIntoView({ behavior: "smooth", block: "start" });
+    else window.scrollBy({ top: shift, behavior: "instant" });
+  }, [created]);
 
   // created: the cluster gathered on click spreads into a line, folds
   // into letters on the link's invisible copy (in the middle of the cloud), then the link
@@ -440,8 +495,18 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
 
     setBusy(true);
     // the nebula reacts at once: it gathers into a crackling cluster
-    // while the browser encrypts and sends (nothing leaves from the button)
-    if (scene.current) { scene.current.layout(); gathered.current = scene.current.gather(); }
+    // while the browser encrypts and sends (nothing leaves from the button);
+    // on a phone, the stage is below the button: it is brought on screen first,
+    // or the start of the animation would be missed (encryption starts at once)
+    const sc = scene.current, run = ++sendRun.current;
+    if (sc) {
+      gathered.current = showStage().then(() => {
+        // send already failed or form reset during the scroll: the nebula does not move
+        if (scene.current !== sc || run !== sendRun.current) return;
+        sc.layout();
+        return sc.gather();
+      });
+    }
     try {
       // 1. ephemeral key generated locally — never leaves this browser
       const { key, keyB64 } = await generateKey();
@@ -500,6 +565,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
 
       setAge(0);
       setFormed(false);
+      stageTop.current = zoneRef.current ? zoneRef.current.getBoundingClientRect().top + window.scrollY : null;
       setCreated({
         url: `${data.url}#${keyB64}`,
         kind,
@@ -514,9 +580,14 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
         setCaptchaNeeded(true);
       }
       setError(msg === "INSECURE_CONTEXT" ? t("errorInsecureContext") : msg || t("errorGeneric"));
-      // failure: the cluster comes apart, the cloud takes its shape again
+      // failure: the cluster comes apart, the cloud takes its shape again; on a phone, we go back up to the
+      // button so the message (or the anti-bot check) can be seen
+      sendRun.current++;
       scene.current?.release();
       gathered.current = null;
+      if (!window.matchMedia(WIDE).matches) {
+        requestAnimationFrame(() => formRef.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "end" }));
+      }
     } finally {
       setBusy(false);
       setProgress(null);
