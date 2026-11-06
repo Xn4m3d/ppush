@@ -248,41 +248,40 @@ export function SecretViewer({ slug, autoOpen = false }: { slug: string; autoOpe
     if (res.ok) { setStage("burned"); scene.current?.clear(); }
   }
 
-  // ---- left column, by state ----
+  // ---- by state: the header (above the cloud), the left column, and the stage ----
   const last = (meta?.viewsLeft ?? 1) <= 1;
-  let left: React.ReactNode;
+  let hero: { eyebrow: string; title: string; ok?: boolean; lede?: React.ReactNode } | null = null;
+  let left: React.ReactNode = null;
+  const body = (c: React.ReactNode, wide = false) => <p className={cls("m-0 text-[1.0625rem] text-ink-dim", wide ? "max-w-[52ch]" : "max-w-[48ch]")}>{c}</p>;
 
   if (stage === "loading") {
     left = <div className="py-16"><CondenseLoader /></div>;
   } else if (stage === "expired" || stage === "burned") {
+    hero = { eyebrow: tr("goneEyebrow"), title: stage === "burned" ? t("burnedTitle") : t("expiredTitle") };
     left = (
-      <View eyebrow={tr("goneEyebrow")} title={stage === "burned" ? t("burnedTitle") : t("expiredTitle")}>
-        <p className="max-w-[48ch] text-[1.0625rem] text-ink-dim">{stage === "burned" ? t("burnedBody") : t("expiredBody")}</p>
-        {stage === "expired" && <p className="max-w-[52ch] text-sm text-ink-faint">{tr("goneHint")}</p>}
-      </View>
+      <>
+        {body(stage === "burned" ? t("burnedBody") : t("expiredBody"))}
+        {stage === "expired" && <p className="m-0 max-w-[52ch] text-sm text-ink-faint">{tr("goneHint")}</p>}
+      </>
     );
   } else if (stage === "no-key") {
-    left = (
-      <View eyebrow={tr("goneEyebrow")} title={t("noKeyTitle")}>
-        <p className="max-w-[52ch] text-[1.0625rem] text-ink-dim">{t.rich("noKeyBody", { code: (c) => <code className="font-mono text-ink">{c}</code> })}</p>
-      </View>
-    );
+    hero = { eyebrow: tr("goneEyebrow"), title: t("noKeyTitle") };
+    left = body(t.rich("noKeyBody", { code: (c) => <code className="font-mono text-ink">{c}</code> }), true);
   } else if (stage === "error") {
-    left = <View eyebrow={tr("eyebrow")} title={t("serverError")} />;
+    hero = { eyebrow: tr("eyebrow"), title: t("serverError") };
   } else if (stage === "wiped") {
-    left = (
-      <View eyebrow={tr("wipedEyebrow")} title={lastView ? tr("wipedTitleLast") : tr("wipedTitle")} ok>
-        <p className="text-[1.0625rem] text-ink-dim">{tr("wipedBody")}</p>
-      </View>
-    );
+    hero = { eyebrow: tr("wipedEyebrow"), title: lastView ? tr("wipedTitleLast") : tr("wipedTitle"), ok: true };
+    left = body(tr("wipedBody"));
   } else if (stage === "gate" || stage === "revealing") {
+    hero = {
+      eyebrow: tr("eyebrow"),
+      title: tr("title"),
+      lede: tr.rich(last ? "ledeOnce" : "ledeMany", { b: (c) => <b className="font-medium text-ink">{c}</b> }),
+    };
     left = (
-      <View eyebrow={tr("eyebrow")} title={tr("title")}>
-        <p className="-mt-1 max-w-[46ch] text-[1.0625rem] text-ink-dim">
-          {tr.rich(last ? "ledeOnce" : "ledeMany", { b: (c) => <b className="font-medium text-ink">{c}</b> })}
-        </p>
+      <>
         {meta && (
-          <ul className="grid grid-cols-3 overflow-hidden rounded-2xl border border-line">
+          <ul className="m-0 grid list-none grid-cols-3 overflow-hidden rounded-2xl border border-line p-0">
             <Fact label={tr("factKind")} value={tTabs(meta.kind as "PASSWORD")} />
             <Fact label={tr("factExpires")} value={<Remaining expiresAt={meta.expiresAt} onExpire={expire} />} />
             <Fact label={tr("factViews")} value={tr("viewsLeft", { count: meta.viewsLeft ?? 1 })} />
@@ -307,102 +306,105 @@ export function SecretViewer({ slug, autoOpen = false }: { slug: string; autoOpe
           ref={actionRef}
           onClick={() => reveal()}
           loading={stage === "revealing"}
-          className="min-h-14 w-full text-base"
+          className="min-h-14 w-full text-[1.05rem] shadow-[0_10px_40px_-12px_var(--accent-glow)]"
           disabled={meta?.hasPassphrase && !passphrase}
         >
           <Eye className="size-4" />
           {t("reveal")}
         </Button>
-        <p className="text-sm text-ink-faint">{last ? tr("revealHintLast") : tr("revealHint")}</p>
+        <p className="m-0 text-sm text-ink-faint">{last ? tr("revealHintLast") : tr("revealHint")}</p>
         <details className="border-t border-line pt-3 text-sm text-ink-dim">
           <summary className="cursor-pointer font-medium text-ink">{tr("unsure")}</summary>
           <p className="mt-2 max-w-[52ch]">{tr("unsureBody")}</p>
         </details>
-      </View>
+      </>
     );
   } else {
-    // revealed
+    // revealed: the secret condenses in the stage; here, what to do now
+    hero = { eyebrow: lastView ? tr("shownEyebrowLast") : tr("shownEyebrow"), title: tr("shownTitle"), ok: true };
     left = (
-      <View eyebrow={lastView ? tr("shownEyebrowLast") : tr("shownEyebrow")} title={tr("shownTitle")} ok>
-        <div className="flex flex-col gap-3.5 rounded-2xl border border-line bg-panel p-4 sm:p-5">
-          {payload?.t === "URL" ? (
-            <UrlReveal url={payload.d} autoOpen={autoOpen && formed} formed={formed} textRef={textRef} />
-          ) : payload?.t === "FILE" ? (
-            <FileReveal payload={payload} formed={formed} textRef={textRef} progress={dlProgress} onDownload={downloadFile} />
-          ) : (
-            <SecretBox value={payload?.d ?? ""} formed={formed} textRef={textRef} />
+      <div className={cls("flex flex-col gap-3.5 transition-[opacity,transform] delay-100 duration-500", formed ? "opacity-100" : "translate-y-1.5 opacity-0")}>
+        <ErrorText>{error}</ErrorText>
+        <p className="m-0 rounded-[0.625rem] bg-accent/10 px-3.5 py-3 text-[0.9375rem] text-ink">{lastView ? tr("copyNowLast") : tr("copyNow")}</p>
+        {lastView && (
+          <p className="m-0 flex items-start gap-2.5 text-[0.9375rem] text-ink-dim">
+            <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden className="mt-1 flex-none text-ok">
+              <circle cx="8" cy="8" r="7.5" fill="none" stroke="currentColor" />
+              <path d="M4.5 8.2l2.3 2.3 4.7-4.9" fill="none" stroke="currentColor" strokeWidth="1.6" />
+            </svg>
+            {tr("goneServer")}
+          </p>
+        )}
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          <Button variant="ghost" onClick={() => { setPayload(null); setStage("wiped"); }}>
+            {tr("wipe")}
+          </Button>
+          {deletable && !lastView && (
+            <button onClick={burn} className="inline-flex items-center gap-1.5 text-sm font-medium text-danger hover:text-danger/80 cursor-pointer">
+              <Flame className="size-3.5" />
+              {t("burnAction")}
+            </button>
           )}
         </div>
-        <div className={cls("flex flex-col gap-3.5 transition-[opacity,transform] delay-100 duration-500", formed ? "opacity-100" : "translate-y-1.5 opacity-0")}>
-          <ErrorText>{error}</ErrorText>
-          <p className="rounded-[10px] bg-accent/10 px-3.5 py-3 text-[0.9375rem] text-ink">{lastView ? tr("copyNowLast") : tr("copyNow")}</p>
-          {lastView && (
-            <p className="flex items-start gap-2.5 text-[0.9375rem] text-ink-dim">
-              <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden className="mt-1 flex-none text-ok">
-                <circle cx="8" cy="8" r="7.5" fill="none" stroke="currentColor" />
-                <path d="M4.5 8.2l2.3 2.3 4.7-4.9" fill="none" stroke="currentColor" strokeWidth="1.6" />
-              </svg>
-              {tr("goneServer")}
-            </p>
-          )}
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-            <Button variant="ghost" onClick={() => { setPayload(null); setStage("wiped"); }}>
-              {tr("wipe")}
-            </Button>
-            {deletable && !lastView && (
-              <button onClick={burn} className="inline-flex items-center gap-1.5 text-sm font-medium text-danger hover:text-danger/80 cursor-pointer">
-                <Flame className="size-3.5" />
-                {t("burnAction")}
-              </button>
-            )}
-          </div>
-        </div>
-      </View>
+      </div>
     );
   }
 
   const serverEmpty = stage === "expired" || stage === "burned" || stage === "no-key" || stage === "wiped" || (stage === "revealed" && lastView && formed);
 
   return (
-    <div ref={hostRef} className="relative mx-auto w-full max-w-6xl flex-1 px-4 pb-10 pt-6 sm:px-6">
+    <div ref={hostRef} className="wrap bench">
       <canvas ref={canvasRef} aria-hidden className="pointer-events-none absolute inset-0 z-[6] h-full w-full" />
-      <div className="grid gap-x-16 gap-y-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.1fr)]">
-        <div className="relative z-[4] min-w-0">
-          {left}
-          <p className="mt-6 text-sm text-ink-faint">
-            {tr.rich("footCta", { link: (c) => <Link href={lp("/")} className="font-medium text-ink-dim underline underline-offset-2 hover:text-ink">{c}</Link> })}
-          </p>
-          <ReportAbuse slug={slug} />
+
+      {/* the state's header, set above the cloud it talks about */}
+      {hero && (
+        <section key={hero.title} className="bench-hero flex flex-col gap-2.5 animate-fade-up">
+          <p className={cls("eyebrow m-0 !text-accent", hero.ok && "!text-ok")}>{hero.eyebrow}</p>
+          <h1 className="m-0 font-display text-[clamp(1.9rem,calc(0.6rem+2.4vw),4.4rem)] font-bold leading-[1.04] tracking-[-0.035em] text-balance">{hero.title}</h1>
+          {hero.lede && <p className="m-0 max-w-[54ch] text-[1.05rem] text-ink-dim">{hero.lede}</p>}
+        </section>
+      )}
+
+      <div className="bench-ctrl flex flex-col gap-4 animate-fade-up">
+        {left}
+        <p className="m-0 mt-2 text-sm text-ink-faint">
+          {tr.rich("footCta", { link: (c) => <Link href={lp("/")} className="font-medium text-ink-dim underline underline-offset-2 hover:text-ink">{c}</Link> })}
+        </p>
+        <ReportAbuse slug={slug} />
+      </div>
+
+      <section aria-label={tr("zoneAria")} className="bench-stage">
+        <div className="flex justify-between gap-3 eyebrow">
+          <span>{serverEmpty ? tr("zoneGone") : tr("zone")}</span>
+          <span className="text-accent">AES-256-GCM</span>
         </div>
-        <section aria-label={tr("zoneAria")} className="relative z-[4] order-first flex min-h-[200px] min-w-0 flex-col lg:order-none lg:min-h-[460px]">
-          <div className="flex justify-between gap-3 eyebrow">
-            <span>{serverEmpty ? tr("zoneGone") : tr("zone")}</span>
-            <span className="text-accent">AES-256-GCM</span>
-          </div>
-          <div ref={cloudRef} className="grid min-h-[150px] flex-1 place-items-center">
-            <p className={cls("text-[0.9375rem] text-ink-faint transition-opacity duration-700", serverEmpty ? "opacity-100" : "opacity-0")}>
+        <div className="bench-zone">
+          <div ref={cloudRef} className="absolute inset-0" />
+          {stage === "revealed" ? (
+            // the secret, condensed back large in the middle of the stage
+            <div className="relative z-[5] flex min-h-full flex-col justify-center gap-5 py-4">
+              {payload?.t === "URL" ? (
+                <UrlReveal url={payload.d} autoOpen={autoOpen && formed} formed={formed} textRef={textRef} />
+              ) : payload?.t === "FILE" ? (
+                <FileReveal payload={payload} formed={formed} textRef={textRef} progress={dlProgress} onDownload={downloadFile} />
+              ) : (
+                <SecretBox value={payload?.d ?? ""} big={payload?.t !== "TEXT"} formed={formed} textRef={textRef} />
+              )}
+            </div>
+          ) : (
+            <p className={cls("pointer-events-none absolute inset-0 m-0 grid place-items-center text-[0.95rem] text-ink-faint transition-opacity duration-700", serverEmpty ? "opacity-100" : "opacity-0")}>
               {tr("zoneGone")}
             </p>
-          </div>
-          {!serverEmpty && (
-            <div className="hidden flex-col gap-1 border-t border-line pt-3 font-mono text-xs text-ink-faint lg:flex">
-              <span>{tr("metaUnreadable")}</span>
-              <span>{tr("metaKey")}</span>
-            </div>
           )}
-        </section>
-      </div>
+        </div>
+        {/* hidden without leaving the layout: if they vanished while the
+            secret forms, the stage would grow and the text would slide under its particles */}
+        <div className={cls("hidden flex-wrap justify-between gap-x-4 gap-y-1 font-mono text-xs text-ink-faint lg:flex", serverEmpty && "invisible")}>
+          <span>{tr("metaUnreadable")}</span>
+          <span>{tr("metaKey")}</span>
+        </div>
+      </section>
     </div>
-  );
-}
-
-function View({ eyebrow, title, ok, children }: { eyebrow: string; title: string; ok?: boolean; children?: React.ReactNode }) {
-  return (
-    <section className="flex flex-col gap-4 animate-fade-up">
-      <p className={cls("eyebrow !text-accent", ok && "!text-ok")}>{eyebrow}</p>
-      <h1 className="text-[clamp(28px,3.3vw,42px)] font-bold leading-[1.05]">{title}</h1>
-      {children}
-    </section>
   );
 }
 
@@ -442,7 +444,7 @@ function Remaining({ expiresAt, onExpire }: { expiresAt: string; onExpire: () =>
   return <>{longDelay(left)}</>;
 }
 
-function SecretBox({ value, formed, textRef }: { value: string; formed: boolean; textRef: React.RefObject<HTMLElement | null> }) {
+function SecretBox({ value, big, formed, textRef }: { value: string; big: boolean; formed: boolean; textRef: React.RefObject<HTMLElement | null> }) {
   const t = useTranslations("viewer");
   const tr = useTranslations("receive");
   const [masked, setMasked] = useState(false);
@@ -451,7 +453,9 @@ function SecretBox({ value, formed, textRef }: { value: string; formed: boolean;
       <p
         ref={(el) => { textRef.current = el; }}
         className={cls(
-          "m-0 max-h-80 min-h-[1.6em] overflow-auto whitespace-pre-wrap break-all font-mono text-[clamp(17px,2vw,22px)] leading-relaxed transition-colors duration-700",
+          "m-0 max-h-[60vh] min-h-[1.6em] overflow-auto whitespace-pre-wrap break-all font-mono leading-relaxed transition-colors duration-700",
+          // a password is written large in the stage; a text stays readable as a paragraph
+          big ? "text-[clamp(1.3rem,calc(0.6rem+1.6vw),2.6rem)] leading-[1.5]" : "text-[clamp(1rem,calc(0.7rem+0.5vw),1.25rem)]",
           formed ? "text-ink" : "text-transparent"
         )}
       >
@@ -485,7 +489,7 @@ function FileReveal({
   const locale = useLocale() as Locale;
   return (
     <>
-      <p ref={(el) => { textRef.current = el; }} className={cls("m-0 break-all font-mono text-lg transition-colors duration-700", formed ? "text-ink" : "text-transparent")}>
+      <p ref={(el) => { textRef.current = el; }} className={cls("m-0 break-all font-mono text-[clamp(1.15rem,calc(0.6rem+1vw),1.8rem)] transition-colors duration-700", formed ? "text-ink" : "text-transparent")}>
         {payload.name}
       </p>
       {payload.size ? <p className="-mt-2 font-mono text-xs text-ink-faint">{formatBytes(payload.size, locale)}</p> : null}
@@ -563,7 +567,7 @@ function UrlReveal({
 
   return (
     <>
-      <p ref={(el) => { textRef.current = el; }} className={cls("m-0 break-all font-mono text-[1.0625rem] transition-colors duration-700", formed ? "text-ink" : "text-transparent")}>
+      <p ref={(el) => { textRef.current = el; }} className={cls("m-0 break-all font-mono text-[clamp(1.05rem,calc(0.6rem+0.9vw),1.6rem)] transition-colors duration-700", formed ? "text-ink" : "text-transparent")}>
         {url}
       </p>
       {auto ? (
