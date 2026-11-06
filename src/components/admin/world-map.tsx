@@ -136,13 +136,13 @@ export function WorldMap({
               })}
               {countries.length === 0 && <li className="text-xs text-ink-faint">{t("mapEmpty")}</li>}
             </ul>
-            <p className="mt-3 border-t border-line/60 pt-2 text-[11px] text-ink-faint">
+            <p className="mt-3 border-t border-line/60 pt-2 text-[0.6875rem] text-ink-faint">
               {t("mapLocated", { located, unlocated })}
             </p>
           </div>
         </div>
         {/* Geo source credit (DB-IP Lite, CC-BY) — admin map only */}
-        <p className="mt-2 text-right text-[10px] text-ink-faint/70">
+        <p className="mt-2 text-right text-[0.625rem] text-ink-faint/70">
           <a
             href="https://db-ip.com"
             target="_blank"

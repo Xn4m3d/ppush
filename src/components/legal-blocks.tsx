@@ -39,7 +39,7 @@ export function LegalSection({
       <h2 className="border-b border-line pb-2 text-lg font-semibold tracking-tight text-ink">
         {title}
       </h2>
-      <div className="space-y-3 text-[15px] leading-relaxed text-ink-dim">
+      <div className="space-y-3 text-[0.9375rem] leading-relaxed text-ink-dim">
         {children}
       </div>
     </section>

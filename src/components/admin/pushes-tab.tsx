@@ -154,7 +154,7 @@ export function PushesTab({ refreshKey, bump }: { refreshKey: number; bump: () =
                       {p.kind === "FILE" ? <FileUp className="size-3.5 text-ink-faint" /> : null}
                       {p.slug}
                     </span>
-                    <p className="text-[11px] text-ink-faint">{kindLabel(p.kind)}</p>
+                    <p className="text-[0.6875rem] text-ink-faint">{kindLabel(p.kind)}</p>
                   </td>
                   <td className="px-3 py-3.5">
                     {p.anon ? (
@@ -166,7 +166,7 @@ export function PushesTab({ refreshKey, bump }: { refreshKey: number; bump: () =
                       <p className="mt-1 flex flex-wrap items-center gap-1.5">
                         <Badge tone="accent">{t("sourceApi")}</Badge>
                         {p.apiTokenName && (
-                          <span className="font-mono text-[11px] text-ink-faint break-all">
+                          <span className="font-mono text-[0.6875rem] text-ink-faint break-all">
                             {p.apiTokenName}
                           </span>
                         )}

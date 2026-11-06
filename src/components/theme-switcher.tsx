@@ -52,7 +52,7 @@ export function ThemeSwitcher({ current, persist }: { current: ThemeChoice; pers
               <span className="-ml-1 size-2.5 rounded-full ring-1 ring-black/40" style={{ background: line }} />
               <span className="-ml-1 size-2.5 rounded-full ring-1 ring-black/40" style={{ background: accent }} />
             </span>
-            <span className="text-[10px] font-medium uppercase tracking-wide">{t(id)}</span>
+            <span className="text-[0.625rem] font-medium uppercase tracking-wide">{t(id)}</span>
           </button>
         );
       })}

@@ -136,7 +136,7 @@ export function AdminPanel({ selfId }: { selfId: string }) {
           >
             {label}
             {badge !== undefined && badge > 0 && (
-              <span className="grid min-w-[1.25rem] place-items-center rounded-full bg-warn/20 px-1.5 text-[11px] font-semibold tabular-nums text-warn">
+              <span className="grid min-w-[1.25rem] place-items-center rounded-full bg-warn/20 px-1.5 text-[0.6875rem] font-semibold tabular-nums text-warn">
                 {badge}
               </span>
             )}
@@ -179,7 +179,7 @@ function SourceBreakdown({ p }: { p: Stats["pushes"] }) {
     <Card className="p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">{t("sourceBreakdown")}</p>
-        <p className="text-[11px] text-ink-faint">
+        <p className="text-[0.6875rem] text-ink-faint">
           {t("sourceApiShare", { pct: Math.round((p.bySource.api / tot) * 100) })}
         </p>
       </div>
@@ -201,7 +201,7 @@ function SourceBreakdown({ p }: { p: Stats["pushes"] }) {
       </div>
       {p.topApiTokens.length > 0 && (
         <div className="mt-4 border-t border-line pt-3">
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+          <p className="mb-2 text-[0.6875rem] font-semibold uppercase tracking-wide text-ink-faint">
             {t("topApiTokens")}
           </p>
           <ul className="space-y-1 text-sm">

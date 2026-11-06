@@ -35,7 +35,7 @@ export function Story({ title, children }: { title: string; children: ReactNode 
   return (
     <section>
       <h2 className="text-2xl font-semibold">{title}</h2>
-      <div className="mt-4 space-y-3 text-[15px] leading-relaxed text-ink-dim">{children}</div>
+      <div className="mt-4 space-y-3 text-[0.9375rem] leading-relaxed text-ink-dim">{children}</div>
     </section>
   );
 }

@@ -56,7 +56,7 @@ export function EntropyExplainer({ variant = "link" }: { variant?: "link" | "ico
           onClick={() => setOpen(true)}
           className="inline-flex items-center gap-1.5 font-medium text-accent underline decoration-accent/40 underline-offset-4 hover:decoration-accent cursor-pointer"
         >
-          <span aria-hidden className="grid size-4 place-items-center rounded-full border border-accent/60 text-[10px] leading-none no-underline">?</span>
+          <span aria-hidden className="grid size-4 place-items-center rounded-full border border-accent/60 text-[0.625rem] leading-none no-underline">?</span>
           {t("link")}
         </button>
       )}
@@ -65,12 +65,12 @@ export function EntropyExplainer({ variant = "link" }: { variant?: "link" | "ico
           <h2 id="entropy-title" className="text-lg font-bold">{t("title")}</h2>
           <button type="button" onClick={(e) => requestMorphClose(e.currentTarget)} aria-label={t("close")} className="grid size-8 place-items-center rounded-lg text-ink-dim hover:bg-panel hover:text-ink cursor-pointer">✕</button>
         </div>
-        <div className="min-h-0 flex-1 space-y-3 overflow-auto px-5 py-3.5 text-[14px] leading-relaxed text-ink-dim">
+        <div className="min-h-0 flex-1 space-y-3 overflow-auto px-5 py-3.5 text-[0.875rem] leading-relaxed text-ink-dim">
           {(["s1", "s2", "s3"] as const).map((k, i) => (
             <section key={k} className="flex gap-3">
               <span className="mt-0.5 font-mono text-xs text-accent">{String(i + 1).padStart(2, "0")}</span>
               <div>
-                <h3 className="mb-0.5 text-[14px] font-semibold text-ink">{t(`${k}t`)}</h3>
+                <h3 className="mb-0.5 text-[0.875rem] font-semibold text-ink">{t(`${k}t`)}</h3>
                 <p className="m-0">{t.rich(k, { b })}</p>
               </div>
             </section>
@@ -79,7 +79,7 @@ export function EntropyExplainer({ variant = "link" }: { variant?: "link" | "ico
             <figcaption className="eyebrow mb-2">{t("tableCaption")}</figcaption>
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-[11px] text-ink-faint">
+                <tr className="text-left text-[0.6875rem] text-ink-faint">
                   <th className="pb-1 pr-3 font-normal">{t("colPhrase")}</th>
                   <th className="pb-1 pr-3 font-normal">{t("colBits")}</th>
                   <th className="pb-1 pr-3 text-right font-normal">{t("colOne")}</th>
@@ -114,7 +114,7 @@ export function EntropyExplainer({ variant = "link" }: { variant?: "link" | "ico
           <section className="flex gap-3">
             <span className="mt-0.5 font-mono text-xs text-accent">04</span>
             <div>
-              <h3 className="mb-0.5 text-[14px] font-semibold text-ink">{t("s4t")}</h3>
+              <h3 className="mb-0.5 text-[0.875rem] font-semibold text-ink">{t("s4t")}</h3>
               <p className="m-0">{t("s4")}</p>
             </div>
           </section>

@@ -11,7 +11,7 @@
 
    NIGHT → data-theme="midnight" (default): blue-black, cool ink, coral.
    DAY   → data-theme="mecha": light grey paper, near-black ink, coral
-           darkened to hold contrast on a light background.
+   darkened to hold contrast on a light background.
 
    The technical ids stay `midnight` / `mecha`: they are written
    in the cookies already set and in User.theme in the database — renaming them would break
@@ -88,9 +88,13 @@ html[data-theme="mecha"] {
 }
 
 html {
+  /* Fluid scale: everything is in rem, and the rem follows the screen — 16 px up to
+     ~1,440 px wide, 18 px at 1,920, 20 px from ~2,400 on. Large
+     screens gain readability instead of leaving half of the screen empty. */
+  font-size: clamp(16px, calc(10px + 0.42vw), 20px);
   color-scheme: dark;
   /* always reserve the scrollbar gutter: avoids a horizontal shift
-     of centered content between a scrolling page and a short one */
+  of centered content between a scrolling page and a short one */
   scrollbar-gutter: stable;
   background: var(--color-bg);
 }
@@ -112,17 +116,17 @@ h1, h2, h3, h4 {
 }
 
 /* Technical label: spaced mono capitals (sections, column
-   headers, visualization captions). */
+headers, visualization captions). */
 .eyebrow {
   font-family: var(--font-mono);
-  font-size: 11.5px;
+  font-size: 0.72rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--color-ink-faint);
 }
 
 /* Background dust (src/components/ambient.tsx): a few particles drifting
-   behind every page — the most discreet echo of the cloud. */
+behind every page — the most discreet echo of the cloud. */
 .dust {
   position: fixed;
   inset: 0;
@@ -132,7 +136,7 @@ h1, h2, h3, h4 {
 }
 
 /* Card surface: a hairline, no shadow — depth comes from the contrast
-   between background and surface, not from a blur. */
+between background and surface, not from a blur. */
 .surface-card {
   position: relative;
 }
@@ -155,17 +159,60 @@ h1, h2, h3, h4 {
   0%, 100% { transform: translate(var(--dx), var(--dy)); opacity: 0.25; }
   50% { transform: translate(0, 0); opacity: 1; }
 }
-.condense-loader { position: relative; display: inline-block; width: 28px; height: 28px; }
+.condense-loader { position: relative; display: inline-block; width: 1.75rem; height: 1.75rem; }
 .condense-loader i {
-  position: absolute; left: 12px; top: 12px; width: 4px; height: 4px; border-radius: 50%;
+  position: absolute; left: 0.75rem; top: 0.75rem; width: 0.25rem; height: 0.25rem; border-radius: 50%;
   background: var(--color-ink); animation: condense 1.4s ease-in-out infinite;
 }
-.condense-loader i:nth-child(1) { --dx: -10px; --dy: -6px; }
-.condense-loader i:nth-child(2) { --dx: 9px; --dy: -8px; animation-delay: 0.15s; background: var(--color-accent); }
-.condense-loader i:nth-child(3) { --dx: 2px; --dy: 10px; animation-delay: 0.3s; }
+.condense-loader i:nth-child(1) { --dx: -0.625rem; --dy: -0.375rem; }
+.condense-loader i:nth-child(2) { --dx: 0.5625rem; --dy: -0.5rem; animation-delay: 0.15s; background: var(--color-accent); }
+.condense-loader i:nth-child(3) { --dx: 0.125rem; --dy: 0.625rem; animation-delay: 0.3s; }
+/* variant inside the submit button: the dots take the text colour */
+.condense-loader.on-button { width: 1.4rem; height: 1.4rem; }
+.condense-loader.on-button i { left: 0.6rem; top: 0.6rem; width: 0.24rem; height: 0.24rem; background: currentColor; }
+.condense-loader.on-button i:nth-child(2) { background: var(--color-accent); }
 
 /* Field being encrypted: a brief halo on each keystroke. */
 .pulse-field { box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 26%, transparent); }
+
+/* The secret's frame (home): the field on top, its generator below, one
+   single object; the sidereal halo glows behind it, the typing pulse surrounds it. */
+.composer {
+  position: relative;
+  z-index: 1;
+  border: 1px solid var(--color-line-soft);
+  border-radius: 0.9rem;
+  background: var(--color-panel);
+  transition: border-color 0.2s, box-shadow 0.26s;
+}
+.composer:focus-within { border-color: var(--color-ink-faint); }
+.composer:has(.pulse-field) { box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 26%, transparent); }
+.composer-field {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  min-height: 3.9rem;
+  padding: 0.85rem 3.6rem 0.85rem 1rem;
+  border: 0;
+  border-radius: 0.9rem 0.9rem 0 0;
+  background: none;
+  outline: none;
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  color: var(--color-ink);
+}
+.composer-field::placeholder { font-family: var(--font-sans); font-size: 0.95rem; color: var(--color-ink-faint); }
+.composer-field.pulse-field { box-shadow: none; }
+
+/* The link, written by the particles: its invisible copy in the middle of the cloud has
+   the same font and the same width, hence the same line breaks. */
+.link-text {
+  font-family: var(--font-mono);
+  font-size: clamp(1rem, calc(0.5rem + 1vw), 1.6rem);
+  line-height: 1.7;
+  word-break: break-all;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-up, .condense-loader i { animation: none; }
@@ -177,7 +224,7 @@ h1, h2, h3, h4 {
 }
 
 /* Large readable slider (generator): thick track filled up to the
-   value (--pct set by the component), large high-contrast thumb. */
+value (--pct set by the component), large high-contrast thumb. */
 .range-lg {
   -webkit-appearance: none;
   appearance: none;
@@ -214,7 +261,7 @@ h1, h2, h3, h4 {
 .range-lg:active::-webkit-slider-thumb { transform: scale(1.12); }
 
 /* Sidereal halo (password field): diffuse glow + twinkling
-   stars. Stays under the field (pointer-events: none). */
+stars. Stays under the field (pointer-events: none). */
 .sidereal-halo { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
 .sidereal-halo::before {
   content: "";
@@ -241,35 +288,50 @@ h1, h2, h3, h4 {
 @media (prefers-reduced-motion: reduce) { .sidereal-halo i { animation: none; opacity: 0.4; } }
 
 /* "Morphing" windows (src/components/morph-dialog.tsx): the motion is
-   driven in JS (Web Animations); only the backdrop and drop shadow live here. */
+driven in JS (Web Animations); only the backdrop and drop shadow live here. */
 .morph-dialog { box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.7); transform-origin: 0 0; }
 .morph-dialog::backdrop { background: rgba(3, 5, 8, 0.62); backdrop-filter: blur(4px); }
 
 /* ══════════════════════════════════════════════════════════════════════
-   Full-screen home (desktop): header + workbench = exact visible
-   height (100dvh follows the browser bars), the footer starts
-   below the fold. Content compacts according to the available HEIGHT; below
-   ~600 px it scrolls rather than becoming unreadable. Mobile: normal
-   flow, unaffected.
+   Shared frame (header, footer, workbench): up to 2,400 px wide.
    ══════════════════════════════════════════════════════════════════════ */
+.wrap {
+  width: 100%;
+  max-width: 2400px;
+  margin-inline: auto;
+  padding-inline: clamp(16px, 2.6vw, 4rem);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   "The workbench" (home and receive). Desktop: the controls in a
+   fluid column on the left; the cloud takes all the rest as a stage, at
+   full height, with the hook set above it (it talks about "this
+   cloud"). The footer starts below the edge of the screen.
+   Narrow: one column, hook → controls (button last) → cloud.
+   ══════════════════════════════════════════════════════════════════════ */
+.bench {
+  position: relative;
+  flex: 1;
+  display: grid;
+  gap: 1.5rem;
+  grid-template-areas: "hero" "ctrl" "stage";
+  padding-block: 1.25rem 2.5rem;
+}
+.bench-hero { grid-area: hero; position: relative; z-index: 2; min-width: 0; }
+.bench-ctrl { grid-area: ctrl; position: relative; z-index: 2; min-width: 0; container-type: inline-size; }
+.bench-stage { grid-area: stage; position: relative; z-index: 4; min-width: 0; display: flex; flex-direction: column; gap: 0.75rem; }
 @media (min-width: 1024px) {
-  .hc-host {
+  .bench {
+    grid-template-columns: clamp(28rem, 31vw, 34rem) minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas: "ctrl hero" "ctrl stage";
+    column-gap: clamp(3rem, 5vw, 7rem);
+    row-gap: 1.25rem;
     min-height: calc(100dvh - 4rem);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding-top: clamp(8px, 2.5vh, 28px);
-    padding-bottom: clamp(8px, 2.5vh, 28px);
+    padding-block: clamp(1rem, 4vh, 3rem);
   }
+  .bench-ctrl { align-self: start; }
 }
-@media (min-width: 1024px) and (max-height: 860px) {
-  .hc-title { font-size: clamp(26px, 4.4vh, 40px); }
-  /* the "free account" strip repeats the limits link just above it */
-  .hc-anon { display: none; }
-  .hc-gap { gap: clamp(8px, 1.4vh, 14px); }
-  .hc-cloud { height: clamp(170px, 36vh, 330px); }
-}
-@media (min-width: 1024px) and (max-height: 720px) {
-  .hc-lede, .hc-anon { display: none; }
-  .hc-title { font-size: clamp(24px, 4vh, 32px); }
-}
+/* the cloud area takes the stage's remaining height */
+.bench-zone { position: relative; flex: 1; min-height: 15rem; }
+@media (min-width: 1024px) { .bench-zone { min-height: 20rem; } }

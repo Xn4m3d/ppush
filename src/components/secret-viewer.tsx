@@ -35,7 +35,7 @@ type Stage =
   | "loading"
   | "expired"
   | "no-key"
-  | "gate" // passphrase and/or retrieval step
+  | "gate" // passphrase et/ou étape de récupération
   | "revealing"
   | "revealed"
   | "wiped"
@@ -257,14 +257,14 @@ export function SecretViewer({ slug, autoOpen = false }: { slug: string; autoOpe
   } else if (stage === "expired" || stage === "burned") {
     left = (
       <View eyebrow={tr("goneEyebrow")} title={stage === "burned" ? t("burnedTitle") : t("expiredTitle")}>
-        <p className="max-w-[48ch] text-[17px] text-ink-dim">{stage === "burned" ? t("burnedBody") : t("expiredBody")}</p>
+        <p className="max-w-[48ch] text-[1.0625rem] text-ink-dim">{stage === "burned" ? t("burnedBody") : t("expiredBody")}</p>
         {stage === "expired" && <p className="max-w-[52ch] text-sm text-ink-faint">{tr("goneHint")}</p>}
       </View>
     );
   } else if (stage === "no-key") {
     left = (
       <View eyebrow={tr("goneEyebrow")} title={t("noKeyTitle")}>
-        <p className="max-w-[52ch] text-[17px] text-ink-dim">{t.rich("noKeyBody", { code: (c) => <code className="font-mono text-ink">{c}</code> })}</p>
+        <p className="max-w-[52ch] text-[1.0625rem] text-ink-dim">{t.rich("noKeyBody", { code: (c) => <code className="font-mono text-ink">{c}</code> })}</p>
       </View>
     );
   } else if (stage === "error") {
@@ -272,13 +272,13 @@ export function SecretViewer({ slug, autoOpen = false }: { slug: string; autoOpe
   } else if (stage === "wiped") {
     left = (
       <View eyebrow={tr("wipedEyebrow")} title={lastView ? tr("wipedTitleLast") : tr("wipedTitle")} ok>
-        <p className="text-[17px] text-ink-dim">{tr("wipedBody")}</p>
+        <p className="text-[1.0625rem] text-ink-dim">{tr("wipedBody")}</p>
       </View>
     );
   } else if (stage === "gate" || stage === "revealing") {
     left = (
       <View eyebrow={tr("eyebrow")} title={tr("title")}>
-        <p className="-mt-1 max-w-[46ch] text-[17px] text-ink-dim">
+        <p className="-mt-1 max-w-[46ch] text-[1.0625rem] text-ink-dim">
           {tr.rich(last ? "ledeOnce" : "ledeMany", { b: (c) => <b className="font-medium text-ink">{c}</b> })}
         </p>
         {meta && (
@@ -297,7 +297,7 @@ export function SecretViewer({ slug, autoOpen = false }: { slug: string; autoOpe
               onChange={(e) => { setPassphrase(e.target.value); setError(""); }}
               onKeyDown={(e) => e.key === "Enter" && passphrase && reveal()}
               placeholder={tr("passPlaceholder")}
-              className={cls("min-h-14 text-[17px] sm:text-[17px]", error && "border-accent")}
+              className={cls("min-h-14 text-[1.0625rem] sm:text-[1.0625rem]", error && "border-accent")}
               autoFocus
             />
           </label>
@@ -335,9 +335,9 @@ export function SecretViewer({ slug, autoOpen = false }: { slug: string; autoOpe
         </div>
         <div className={cls("flex flex-col gap-3.5 transition-[opacity,transform] delay-100 duration-500", formed ? "opacity-100" : "translate-y-1.5 opacity-0")}>
           <ErrorText>{error}</ErrorText>
-          <p className="rounded-[10px] bg-accent/10 px-3.5 py-3 text-[15px] text-ink">{lastView ? tr("copyNowLast") : tr("copyNow")}</p>
+          <p className="rounded-[10px] bg-accent/10 px-3.5 py-3 text-[0.9375rem] text-ink">{lastView ? tr("copyNowLast") : tr("copyNow")}</p>
           {lastView && (
-            <p className="flex items-start gap-2.5 text-[15px] text-ink-dim">
+            <p className="flex items-start gap-2.5 text-[0.9375rem] text-ink-dim">
               <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden className="mt-1 flex-none text-ok">
                 <circle cx="8" cy="8" r="7.5" fill="none" stroke="currentColor" />
                 <path d="M4.5 8.2l2.3 2.3 4.7-4.9" fill="none" stroke="currentColor" strokeWidth="1.6" />
@@ -380,7 +380,7 @@ export function SecretViewer({ slug, autoOpen = false }: { slug: string; autoOpe
             <span className="text-accent">AES-256-GCM</span>
           </div>
           <div ref={cloudRef} className="grid min-h-[150px] flex-1 place-items-center">
-            <p className={cls("text-[15px] text-ink-faint transition-opacity duration-700", serverEmpty ? "opacity-100" : "opacity-0")}>
+            <p className={cls("text-[0.9375rem] text-ink-faint transition-opacity duration-700", serverEmpty ? "opacity-100" : "opacity-0")}>
               {tr("zoneGone")}
             </p>
           </div>
@@ -409,8 +409,8 @@ function View({ eyebrow, title, ok, children }: { eyebrow: string; title: string
 function Fact({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <li className="flex min-w-0 flex-col gap-0.5 border-l border-line px-3 py-2.5 first:border-l-0 sm:px-3.5 sm:py-3">
-      <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-ink-faint sm:text-[11px]">{label}</span>
-      <b className="text-[15px] font-medium tabular-nums sm:text-[17px]">{value}</b>
+      <span className="font-mono text-[0.625rem] uppercase tracking-[0.08em] text-ink-faint sm:text-[0.6875rem]">{label}</span>
+      <b className="text-[0.9375rem] font-medium tabular-nums sm:text-[1.0625rem]">{value}</b>
     </li>
   );
 }
@@ -563,7 +563,7 @@ function UrlReveal({
 
   return (
     <>
-      <p ref={(el) => { textRef.current = el; }} className={cls("m-0 break-all font-mono text-[17px] transition-colors duration-700", formed ? "text-ink" : "text-transparent")}>
+      <p ref={(el) => { textRef.current = el; }} className={cls("m-0 break-all font-mono text-[1.0625rem] transition-colors duration-700", formed ? "text-ink" : "text-transparent")}>
         {url}
       </p>
       {auto ? (

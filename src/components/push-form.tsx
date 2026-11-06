@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import QRCode from "qrcode";
 import { useLocale, useTranslations } from "next-intl";
-import { KeyRound, FileText, FileUp, Link2, Eye, EyeOff, Dices, UploadCloud, Lock, ArrowLeft } from "lucide-react";
+import { KeyRound, FileText, FileUp, Link2, Eye, EyeOff, Dices, UploadCloud, Lock, Plus, ChevronRight, SlidersHorizontal } from "lucide-react";
 import {
   generateKey,
   encryptPayload,
@@ -26,7 +26,7 @@ import { EntropyExplainer } from "./entropy-explainer";
 import { Turnstile, type TurnstileHandle } from "./turnstile";
 import { DiffusionScene } from "./diffusion/scene";
 import { SiderealHalo } from "./diffusion/mini-cloud";
-import { AgeTimeline, DurationDial, ReadsPips, useWheel } from "./diffusion/controls";
+import { AgeTimeline, DurationRuler, ReadsDots, useWheel } from "./diffusion/controls";
 import { useLocalePath } from "@/i18n/use-locale-path";
 
 type Kind = "PASSWORD" | "TEXT" | "FILE" | "URL";
@@ -147,7 +147,6 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
   const [lock, setLock] = useState<"dur" | "views" | null>(null);
   const [cipherLen, setCipherLen] = useState(0);
   const [age, setAge] = useState(0);
-  const [launching, setLaunching] = useState(false);
   // anti-spam shield (server): Turnstile required, single-use token
   const [captchaNeeded, setCaptchaNeeded] = useState(false);
   const captchaToken = useRef<string | null>(null);
@@ -165,11 +164,14 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
   const formRef = useRef<HTMLFormElement>(null);
   const fieldRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
   const dropRef = useRef<HTMLDivElement>(null);
-  const idRef = useRef<HTMLSpanElement>(null);
-  const keyRef = useRef<HTMLSpanElement>(null);
+  // the link: invisible copy in the middle of the cloud (written by the particles), then its real place
+  const ghostRef = useRef<HTMLParagraphElement>(null);
+  const ghostIdRef = useRef<HTMLSpanElement>(null);
+  const ghostKeyRef = useRef<HTMLSpanElement>(null);
+  const linkRef = useRef<HTMLParagraphElement>(null);
+  // nebula gathering started on click, awaited before writing the link
+  const gathered = useRef<Promise<void> | null>(null);
   const zoneRef = useRef<HTMLElement>(null);
-  const ctaRef = useRef<HTMLButtonElement>(null);
-  const ctaMobileRef = useRef<HTMLButtonElement>(null);
   const advBtn = useRef<HTMLButtonElement>(null);
   const [advOpen, setAdvOpen] = useState(false);
   const scene = useRef<DiffusionScene | null>(null);
@@ -329,7 +331,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
     setNote("");
     setCreated(null);
     setFormed(false);
-    setLaunching(false);
+    gathered.current = null;
     setError("");
     setProgress(null);
     setCipherLen(0);
@@ -370,19 +372,33 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
     sc.destroyedLabel = td("destroyed");
   }, [views, passphrase, age, td]);
 
-  // created: the cloud's particles compose the link (address + key)
+  // created: the cluster gathered on click spreads into a line, folds
+  // into letters on the link's invisible copy (in the middle of the cloud), then the link
+  // glides into place; the real text then takes over
   useEffect(() => {
     if (!created) return;
-    const sc = scene.current;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const raf = requestAnimationFrame(() => {
-      if (!sc || !idRef.current || !keyRef.current) return;
-      sc.layout();
-      sc.seal(idRef.current, keyRef.current);
-      if (!window.matchMedia(WIDE).matches) zoneRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      timer = setTimeout(() => { sc.settle(); setFormed(true); }, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1700);
-    });
-    return () => { cancelAnimationFrame(raf); if (timer) clearTimeout(timer); };
+    let live = true;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const wait = (ms: number) => new Promise((r) => setTimeout(r, reduce ? 0 : ms));
+    void (async () => {
+      const sc = scene.current;
+      await Promise.all([gathered.current ?? Promise.resolve(), document.fonts?.ready]);
+      if (!live) return;
+      if (!window.matchMedia(WIDE).matches) zoneRef.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+      await new Promise((r) => requestAnimationFrame(r));
+      const ghost = ghostRef.current, id = ghostIdRef.current, key = ghostKeyRef.current;
+      if (sc && ghost && id && key && live) {
+        await sc.write(id, key);
+        if (!live) return;
+        await wait(220);
+        const g = ghost.getBoundingClientRect(), f = linkRef.current?.getBoundingClientRect();
+        if (f && live) await sc.glide(f.left - g.left, f.top - g.top, 800);
+        if (!live) return;
+        sc.settle();
+      }
+      setFormed(true);
+    })();
+    return () => { live = false; };
   }, [created]);
 
   // aging: wheel over the cloud; once released, back to the present
@@ -423,13 +439,9 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
     }
 
     setBusy(true);
-    // the button dissolves into particles that stream into the cloud
-    const btn = [ctaRef.current, ctaMobileRef.current].find((b) => b && b.offsetParent !== null);
-    if (btn && scene.current) {
-      const r = scene.current.toHost(btn.getBoundingClientRect());
-      scene.current.burst({ x0: r.x, x1: r.x + r.w, y0: r.y, y1: r.y + r.h });
-    }
-    setLaunching(true);
+    // the nebula reacts at once: it gathers into a crackling cluster
+    // while the browser encrypts and sends (nothing leaves from the button)
+    if (scene.current) { scene.current.layout(); gathered.current = scene.current.gather(); }
     try {
       // 1. ephemeral key generated locally — never leaves this browser
       const { key, keyB64 } = await generateKey();
@@ -502,7 +514,9 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
         setCaptchaNeeded(true);
       }
       setError(msg === "INSECURE_CONTEXT" ? t("errorInsecureContext") : msg || t("errorGeneric"));
-      setLaunching(false);
+      // failure: the cluster comes apart, the cloud takes its shape again
+      scene.current?.release();
+      gathered.current = null;
     } finally {
       setBusy(false);
       setProgress(null);
@@ -531,7 +545,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
       : lock === "views"
         ? td("limitViews", { views: defaults.maxViews, max: upViews })
         : defaults.tier === "anon"
-          ? td.rich("limitsAnon", {
+          ? td.rich("limitsAnonFull", {
               delay: unit(maxDaysNow * 1440, false),
               views: defaults.maxViews,
               link: (c) => <Link href={lp("/register")} className="text-ink-dim underline underline-offset-2 hover:text-ink">{c}</Link>,
@@ -559,28 +573,32 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
   const pwShort = kind === "PASSWORD" && pwLen > 0 && pwLen < MIN_PASSWORD;
   const ready = kind === "FILE" ? !!file : secret.trim().length > 0 && !pwShort;
   const ctaHint = busy ? (progress ?? td("ctaWorking")) : pwShort ? td("ctaTooShort", { count: MIN_PASSWORD - pwLen, min: MIN_PASSWORD }) : ready ? td("ctaReady") : td("ctaHint");
-  const ctaHintMobile = busy || pwShort ? ctaHint : ready ? td("ctaReadyMobile") : td("ctaHintMobile");
 
   return (
-    <div ref={hostRef} className="hc-host relative mx-auto w-full max-w-6xl flex-1 px-4 pb-10 pt-6 sm:px-6">
+    <div ref={hostRef} className="wrap bench">
       <canvas ref={canvasRef} aria-hidden className="pointer-events-none absolute inset-0 z-[3] h-full w-full" />
-      <div className="grid gap-x-16 gap-y-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.1fr)]">
-        <form id="pp-form" ref={formRef} onSubmit={submit} className="hc-gap relative z-[2] flex min-w-0 flex-col gap-3.5 animate-fade-up">
-          {/* H1 = what the site does, with the words people search for; the slogan
-              keeps its title look but is just a paragraph */}
-          <div>
-            <h1 className="mb-1.5 text-[13px] font-medium tracking-normal text-accent-soft">{th("kicker")}</h1>
-            <p className="hc-title font-display text-[clamp(28px,3.3vw,42px)] font-bold leading-[1.04] tracking-[-0.035em] text-balance">
-              <HeroTitle />
-            </p>
-          </div>
-          <div className="hc-lede -mt-1 max-w-[46ch] text-base text-ink-dim">
-            {td.rich("lede", { b: (c) => <b className="font-medium text-ink">{c}</b> })}
-          </div>
 
-          <fieldset disabled={sealed} className={cls("flex min-w-0 flex-col gap-3.5 transition-opacity", sealed && "opacity-55")}>
-            {/* Content type */}
-            <div className="grid grid-cols-4 gap-1.5" role="group" aria-label={t("passwordLabel")}>
+      {/* The hook talks about "this cloud": on desktop it sits above
+          it, and the left column starts with the action. H1 = what the site
+          does, with the words people search for; the slogan is only a paragraph. */}
+      <div className="bench-hero flex flex-col gap-2.5 animate-fade-up">
+        <h1 className="m-0 text-sm font-medium tracking-normal text-accent-soft">{th("kicker")}</h1>
+        <p className="m-0 font-display text-[clamp(1.9rem,calc(0.6rem+2.4vw),4.4rem)] font-bold leading-[1.04] tracking-[-0.035em] text-balance">
+          <HeroTitle />
+        </p>
+        <div className="max-w-[54ch] text-[1.05rem] text-ink-dim">
+          {td.rich("lede", { b: (c) => <b className="font-medium text-ink">{c}</b> })}
+        </div>
+      </div>
+
+      {/* Input order = reading order, at every size: content,
+          duration, reads, options, then the button. One frame (the secret) and
+          one filled button; the rest in text, hairlines, graduations and dots. */}
+      <form id="pp-form" ref={formRef} onSubmit={submit} className="bench-ctrl flex flex-col gap-6 animate-fade-up">
+        <fieldset disabled={sealed || busy} className={cls("flex min-w-0 flex-col gap-[1.6rem] transition-opacity", sealed && "opacity-55")}>
+          <div className="flex flex-col gap-4">
+            {/* Content type: tabs underlined on a hairline */}
+            <div className="flex border-b border-line" role="group" aria-label={t("kindLabel")}>
               {TABS.map(({ kind: k, icon: Icon }) => (
                 <button
                   key={k}
@@ -610,63 +628,84 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
                     else if (v) setTimeout(() => void preview(new TextEncoder().encode(v), "all"), 0);
                   }}
                   className={cls(
-                    "flex items-center justify-center gap-2 whitespace-nowrap rounded-[10px] border px-1 py-2.5 text-[12px] font-medium tracking-[-0.01em] transition-colors sm:px-2 sm:text-sm sm:tracking-normal cursor-pointer",
-                    kind === k ? "border-ink bg-ink text-bg" : "border-line bg-bg text-ink hover:border-line-soft"
+                    "-mb-px flex min-h-11 min-w-0 flex-1 items-center justify-center gap-2 whitespace-nowrap border-b-2 px-1 text-[0.95rem] font-medium transition-colors cursor-pointer @max-[26rem]:text-[0.85rem]",
+                    kind === k ? "border-accent text-ink" : "border-transparent text-ink-faint hover:text-ink-dim"
                   )}
                 >
-                  <Icon className="hidden size-4 sm:block" />
+                  <Icon aria-hidden className="hidden size-4 @min-[31rem]:block" />
                   {tTabs(k)}
                 </button>
               ))}
             </div>
 
-            {/* Secret content */}
+            {/* The secret's content. The labels stay for screen readers:
+                the underlined tab right above already says what it is. */}
             {kind === "PASSWORD" && (
-              <div className="flex flex-col gap-2">
-                <div className="flex items-baseline justify-between gap-3">
-                  <label htmlFor="pp-secret" className="text-[15px] font-semibold text-ink">{t("passwordLabel")}</label>
-                  <span className="flex gap-1">
-                    <button type="button" onClick={() => setShowSecret(!showSecret)} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line-soft bg-panel px-3 text-sm font-medium text-ink transition-colors hover:border-ink-faint cursor-pointer">
-                      {showSecret ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                      {showSecret ? t("hide") : t("show")}
-                    </button>
-                    <button
-                      type="button"
-                      title={t("generateTitle")}
-                      onClick={() => void runGenerate(gen)}
-                      className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-accent/60 bg-accent/10 px-3 text-sm font-semibold text-accent transition-colors hover:bg-accent/20 cursor-pointer"
-                    >
-                      <Dices className="size-4" />
-                      {t("generate")}
-                    </button>
-                  </span>
-                </div>
-                {/* No `type="password"`: password managers would treat this as
-                    a login field and inject a stored credential (they ignore
-                    `autocomplete=off` on password fields). We mask the value
-                    with CSS instead and opt out of the remaining heuristics
-                    via per-manager data attributes. */}
+              <div className="flex flex-col gap-2.5">
+                {/* one frame: the field on top, its generator below; the halo glows behind */}
                 <div className="relative">
-                <SiderealHalo />
-                <Input
-                  id="pp-secret"
-                  ref={(el: HTMLInputElement | HTMLTextAreaElement | null) => { fieldRef.current = el; }}
-                  type="text"
-                  value={secret}
-                  onChange={(e) => changeSecret(e.target.value)}
-                  placeholder={t("passwordPlaceholder")}
-                  // masked only when there is content: the placeholder stays readable
-                  className={cls("relative z-[1] min-h-14 font-mono text-[17px] sm:text-[17px] placeholder:font-sans placeholder:text-[15px]", !showSecret && secret && "[-webkit-text-security:disc]")}
-                  autoComplete="off"
-                  autoCorrect="off"
-                  autoCapitalize="off"
-                  spellCheck={false}
-                  data-1p-ignore
-                  data-lpignore="true"
-                  data-bwignore
-                  data-form-type="other"
-                />
+                  <SiderealHalo />
+                  <div className="composer">
+                    <div className="relative">
+                      <label htmlFor="pp-secret" className="sr-only">{t("passwordLabel")}</label>
+                      {/* No `type="password"`: password managers would treat this as
+                      a login field and inject a stored credential (they ignore
+                      `autocomplete=off` on password fields). We mask the value
+                      with CSS instead and opt out of the remaining heuristics
+                      via per-manager data attributes. */}
+                      <input
+                        id="pp-secret"
+                        ref={(el: HTMLInputElement | null) => { fieldRef.current = el; }}
+                        type="text"
+                        value={secret}
+                        onChange={(e) => changeSecret(e.target.value)}
+                        placeholder={t("passwordPlaceholder")}
+                        // masked only when there is content: the placeholder stays readable
+                        className={cls("composer-field", !showSecret && secret && "[-webkit-text-security:disc]")}
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck={false}
+                        data-1p-ignore
+                        data-lpignore="true"
+                        data-bwignore
+                        data-form-type="other"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSecret(!showSecret)}
+                        aria-pressed={showSecret}
+                        aria-label={showSecret ? t("hide") : t("show")}
+                        title={showSecret ? t("hide") : t("show")}
+                        className="absolute right-2.5 top-1/2 z-[2] grid size-10 -translate-y-1/2 place-items-center rounded-[0.6rem] text-ink-faint transition-colors hover:bg-panel-soft hover:text-ink cursor-pointer"
+                      >
+                        {showSecret ? <EyeOff className="size-[1.15rem]" /> : <Eye className="size-[1.15rem]" />}
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2 border-t border-line p-[0.45rem]">
+                      <button
+                        type="button"
+                        title={t("generateTitle")}
+                        onClick={() => void runGenerate(gen)}
+                        className="inline-flex min-h-9 flex-none items-center gap-1.5 rounded-[0.55rem] bg-accent/[0.13] px-3 text-sm font-semibold text-accent transition-colors hover:bg-accent/[0.22] cursor-pointer"
+                      >
+                        <Dices className="size-4" />
+                        {t("generate")}
+                      </button>
+                      <GeneratorOptions
+                        gen={gen}
+                        charCount={[...texts.PASSWORD].length}
+                        preview={texts.PASSWORD}
+                        onGen={changeGen}
+                        onGenerate={() => void runGenerate(gen)}
+                        canSave={defaults.tier === "user"}
+                        saveState={genSave}
+                        onSave={() => void saveGenDefault()}
+                      />
+                    </div>
+                  </div>
                 </div>
+                {/* a single strength meter, the one for the field's content */}
                 <StrengthMeter
                   chars={[...texts.PASSWORD].length}
                   measure={
@@ -676,37 +715,27 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
                     : "pending"
                   }
                 />
-                <GeneratorOptions
-                  gen={gen}
-                  charCount={[...texts.PASSWORD].length}
-                  preview={texts.PASSWORD}
-                  onGen={changeGen}
-                  onGenerate={() => void runGenerate(gen)}
-                  canSave={defaults.tier === "user"}
-                  saveState={genSave}
-                  onSave={() => void saveGenDefault()}
-                />
               </div>
             )}
 
             {kind === "TEXT" && (
               <div className="flex flex-col gap-2">
-                <label htmlFor="pp-text" className="text-[15px] font-semibold text-ink">{t("textLabel")}</label>
+                <label htmlFor="pp-text" className="sr-only">{t("textLabel")}</label>
                 <Textarea
                   id="pp-text"
                   ref={(el: HTMLInputElement | HTMLTextAreaElement | null) => { fieldRef.current = el; }}
                   value={secret}
                   onChange={(e) => changeSecret(e.target.value)}
-                  rows={4}
+                  rows={5}
                   placeholder={t("textPlaceholder")}
-                  className="font-mono"
+                  className="min-h-32 font-mono"
                 />
               </div>
             )}
 
             {kind === "URL" && (
               <div className="flex flex-col gap-2">
-                <label htmlFor="pp-url" className="text-[15px] font-semibold text-ink">{t("urlLabel")}</label>
+                <label htmlFor="pp-url" className="sr-only">{t("urlLabel")}</label>
                 <Input
                   id="pp-url"
                   ref={(el: HTMLInputElement | HTMLTextAreaElement | null) => { fieldRef.current = el; }}
@@ -725,198 +754,203 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
                 <FileDrop file={file} onFile={(f) => void changeFile(f)} maxMb={defaults.maxFileSizeMb} />
               </div>
             )}
+          </div>
 
-            {/* mobile: the button right under the content, visible on the first screen */}
-            {!sealed && <CtaBlock buttonRef={ctaMobileRef} className="flex lg:hidden" hint={ctaHintMobile} label={t("submit")} disabled={!ready || busy} launching={launching} />}
-
-            {/* Lifetime and views: two ways to expire, whichever comes first wins */}
-            <div className="grid gap-x-4 gap-y-2 sm:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
-              <div className="flex min-w-0 flex-col gap-2">
-                <div className="flex items-baseline justify-between gap-2">
-                  <span id="pp-dur" className="text-[15px] font-semibold text-ink">{td("validFor")}</span>
-                  <output className="whitespace-nowrap text-lg font-bold tracking-tight tabular-nums">{longDelay}</output>
-                </div>
-                <DurationDial
-                  presets={dialPresets}
-                  allowedMax={allowedMaxIdx}
-                  index={durIdx}
-                  onChange={(i) => setMinutes(dialPresets[i])}
-                  onLocked={(l) => setLock(l ? "dur" : null)}
-                  short={(m) => unit(m, true)}
-                  labelId="pp-dur"
-                  valueText={longDelay}
-                />
+          {/* Lifetime and views: two ways to expire, whichever comes first wins */}
+          <div className="flex flex-col gap-[1.35rem]">
+            <div className="flex min-w-0 flex-col gap-2">
+              <div className="flex items-baseline justify-between gap-3">
+                <span id="pp-dur" className="text-[0.975rem] font-semibold text-ink">{td("validFor")}</span>
+                <output className="whitespace-nowrap text-lg font-bold tracking-tight tabular-nums">{longDelay}</output>
               </div>
-              <div className="flex min-w-0 flex-col gap-2">
-                <div className="flex items-baseline justify-between gap-2">
-                  <span id="pp-reads" className="text-[15px] font-semibold text-ink">{td("reads")}</span>
-                  <output className="whitespace-nowrap text-lg font-bold tracking-tight tabular-nums">{td("readsValue", { count: views })}</output>
-                </div>
-                <ReadsPips
-                  value={views}
-                  allowed={Math.min(defaults.maxViews, 100)}
-                  onChange={setViews}
-                  onLocked={(l) => setLock(l ? "views" : null)}
-                  labelId="pp-reads"
-                  valueText={td("readsValue", { count: views })}
-                  moreLabel={td("readsMore")}
-                  lessLabel={td("readsLess")}
-                />
-              </div>
-              <p className={cls("text-[13px] sm:col-span-2", lock ? "text-accent" : "text-ink-faint")} aria-live="polite">
-                {limitNote}
-              </p>
+              <DurationRuler
+                presets={dialPresets}
+                allowedMax={allowedMaxIdx}
+                index={durIdx}
+                onChange={(i) => setMinutes(dialPresets[i])}
+                onLocked={(l) => setLock(l ? "dur" : null)}
+                labelId="pp-dur"
+                valueText={longDelay}
+                units={{ min: td("unitMin"), hour: td("unitHour"), day: td("unitDay"), account: td("unitAccount") }}
+                title={(m, l) => unit(m, false) + (l ? ` · ${td("withAccount")}` : "")}
+              />
             </div>
-
-            {/* Advanced options: a native modal window (<dialog>) that handles
-                Escape, the focus trap and the backdrop. The button tells how many
-                options differ from the default. */}
-            <button
-              ref={advBtn}
-              type="button"
-              aria-haspopup="dialog"
-              onClick={() => setAdvOpen(true)}
-              className="flex min-h-11 items-center justify-between gap-3 rounded-xl border border-line bg-bg/60 px-4 text-sm text-ink-dim transition-colors hover:border-line-soft hover:text-ink cursor-pointer"
-            >
-              <span>{t("advanced")}</span>
-              <span className={cls("font-mono text-xs", advChanged > 0 ? "text-accent" : "text-ink-faint")}>
-                {advChanged > 0 ? td("advChanged", { count: advChanged }) : td("advDefault")}
-              </span>
-            </button>
-            <MorphDialog open={advOpen} onClose={() => setAdvOpen(false)} anchorRef={advBtn} labelledBy="adv-title" className="w-[min(560px,calc(100vw-32px))]">
-              <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">
-                <h2 id="adv-title" className="text-lg font-bold">{t("advanced")}</h2>
-                <button type="button" onClick={(e) => requestMorphClose(e.currentTarget)} aria-label={td("advClose")} className="grid size-9 place-items-center rounded-lg text-ink-dim hover:bg-panel hover:text-ink cursor-pointer">✕</button>
+            <div className="flex min-w-0 flex-col gap-2">
+              <div className="flex items-baseline justify-between gap-3">
+                <span id="pp-reads" className="text-[0.975rem] font-semibold text-ink">{td("reads")}</span>
+                <output className="whitespace-nowrap text-lg font-bold tracking-tight tabular-nums">{td("readsValue", { count: views })}</output>
               </div>
-              <div className="min-h-0 flex-1 space-y-3 overflow-auto px-4 py-4">
+              <ReadsDots
+                value={views}
+                allowed={Math.min(defaults.maxViews, 100)}
+                onChange={setViews}
+                onLocked={(l) => setLock(l ? "views" : null)}
+                labelId="pp-reads"
+                valueText={td("readsValue", { count: views })}
+                moreLabel={td("readsMore")}
+                lessLabel={td("readsLess")}
+                accountLabel={td("unitAccount")}
+                title={(n, l) => td("readsValue", { count: n }) + (l ? ` · ${td("withAccount")}` : "")}
+              />
+            </div>
+            <p className={cls("m-0 text-[0.85rem]", lock ? "text-accent" : "text-ink-faint")} aria-live="polite">
+              {limitNote}
+            </p>
+          </div>
+
+          {/* Advanced options: a line between two hairlines, opening a native
+              modal (<dialog>: Escape, focus trap, backdrop). It
+              says how many options differ from the default. */}
+          <button
+            ref={advBtn}
+            type="button"
+            aria-haspopup="dialog"
+            onClick={() => setAdvOpen(true)}
+            className="flex min-h-12 w-full items-center justify-between gap-4 border-y border-line px-1 text-left text-[0.95rem] font-medium text-ink transition-colors hover:bg-ink/[0.04] cursor-pointer"
+          >
+            <span>{t("advanced")}</span>
+            <span className={cls("inline-flex items-center gap-2 font-mono text-xs font-normal", advChanged > 0 ? "text-accent" : "text-ink-faint")}>
+              {advChanged > 0 ? td("advChanged", { count: advChanged }) : td("advDefault")}
+              <ChevronRight aria-hidden className="size-4" />
+            </span>
+          </button>
+          <MorphDialog open={advOpen} onClose={() => setAdvOpen(false)} anchorRef={advBtn} labelledBy="adv-title" className="w-[min(36rem,calc(100vw-32px))]">
+            <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">
+              <h2 id="adv-title" className="text-lg font-bold">{t("advanced")}</h2>
+              <button type="button" onClick={(e) => requestMorphClose(e.currentTarget)} aria-label={td("advClose")} className="grid size-9 place-items-center rounded-lg text-ink-dim hover:bg-panel hover:text-ink cursor-pointer">✕</button>
+            </div>
+            <div className="min-h-0 flex-1 space-y-3 overflow-auto px-4 py-4">
+              <label className="block space-y-1.5 px-1">
+                <span className="text-[0.9375rem] font-semibold text-ink">{t("passphraseLabel")}</span>
+                <Input
+                  type="text"
+                  value={passphrase}
+                  onChange={(e) => setPassphrase(e.target.value)}
+                  placeholder={t("passphrasePlaceholder")}
+                  autoComplete="off"
+                  autoFocus
+                />
+                <span className="block text-xs text-ink-faint">{t("passphraseHint")}</span>
+              </label>
+              <Toggle checked={retrievalStep} onChange={setRetrievalStep} label={t("retrievalLabel")} hint={t("retrievalHint")} />
+              <Toggle checked={deletable} onChange={setDeletable} label={t("deletableLabel")} hint={t("deletableHint")} />
+              {defaults.showNote && (
                 <label className="block space-y-1.5 px-1">
-                  <span className="text-[15px] font-semibold text-ink">{t("passphraseLabel")}</span>
-                  <Input
-                    type="text"
-                    value={passphrase}
-                    onChange={(e) => setPassphrase(e.target.value)}
-                    placeholder={t("passphrasePlaceholder")}
-                    autoComplete="off"
-                    autoFocus
-                  />
-                  <span className="block text-xs text-ink-faint">{t("passphraseHint")}</span>
+                  <span className="text-[0.9375rem] font-semibold text-ink">{t("noteLabel")}</span>
+                  <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder={t("notePlaceholder")} maxLength={500} />
+                  <span className="block text-xs text-ink-faint">{t("noteHint")}</span>
                 </label>
-                <Toggle checked={retrievalStep} onChange={setRetrievalStep} label={t("retrievalLabel")} hint={t("retrievalHint")} />
-                <Toggle checked={deletable} onChange={setDeletable} label={t("deletableLabel")} hint={t("deletableHint")} />
-                {defaults.showNote && (
-                  <label className="block space-y-1.5 px-1">
-                    <span className="text-[15px] font-semibold text-ink">{t("noteLabel")}</span>
-                    <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder={t("notePlaceholder")} maxLength={500} />
-                    <span className="block text-xs text-ink-faint">{t("noteHint")}</span>
-                  </label>
-                )}
-              </div>
-              <div className="flex justify-end border-t border-line px-5 py-3.5">
-                <Button type="button" onClick={(e) => requestMorphClose(e.currentTarget)} className="min-h-11 px-6">{td("advDone")}</Button>
-              </div>
-            </MorphDialog>
+              )}
+            </div>
+            <div className="flex justify-end border-t border-line px-5 py-3.5">
+              <Button type="button" onClick={(e) => requestMorphClose(e.currentTarget)} className="min-h-11 px-6">{td("advDone")}</Button>
+            </div>
+          </MorphDialog>
 
-            {captchaNeeded && defaults.turnstileSiteKey && (
-              // token obtained → resend automatically
-              <Turnstile ref={captchaRef} siteKey={defaults.turnstileSiteKey} onToken={(tk) => { if (tk) { captchaToken.current = tk; void submitRef.current(); } }} />
-            )}
-            <ErrorText>{error}</ErrorText>
-          </fieldset>
+          {captchaNeeded && defaults.turnstileSiteKey && (
+            // token obtained → resend automatically
+            <Turnstile ref={captchaRef} siteKey={defaults.turnstileSiteKey} onToken={(tk) => { if (tk) { captchaToken.current = tk; void submitRef.current(); } }} />
+          )}
+          <ErrorText>{error}</ErrorText>
+        </fieldset>
 
-          {defaults.tier === "anon" && !sealed && (
-            <p className="hc-anon text-[13px] text-ink-faint">
-              {td.rich("anonStrip", {
-                link: (c) => <Link href={lp("/register")} className="font-medium text-ink-dim underline underline-offset-2 hover:text-ink">{c}</Link>,
-              })}
+        {/* the button, always last; on click, the nebula right next to it reacts */}
+        {!sealed && <CtaBlock hint={ctaHint} label={t("submit")} busyLabel={progress ?? td("ctaWorking")} busy={busy} disabled={!ready || busy} />}
+      </form>
+
+      {/* The stage: what the server receives — then, once created, the link */}
+      <section ref={zoneRef} aria-label={sealed ? td("zoneLink") : td("zoneSend")} className="bench-stage">
+        <div className="flex justify-between gap-3 eyebrow">
+          <span>{sealed ? td("zoneLink") : age > 0.995 ? td("zoneGone") : td("zoneSend")}</span>
+          <span className="text-accent">{td("algo")}</span>
+        </div>
+        <div className="bench-zone">
+          <div
+            ref={cloudRef}
+            role="img"
+            aria-label={cipherLen ? td("cloudAria", { bytes: cipherLen }) : td("cloudEmpty")}
+            className={cls("absolute inset-0", cipherLen > 0 && !sealed && "cursor-ns-resize")}
+          />
+          {!sealed && (
+            <p className={cls("pointer-events-none absolute inset-0 m-0 grid place-items-center p-4 text-center text-[0.95rem] text-ink-faint transition-opacity duration-500", cipherLen ? "opacity-0" : "opacity-100")}>
+              {td("metaEmpty")}
             </p>
           )}
-        </form>
-
-        {/* The cloud: what the server receives — then, once created, the link */}
-        <section ref={zoneRef} aria-label={sealed ? td("zoneLink") : td("zoneSend")} className="relative z-[4] flex min-w-0 flex-col self-start">
-          {/* The button lives above the cloud: disabled while there is nothing to
-              encrypt, then, on click, it dissolves into particles that
-              join the cloud — that is where the link will be written. */}
-          {!sealed && <CtaBlock buttonRef={ctaRef} className="mb-5 hidden lg:flex" hint={ctaHint} label={t("submit")} disabled={!ready || busy} launching={launching} />}
-          <div className="flex justify-between gap-3 eyebrow">
-            <span>{sealed ? td("zoneLink") : age > 0.995 ? td("zoneGone") : td("zoneSend")}</span>
-            <span className="text-accent">{td("algo")}</span>
-          </div>
-          {!sealed ? (
+          {sealed && (
             <>
-              <div
-                ref={cloudRef}
-                role="img"
-                aria-label={cipherLen ? td("cloudAria", { bytes: cipherLen }) : td("cloudEmpty")}
-                className={cls("hc-cloud h-[260px] lg:h-[330px]", cipherLen > 0 && "cursor-ns-resize")}
+              {/* invisible copy of the link, in the middle of the cloud, where the particles
+                  write it before it glides into place (same width, same line breaks) */}
+              {!formed && (
+                <p ref={ghostRef} aria-hidden className="link-text pointer-events-none absolute inset-x-0 top-1/2 z-[1] m-0 -translate-y-1/2 text-transparent">
+                  <span ref={ghostIdRef}>{created!.url.slice(0, created!.url.indexOf("#"))}</span>
+                  <span ref={ghostKeyRef}>{created!.url.slice(created!.url.indexOf("#"))}</span>
+                </p>
+              )}
+              <ShareCard
+                created={created!}
+                formed={formed}
+                hasPassphrase={!!passphrase}
+                onNew={reset}
+                tier={defaults.tier}
+                shareTemplate={defaults.shareTemplates[created!.kind]}
+                linkRef={linkRef}
+                delayLabel={unit(created!.expireAfterMinutes, false)}
               />
-              <div data-noage>
-              <AgeTimeline value={age} onChange={setAgeHold} ticks={ticks} bubble={ageBubble} label={td("ageLabel")} />
-              <div className="mt-1 flex flex-wrap justify-between gap-x-4 gap-y-1 font-mono text-xs text-ink-faint tabular-nums" aria-live="polite">
-                <span>{cipherLen ? td.rich("metaBytes", { bytes: cipherLen, b: (c) => <b className="font-medium text-ink">{c}</b> }) : td("metaEmpty")}</span>
-                <span>{touch ? td("hintTouch") : td("hintWheel")}</span>
-              </div>
-              </div>
             </>
-          ) : (
-            <ShareCard
-              created={created!}
-              formed={formed}
-              hasPassphrase={!!passphrase}
-              onNew={reset}
-              tier={defaults.tier}
-              shareTemplate={defaults.shareTemplates[created!.kind]}
-              idRef={idRef}
-              keyRef={keyRef}
-              delayLabel={unit(created!.expireAfterMinutes, false)}
-            />
           )}
-        </section>
-      </div>
+        </div>
+        {!sealed && (
+          <div data-noage>
+            <AgeTimeline value={age} onChange={setAgeHold} ticks={ticks} bubble={ageBubble} label={td("ageLabel")} />
+            <div className="mt-1 flex flex-wrap justify-between gap-x-4 gap-y-1 font-mono text-xs text-ink-faint tabular-nums" aria-live="polite">
+              {/* empty: the hint is already in the middle of the cloud */}
+              <span>{cipherLen ? td.rich("metaBytes", { bytes: cipherLen, b: (c) => <b className="font-medium text-ink">{c}</b> }) : ""}</span>
+              <span>{touch ? td("hintTouch") : td("hintWheel")}</span>
+            </div>
+          </div>
+        )}
+      </section>
     </div>
   );
 }
 
 /**
- * Main button and its hint. Rendered twice by PushForm: in the
- * cloud column on desktop, higher up in the form on mobile
- * (only one is visible, depending on the width).
+ * Main button and its hint, at the bottom of the form. While sending it
+ * shows ppush's small loader; the nebula is what reacts.
  */
 function CtaBlock({
-  buttonRef,
-  className,
   hint,
   label,
+  busyLabel,
+  busy,
   disabled,
-  launching,
 }: {
-  buttonRef: React.RefObject<HTMLButtonElement | null>;
-  className: string;
   hint: string;
   label: string;
+  busyLabel: string;
+  busy: boolean;
   disabled: boolean;
-  launching: boolean;
 }) {
   return (
-    <div className={cls("flex-col gap-2.5", className)}>
-      <p className="text-sm text-ink-dim" aria-live="polite">{hint}</p>
+    <div className="flex flex-col gap-2.5 pt-1">
+      <p className="m-0 min-h-[1.3em] text-sm text-ink-dim" aria-live="polite">{hint}</p>
       <Button
-        ref={buttonRef}
         type="submit"
         form="pp-form"
         disabled={disabled}
-        className={cls(
-          "min-h-14 w-full text-base transition-[opacity,transform,filter,background-color] duration-500",
-          // while sending, the button is also `disabled`: the "disabled" styles
-          // (more specific, :disabled) would keep it from disappearing → they are
-          // dropped and the dissolve is forced
-          launching
-            ? "pointer-events-none scale-y-[0.2] opacity-0! blur-[2px]"
-            : "disabled:bg-panel disabled:text-ink-faint disabled:opacity-100 disabled:border disabled:border-line"
-        )}
+        className="min-h-14 w-full text-[1.05rem] shadow-[0_10px_40px_-12px_var(--accent-glow)] disabled:border disabled:border-line disabled:bg-panel disabled:text-ink-faint disabled:opacity-100 disabled:shadow-none"
       >
-        <Lock className="size-4" />
-        {label}
+        {busy ? (
+          <>
+            <span aria-hidden className="condense-loader on-button"><i /><i /><i /></span>
+            {busyLabel}
+          </>
+        ) : (
+          <>
+            <Lock className="size-4" />
+            {label}
+          </>
+        )}
       </Button>
     </div>
   );
@@ -1023,8 +1057,8 @@ function SymbolPicker({ value, onChange }: { value: string; onChange: (v: string
   return (
     <div className="px-2 pb-1.5" role="group" aria-label={t("symbolSetLabel")}>
       <div className="mb-1.5 flex items-baseline justify-between gap-2">
-        <p className="text-[13px] font-medium text-ink-dim">{t("symbolSetLabel")}</p>
-        <p className="font-mono text-[11px] text-ink-faint">{t("symbolSetCount", { count: value.length })}</p>
+        <p className="text-[0.8125rem] font-medium text-ink-dim">{t("symbolSetLabel")}</p>
+        <p className="font-mono text-[0.6875rem] text-ink-faint">{t("symbolSetCount", { count: value.length })}</p>
       </div>
       <div className="flex flex-wrap gap-1">
         {[...SYMBOL_CATALOG].map((c) => {
@@ -1047,7 +1081,7 @@ function SymbolPicker({ value, onChange }: { value: string; onChange: (v: string
           );
         })}
       </div>
-      <p className="mt-1 text-[11px] text-ink-faint">{t("symbolSetHint")}</p>
+      <p className="mt-1 text-[0.6875rem] text-ink-faint">{t("symbolSetHint")}</p>
     </div>
   );
 }
@@ -1091,7 +1125,7 @@ function GeneratorOptions({
 
   const chip = (on: boolean) =>
     cls(
-      "min-h-8 rounded-md border px-2.5 text-[13px] transition-colors cursor-pointer",
+      "min-h-8 rounded-md border px-2.5 text-[0.8125rem] transition-colors cursor-pointer",
       on ? "border-ink bg-ink text-bg" : "border-line bg-bg text-ink-dim hover:border-line-soft hover:text-ink"
     );
   // Readable numeric setting. Small range (≤ 12 values): one cell per
@@ -1102,7 +1136,7 @@ function GeneratorOptions({
     const pct = ((v - lo) / (hi - lo)) * 100;
     return (
       <div className="pb-2">
-        <div className="mb-1.5 flex items-baseline justify-between text-[13px]">
+        <div className="mb-1.5 flex items-baseline justify-between text-[0.8125rem]">
           <span className="font-medium text-ink-dim">{label}</span>
           <span className="text-sm font-bold text-ink tabular-nums">{value}</span>
         </div>
@@ -1116,7 +1150,7 @@ function GeneratorOptions({
                 aria-checked={k === v}
                 onClick={() => onV(k)}
                 className={cls(
-                  "min-h-8 rounded-md border font-mono text-[13px] tabular-nums transition-colors cursor-pointer",
+                  "min-h-8 rounded-md border font-mono text-[0.8125rem] tabular-nums transition-colors cursor-pointer",
                   k === v
                     ? "border-accent bg-accent font-semibold text-[var(--on-accent)]"
                     : k < v
@@ -1140,7 +1174,7 @@ function GeneratorOptions({
               className="range-lg w-full cursor-pointer"
               style={{ "--pct": `${pct}%` } as React.CSSProperties}
             />
-            <div className="mt-1 flex justify-between font-mono text-[11px] text-ink-faint tabular-nums">
+            <div className="mt-1 flex justify-between font-mono text-[0.6875rem] text-ink-faint tabular-nums">
               <span>{lo}</span>
               <span>{Math.round((lo + hi) / 2)}</span>
               <span>{hi}</span>
@@ -1152,41 +1186,23 @@ function GeneratorOptions({
   };
 
   return (
-    <div className="rounded-xl border border-line bg-panel">
-      {/* Always visible: the kind of generated secret (words are
-          recommended), the resulting strength, and access to the settings. */}
-      <div className="px-2.5 pt-2.5">
-        <div className="grid grid-cols-2 gap-1.5" role="group" aria-label={t("summary")}>
-          <button type="button" aria-pressed={gen.mode === "words"} onClick={() => set({ mode: "words" })} className={cls(chip(gen.mode === "words"), "inline-flex flex-col items-center justify-center gap-1 py-1.5 sm:flex-row sm:gap-2")}>
-            {t("modeWords")}
-            <span className={cls("rounded px-1.5 py-px font-mono text-[10px] uppercase tracking-wider", gen.mode === "words" ? "bg-accent text-[var(--on-accent)]" : "bg-accent/15 text-accent")}>
-              {t("recommended")}
-            </span>
-          </button>
-          <button type="button" aria-pressed={gen.mode === "chars"} onClick={() => set({ mode: "chars" })} className={cls(chip(gen.mode === "chars"), "py-1.5")}>
-            {t("modeChars")}
-          </button>
-        </div>
-      </div>
-      <div className="flex items-center justify-between gap-2 px-2.5 py-1">
-        <span className={cls("pl-1 font-mono text-xs tabular-nums", bits < WEAK_BITS ? "text-warn" : "text-ink-faint")}>
-          {gen.mode === "words"
-            ? t("summaryWords", { count: gen.words, bits: wordBits })
-            : t("summaryStats", { length: gen.length, bits: charBits })}
+    <>
+      {/* Inside the secret's frame: the current setting; a click opens the settings */}
+      <button
+        ref={settingsBtn}
+        type="button"
+        aria-haspopup="dialog"
+        title={t("settingsTitle")}
+        onClick={() => setOpen(true)}
+        className="ml-auto inline-flex min-h-9 min-w-0 items-center gap-2 rounded-[0.55rem] px-3 text-[0.85rem] text-ink-faint transition-colors hover:bg-panel-soft hover:text-ink cursor-pointer"
+      >
+        <span className="truncate">
+          {gen.mode === "words" ? t("toolWords", { count: gen.words, digits: gen.digitCount }) : t("toolChars", { length: gen.length })}
         </span>
-        <button
-          ref={settingsBtn}
-          type="button"
-          aria-haspopup="dialog"
-          onClick={() => setOpen(true)}
-          className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line-soft bg-bg px-3 text-[13px] font-medium text-ink transition-colors hover:border-ink-faint cursor-pointer"
-        >
-          {t("settings")}
-          <span aria-hidden className="text-ink-faint">⋯</span>
-        </button>
-      </div>
+        <SlidersHorizontal aria-hidden className="size-4 flex-none" />
+      </button>
       {/* The settings "grow out" of the button (morphing modal); a live
-          preview stands in for the field, which is hidden meanwhile. */}
+      preview stands in for the field, which is hidden meanwhile. */}
       <MorphDialog open={open} onClose={() => setOpen(false)} anchorRef={settingsBtn} labelledBy="gen-title" className="w-[min(640px,calc(100vw-32px))]">
         <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-2.5">
           <h2 id="gen-title" className="text-base font-bold">{t("settingsTitle")}</h2>
@@ -1201,9 +1217,28 @@ function GeneratorOptions({
           </p>
         </div>
       <div className="min-h-0 flex-1 space-y-1 overflow-auto px-3 pb-1 pt-2.5">
-        <div className="grid grid-cols-2 gap-1.5 px-2 pb-2" role="group" aria-label={t("summary")}>
-          <button type="button" aria-pressed={gen.mode === "words"} onClick={() => set({ mode: "words" })} className={cls(chip(gen.mode === "words"), "py-1.5")}>{t("modeWords")}</button>
-          <button type="button" aria-pressed={gen.mode === "chars"} onClick={() => set({ mode: "chars" })} className={cls(chip(gen.mode === "chars"), "py-1.5")}>{t("modeChars")}</button>
+        {/* the password type: two radio buttons (the word sequence is recommended) */}
+        <div className="flex flex-wrap gap-x-5 gap-y-1 px-2 pb-2" role="radiogroup" aria-label={t("summary")}>
+          {(["words", "chars"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              role="radio"
+              aria-checked={gen.mode === m}
+              onClick={() => set({ mode: m })}
+              className={cls("group inline-flex min-h-9 items-center gap-2 rounded-md px-1 text-[0.9rem] transition-colors cursor-pointer", gen.mode === m ? "text-ink" : "text-ink-faint hover:text-ink-dim")}
+            >
+              <span
+                aria-hidden
+                className={cls(
+                  "size-3 flex-none rounded-full border-[1.5px] transition-[background-color,border-color,box-shadow]",
+                  gen.mode === m ? "border-accent bg-accent shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-accent)_18%,transparent)]" : "border-line-soft group-hover:border-ink-faint"
+                )}
+              />
+              {m === "words" ? t("modeWords") : t("modeChars")}
+              {m === "words" && <span className="font-mono text-[0.6rem] uppercase tracking-[0.08em] text-accent">{t("recommended")}</span>}
+            </button>
+          ))}
         </div>
 
         {gen.mode === "chars" ? (
@@ -1217,7 +1252,7 @@ function GeneratorOptions({
             </div>
             {gen.symbols && <SymbolPicker value={gen.symbolSet} onChange={(v) => set({ symbolSet: v })} />}
             <Toggle checked={gen.ambiguous} onChange={(v) => set({ ambiguous: v })} label={t("ambiguous")} hint={t("ambiguousHint")} />
-            <p className="px-2 pt-0.5 text-[11px] text-ink-faint">{t("guarantee", { bits: charBits })}</p>
+            <p className="px-2 pt-0.5 text-[0.6875rem] text-ink-faint">{t("guarantee", { bits: charBits })}</p>
           </>
         ) : (
           <>
@@ -1227,7 +1262,7 @@ function GeneratorOptions({
             </div>
             <div className="grid gap-x-5 gap-y-2 px-2 pb-2 sm:grid-cols-2">
               <div>
-                <p className="mb-1.5 text-[13px] font-medium text-ink-dim">{t("separator")}</p>
+                <p className="mb-1.5 text-[0.8125rem] font-medium text-ink-dim">{t("separator")}</p>
                 <div className="flex flex-wrap gap-1">
                   {SEPARATORS.map((v) => (
                     <button key={SEP_KEYS[v]} type="button" aria-pressed={gen.separator === v} onClick={() => set({ separator: v })} className={chip(gen.separator === v)}>
@@ -1237,7 +1272,7 @@ function GeneratorOptions({
                 </div>
               </div>
               <div>
-                <p className="mb-1.5 text-[13px] font-medium text-ink-dim">{t("language")}</p>
+                <p className="mb-1.5 text-[0.8125rem] font-medium text-ink-dim">{t("language")}</p>
                 <div className="flex flex-wrap gap-1">
                   <button type="button" aria-pressed={gen.lang === "fr"} onClick={() => set({ lang: "fr" })} className={chip(gen.lang === "fr")}>{t("langFr")}</button>
                   <button type="button" aria-pressed={gen.lang === "en"} onClick={() => set({ lang: "en" })} className={chip(gen.lang === "en")}>{t("langEn")}</button>
@@ -1245,7 +1280,7 @@ function GeneratorOptions({
               </div>
             </div>
             <div className="px-2 pb-1.5">
-              <p className="mb-1.5 text-[13px] font-medium text-ink-dim">{t("endSymbol")}</p>
+              <p className="mb-1.5 text-[0.8125rem] font-medium text-ink-dim">{t("endSymbol")}</p>
               <div className="flex flex-wrap gap-1">
                 <button type="button" aria-pressed={gen.symbol === "none"} onClick={() => set({ symbol: "none" })} className={chip(gen.symbol === "none")}>{t("symbolNone")}</button>
                 <button type="button" aria-pressed={gen.symbol === "random"} onClick={() => set({ symbol: "random" })} className={chip(gen.symbol === "random")}>{t("symbolRandom")}</button>
@@ -1253,7 +1288,7 @@ function GeneratorOptions({
             </div>
             {gen.symbol === "random" && <SymbolPicker value={gen.symbolSet} onChange={(v) => set({ symbolSet: v })} />}
             <Toggle checked={gen.capitalize} onChange={(v) => set({ capitalize: v })} label={t("capitalize")} hint={t("capitalizeHint")} />
-            <p className="px-2 pt-0.5 text-[11px] text-ink-faint">{t("guaranteeWords", { size: WORDLIST_SIZE[gen.lang], bits: wordBits })}</p>
+            <p className="px-2 pt-0.5 text-[0.6875rem] text-ink-faint">{t("guaranteeWords", { size: WORDLIST_SIZE[gen.lang], bits: wordBits })}</p>
           </>
         )}
         {bits < WEAK_BITS && <p className="px-2 text-xs text-warn">{gen.mode === "words" ? t("weakWords") : t("weakChars")}</p>}
@@ -1278,7 +1313,7 @@ function GeneratorOptions({
           </Button>
         </div>
       </MorphDialog>
-    </div>
+    </>
   );
 }
 
@@ -1393,8 +1428,10 @@ function FileDrop({
 }
 
 /**
- * The link, written by the cloud's particles (address then key, in accent).
- * The real text stays transparent until the shape is complete.
+ * The link, written by the cloud's particles then glided into place (address,
+ * then key in accent). The real text stays transparent until the end of the
+ * formation; then come the copy button, the summary, the message for the
+ * recipient and the QR code, side by side on large screens.
  */
 function ShareCard({
   created,
@@ -1403,8 +1440,7 @@ function ShareCard({
   onNew,
   tier,
   shareTemplate,
-  idRef,
-  keyRef,
+  linkRef,
   delayLabel,
 }: {
   created: Created;
@@ -1413,27 +1449,23 @@ function ShareCard({
   onNew: () => void;
   tier: "anon" | "user";
   shareTemplate: string;
-  idRef: React.RefObject<HTMLSpanElement | null>;
-  keyRef: React.RefObject<HTMLSpanElement | null>;
+  linkRef: React.RefObject<HTMLParagraphElement | null>;
   delayLabel: string;
 }) {
   const t = useTranslations("success");
   const td = useTranslations("diffusion");
   const lp = useLocalePath();
   const [qr, setQr] = useState<string>("");
-  const [noticeOpen, setNoticeOpen] = useState(false);
   const hash = created.url.indexOf("#");
   const address = created.url.slice(0, hash);
   const keyPart = created.url.slice(hash);
 
-  // delay spelled out in the message ("2 days" rather than "2 d")
-  const delay = delayLabel;
   // "Note to send with the link": ready-to-copy text the sender attaches to the
   // link THEMSELVES (never sent automatically). Templates [link]/[delay]/[views]
   // (square brackets, not braces: avoid next-intl's ICU parser).
   const recipientNotice = shareTemplate
     .replaceAll("[link]", created.url)
-    .replaceAll("[delay]", delay)
+    .replaceAll("[delay]", delayLabel)
     .replaceAll("[views]", String(created.expireAfterViews));
 
   useEffect(() => {
@@ -1453,68 +1485,57 @@ function ShareCard({
     .join(" · ");
 
   return (
-    <div className="flex flex-col gap-4 pt-5">
-      <p className="m-0 break-all font-mono text-[clamp(15px,1.5vw,18px)] leading-[1.75]">
-        <span ref={idRef} className={cls("transition-colors duration-700", formed ? "text-ink" : "text-transparent")}>{address}</span>
-        <span ref={keyRef} className={cls("transition-colors duration-700", formed ? "text-accent" : "text-transparent")}>{keyPart}</span>
+    <div className="relative z-[2] flex flex-col gap-4 py-4">
+      <p ref={linkRef} className="link-text m-0">
+        <span className={cls("transition-colors duration-700", formed ? "text-ink" : "text-transparent")}>{address}</span>
+        <span className={cls("transition-colors duration-700", formed ? "text-accent" : "text-transparent")}>{keyPart}</span>
       </p>
-      <p className="flex flex-wrap gap-x-5 gap-y-1.5 text-[13px] text-ink-faint">
-        <span className="flex items-start gap-2"><i className="mt-[5px] inline-block size-2 flex-none rounded-full bg-ink" /><span>{td("legendAddress")}</span></span>
+      <p className={cls("m-0 flex flex-wrap gap-x-6 gap-y-1.5 text-[0.85rem] text-ink-faint transition-opacity duration-500", formed ? "opacity-100" : "opacity-0")}>
+        <span className="flex items-start gap-2"><i className="mt-[0.3rem] inline-block size-2 flex-none rounded-full bg-ink" /><span>{td("legendAddress")}</span></span>
         <span className="flex items-start gap-2">
-          <i className="mt-[5px] inline-block size-2 flex-none rounded-full bg-accent" />
+          <i className="mt-[0.3rem] inline-block size-2 flex-none rounded-full bg-accent" />
           <span>{td("legendKey")} · <b className="font-medium text-ink">{td("legendExpires", { delay: delayLabel })}</b></span>
         </span>
       </p>
 
-      <div className={cls("flex flex-col gap-4 transition-[opacity,transform] delay-150 duration-500", formed ? "translate-y-0 opacity-100" : "translate-y-1.5 opacity-0")}>
+      <div className={cls("flex flex-col gap-4 transition-[opacity,transform] delay-150 duration-500", formed ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-1.5 opacity-0")}>
         <div className="flex flex-wrap items-center gap-2.5">
-          <CopyButton value={created.url} label={t("copyLink")} big className="min-h-12 px-6" />
-          <Button variant="ghost" onClick={onNew} className="min-h-12">
-            <ArrowLeft className="size-4" />
+          <CopyButton value={created.url} label={t("copyLink")} big className="min-h-12 px-6 max-sm:w-full" />
+          {/* secondary action: a real button, at the end of the row, away from "Copy" */}
+          <Button variant="subtle" onClick={onNew} className="ml-auto min-h-12 px-5 max-sm:ml-0 max-sm:w-full">
+            <Plus className="size-4" />
             {t("newPush")}
           </Button>
         </div>
-        <p className="border-t border-line pt-3 font-mono text-xs text-ink-faint">{sum}</p>
+        <p className="m-0 border-t border-line pt-3 font-mono text-xs text-ink-faint">{sum}</p>
 
-        {/* Copy without expanding first: the button copies the message AND expands the area,
-            so the sender sees what they just copied. */}
-        <details open={noticeOpen} onToggle={(e) => setNoticeOpen(e.currentTarget.open)} className="rounded-xl border border-line bg-bg/60">
-          <summary className="flex cursor-pointer select-none list-none items-center gap-2 py-1.5 pl-4 pr-2 text-sm text-ink-dim hover:text-ink [&::-webkit-details-marker]:hidden">
-            <span aria-hidden className={cls("text-[10px] transition-transform", noticeOpen && "rotate-90")}>▶</span>
-            <span className="flex-1">{td("recipientDetails")}</span>
-            {/* inside the summary: a closed details hides everything else. preventDefault
-                keeps this click from collapsing the area; the copy still happens. */}
-            <span onClick={(e) => { e.preventDefault(); setNoticeOpen(true); }}>
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
+          <div className="flex min-w-0 flex-col gap-2.5 rounded-xl border border-line bg-bg/60 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <label htmlFor="recipient-notice" className="text-[0.9rem] font-semibold text-ink">{td("recipientDetails")}</label>
               <CopyButton value={recipientNotice} label={t("copyNotice")} />
-            </span>
-          </summary>
-          <div className="space-y-2 border-t border-line px-4 pb-4 pt-3">
-            <label htmlFor="recipient-notice" className="eyebrow">{t("recipientLabel")}</label>
+            </div>
             <Textarea
               id="recipient-notice"
               readOnly
-              rows={7}
+              rows={5}
               value={recipientNotice}
               onFocus={(e) => e.currentTarget.select()}
-              className="resize-none text-[13px] leading-relaxed"
+              className="resize-none text-[0.875rem] leading-relaxed"
             />
-            <p className="text-xs text-ink-faint">{t("recipientHint")}</p>
+            <p className="m-0 text-xs text-ink-faint">{t("recipientHint")}</p>
           </div>
-        </details>
-
-        {qr && (
-          <details className="rounded-xl border border-line bg-bg/60">
-            <summary className="cursor-pointer select-none px-4 py-2.5 text-sm text-ink-dim hover:text-ink">{td("qrDetails")}</summary>
-            <div className="flex flex-col items-center gap-2 border-t border-line px-4 pb-4 pt-3">
+          {qr && (
+            <div className="flex flex-col items-center gap-2 rounded-xl border border-line bg-bg/60 p-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={qr} alt={t("qrAlt")} className="rounded-lg border border-line" />
-              <p className="text-xs text-ink-faint">{t("qrHint")}</p>
+              <img src={qr} alt={t("qrAlt")} className="size-[9.5rem] rounded-lg border border-line [image-rendering:pixelated]" />
+              <p className="m-0 text-xs text-ink-faint">{t("qrHint")}</p>
             </div>
-          </details>
-        )}
+          )}
+        </div>
 
         {tier === "anon" && (
-          <p className="text-[13px] text-ink-faint">
+          <p className="m-0 text-[0.8125rem] text-ink-faint">
             {t.rich("anonTip", {
               strong: (chunks) => <strong className="text-ink">{chunks}</strong>,
               link: (chunks) => (

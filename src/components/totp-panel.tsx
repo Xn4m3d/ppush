@@ -115,7 +115,7 @@ export function TotpPanel({
             {qr && <img src={qr} alt={t("qrAlt")} className="rounded-lg border border-line" />}
             <p className="text-center text-xs text-ink-faint">
               {t("scan")}
-              <code className="mt-1 block break-all font-mono text-[11px] text-ink-dim">
+              <code className="mt-1 block break-all font-mono text-[0.6875rem] text-ink-dim">
                 {setup.secret}
               </code>
             </p>
