@@ -20,7 +20,7 @@ export default async function PublicPushPage({
   const t = await getTranslations("viewer");
   const user = await currentUser();
   return (
-    <main className="relative flex min-h-screen flex-col">
+    <main className="relative flex flex-1 flex-col">
       <div className="wrap flex h-16 items-center justify-between gap-4">
         <Logo />
         <BackHome />

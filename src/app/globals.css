@@ -328,9 +328,10 @@ driven in JS (Web Animations); only the backdrop and drop shadow live here. */
 
 /* ══════════════════════════════════════════════════════════════════════
    "The workbench" (home and receive). Desktop: the controls in a
-   fluid column on the left; the cloud takes all the rest as a stage, at
-   full height, with the hook set above it (it talks about "this
-   cloud"). The footer starts below the edge of the screen.
+   fluid column on the left; the cloud takes all the rest as a stage, with
+   the hook set above it (it talks about "this cloud"). The workbench
+   fills the free height without forcing it: the footer stays in the
+   first screen whenever the form allows, its links stay visible.
    Narrow: one column, hook → controls (button last) → cloud.
    ══════════════════════════════════════════════════════════════════════ */
 .bench {
@@ -351,7 +352,6 @@ driven in JS (Web Animations); only the backdrop and drop shadow live here. */
     grid-template-areas: "ctrl hero" "ctrl stage";
     column-gap: clamp(3rem, 5vw, 7rem);
     row-gap: 1.25rem;
-    min-height: calc(100dvh - 4rem);
     padding-block: clamp(1rem, 4vh, 3rem);
   }
   .bench-ctrl { align-self: start; }
