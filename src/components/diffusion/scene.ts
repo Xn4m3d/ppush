@@ -32,7 +32,8 @@
 import { field, h32, mix, type Dot, type FieldClient, type Particle, type Pt, type Seg } from "./field";
 
 type Curve = [Pt, Pt, Pt, Pt];
-type Pulse = { x: number; y: number; R: number; t0: number; dur: number; col: number; k: number; e: number; pts: number[]; arcs: number; seed: number };
+type Pulse = { x: number; y: number; R: number; t0: number; dur: number; col: number; k: number; e: number; pts: number[]; arcs: number; seed: number; dir?: number };
+type Spark = { x: number; y: number; vx: number; vy: number; life: number; max: number; col: number };
 
 export type SceneMode = "live" | "gather" | "write" | "glide" | "forming" | "formed";
 
@@ -96,6 +97,11 @@ export class DiffusionScene implements FieldClient {
   private phase = 0;
   private ripples: { t0: number; amp: number }[] = [];
   private pulses: Pulse[] = [];
+  /** The written link keeps some energy: the element of its text, its sparks, its next sweep of light. */
+  private charged: HTMLElement | null = null;
+  private sparks: Spark[] = [];
+  private sweep: { t0: number; dur: number } | null = null;
+  private nextSweep = 0;
   private beat = 0;
   /** How full the cloud is (0 → 1), for the glow at its heart. */
   private fill = 0;
@@ -231,6 +237,7 @@ export class DiffusionScene implements FieldClient {
     }
     this.parts = []; this.queue = 0; this.hold = false;
     this.mode = "live"; this.choreo = null; this.slices = []; this.pulses = []; this.ripples = [];
+    this.charged = null; this.sparks = []; this.sweep = null;
     this.bytes = new Uint8Array(0); this.age = this.ageTarget = 0;
   }
 
@@ -332,11 +339,81 @@ export class DiffusionScene implements FieldClient {
   // ---------------------------------------------------------------- light and energy
 
   /** A flash at (x, y): it lights up the particles it touches, often with crackling arcs. */
-  private spawnPulse(now: number, x: number, y: number, R: number, arcsP: number) {
+  private spawnPulse(now: number, x: number, y: number, R: number, arcsP: number, col?: number, dir?: number) {
     this.pulses.push({
-      x, y, R, t0: now, dur: 450 + Math.random() * 900, col: Math.random() < 0.5 ? 3 : 4, k: 0.7 + Math.random() * 0.7, e: 0, pts: [],
-      arcs: Math.random() < arcsP ? 1 + ((Math.random() * 3) | 0) : 0, seed: Math.random() * 1000,
+      x, y, R, t0: now, dur: 450 + Math.random() * 900, col: col ?? (Math.random() < 0.5 ? 3 : 4), k: 0.7 + Math.random() * 0.7, e: 0, pts: [],
+      arcs: Math.random() < arcsP ? 1 + ((Math.random() * 3) | 0) : 0, seed: Math.random() * 1000, dir,
     });
+  }
+
+  /**
+   * The link is written and the real text has taken over: it keeps some energy.
+   * Small flashes appear on its characters (coral on the key, blue on
+   * the address) with discharges along the text and sparks, and a
+   * sweep of light runs through it now and then. `el`: the link's text
+   * (address then key). Drawn behind the text: it stays sharp and readable.
+   */
+  charge(el: HTMLElement | null) {
+    this.charged = el;
+    this.nextSweep = performance.now() + 1200;
+  }
+
+  /** A flash on a random character of the link. */
+  private zapLink(now: number) {
+    const el = this.charged;
+    if (!el || !el.isConnected) return;
+    const spans = el.children.length ? ([...el.children] as HTMLElement[]) : [el];
+    const pick = spans[(Math.random() * spans.length) | 0], key = spans.length > 1 && pick === spans[spans.length - 1];
+    const lines = [...pick.getClientRects()].filter((r) => r.width > 2);
+    if (!lines.length) return;
+    const r = lines[(Math.random() * lines.length) | 0], hb = this.o.host.getBoundingClientRect(), sc = this.sc;
+    const x = r.left - hb.left + Math.random() * r.width, y = r.top - hb.top + r.height * (0.35 + Math.random() * 0.3), col = key ? 3 : 4;
+    this.spawnPulse(now, x, y, (24 + Math.random() * 30) * sc, 1, col, Math.random() < 0.5 ? 0 : Math.PI);
+    const last = this.pulses[this.pulses.length - 1];
+    last.k = 1.1 + Math.random() * 0.6; // brighter than a flash in the cloud: it has to show under a text
+    for (let i = 0, n = 8 + ((Math.random() * 8) | 0); i < n; i++) {
+      const a = Math.random() * Math.PI * 2, s = (1 + Math.random() * 2.4) * sc;
+      this.sparks.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0, max: 26 + Math.random() * 30, col });
+    }
+  }
+
+  /** Energy of the written link: flashes, sparks and sweep, under the text. */
+  private drawCharge(ctx: CanvasRenderingContext2D, now: number, dt: number, glowOn: (on: boolean) => void) {
+    const el = this.charged;
+    if (!el || !el.isConnected || this.reduce) return;
+    const sc = this.sc;
+    if (Math.random() < 0.032 * dt) this.zapLink(now);
+    // now and then, a wave of light runs through the link, line after line
+    if (!this.sweep && now > this.nextSweep) this.sweep = { t0: now, dur: 1100 };
+    glowOn(true);
+    if (this.sweep) {
+      const u = (now - this.sweep.t0) / this.sweep.dur;
+      if (u >= 1) { this.sweep = null; this.nextSweep = now + 3500 + Math.random() * 2500; }
+      else {
+        const lines = [...el.getClientRects()].filter((r) => r.width > 2), hb = this.o.host.getBoundingClientRect();
+        const total = lines.reduce((s, r) => s + r.width, 0) || 1;
+        let acc = 0;
+        for (const r of lines) {
+          const lu = (u * total - acc) / r.width;
+          acc += r.width;
+          if (lu < -0.2 || lu > 1.2) continue;
+          const x = r.left - hb.left + lu * r.width, y = r.top - hb.top + r.height / 2, w = 64 * sc;
+          const g = ctx.createRadialGradient(x, y, 0, x, y, w);
+          g.addColorStop(0, mix(field.cols[4], 0.5)); g.addColorStop(0.45, mix(field.cols[3], 0.2)); g.addColorStop(1, mix(field.cols[3], 0));
+          ctx.globalAlpha = 1; ctx.fillStyle = g; ctx.fillRect(x - w, y - r.height, w * 2, r.height * 2);
+        }
+      }
+    }
+    // sparks: small particles thrown out by the flashes, which slow down and fade
+    this.sparks = this.sparks.filter((s) => s.life < s.max);
+    for (const s of this.sparks) {
+      s.life += dt; s.x += s.vx * dt; s.y += s.vy * dt;
+      const f = Math.pow(0.9, dt); s.vx *= f; s.vy *= f;
+      const a = 1 - s.life / s.max, h = field.halo(s.col);
+      if (h) { ctx.globalAlpha = a * 0.8; const R = 6 * sc; ctx.drawImage(h, s.x - R, s.y - R, R * 2, R * 2); }
+      ctx.globalAlpha = a; ctx.fillStyle = field.cols[s.col]; ctx.beginPath(); ctx.arc(s.x, s.y, 1.25 * sc, 0, Math.PI * 2); ctx.fill();
+    }
+    glowOn(false);
   }
 
   /** Envelope of each flash (short rise, slow fall); returns their sum. */
@@ -394,7 +471,8 @@ export class DiffusionScene implements FieldClient {
       if (pu.arcs && age < 260) {
         const ea = 1 - age / 260;
         for (let k = 0; k < pu.arcs; k++) {
-          const ang = pu.seed + k * 2.1 + Math.sin(age * 0.02 + k) * 0.3, len = pu.R * (0.8 + 0.4 * h32(k + ((pu.seed * 7) | 0)));
+          const ang = pu.dir !== undefined ? pu.dir + (h32(k + ((pu.seed * 3) | 0)) - 0.5) * 0.7 + Math.sin(age * 0.03 + k) * 0.15 : pu.seed + k * 2.1 + Math.sin(age * 0.02 + k) * 0.3;
+          const len = pu.R * (pu.dir !== undefined ? 2.2 : 1) * (0.8 + 0.4 * h32(k + ((pu.seed * 7) | 0)));
           const ux = Math.cos(ang), uy = Math.sin(ang), pts: Pt[] = [{ x: pu.x, y: pu.y }];
           for (let s = 1; s <= 8; s++) {
             const f = s / 8, j = (Math.random() - 0.5) * len * 0.22 * (1 - f * 0.5);
@@ -575,6 +653,7 @@ export class DiffusionScene implements FieldClient {
   unseal() {
     this.clear();
     this.mode = "live"; this.choreo = null; this.slices = []; this.pulses = []; this.ripples = []; this.hold = false;
+    this.charged = null; this.sparks = []; this.sweep = null;
     this.layout();
   }
 
@@ -653,6 +732,7 @@ export class DiffusionScene implements FieldClient {
       }
     }
     if (!still) { glowOn(true); this.drawEnergy(ctx, 1, now); glowOn(false); }
+    if (this.mode === "formed") this.drawCharge(ctx, now, dt, glowOn);
   }
 
   /** One frame of the cloud, drawn by the field on its canvas (host coordinates). */
