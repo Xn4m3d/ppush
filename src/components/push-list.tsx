@@ -9,10 +9,12 @@ import {
   Link2,
   ChevronLeft,
   ChevronRight,
+  Plus,
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Badge, Card, CondenseLoader, cls } from "./ui";
 import { MiniCloud } from "./diffusion/mini-cloud";
+import { useLocalePath } from "@/i18n/use-locale-path";
 
 export type OwnerPush = {
   id: string;
@@ -63,7 +65,9 @@ export function PushStatus({ push }: { push: OwnerPush }) {
 export function PushList() {
   const t = useTranslations("pushes");
   const tTabs = useTranslations("tabs");
+  const tNav = useTranslations("header.nav");
   const locale = useLocale();
+  const lp = useLocalePath();
   const [filter, setFilter] = useState<"all" | "active" | "expired">("all");
   const [pushes, setPushes] = useState<OwnerPush[]>([]);
   const [total, setTotal] = useState(0);
@@ -90,35 +94,48 @@ export function PushList() {
 
   const pages = Math.max(1, Math.ceil(total / 20));
 
+  // "account" template: filters in the left column, links as rows between hairlines
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-1.5">
-        {(
-          [
-            ["all", t("filterAll")],
-            ["active", t("filterActive")],
-            ["expired", t("filterExpired")],
-          ] as const
-        ).map(([f, label]) => (
-          <button
-            key={f}
-            onClick={() => {
-              setLoading(true);
-              setFilter(f);
-              setPage(1);
-            }}
-            className={cls(
-              "rounded-xl px-3.5 py-1.5 text-sm transition-colors cursor-pointer",
-              filter === f
-                ? "bg-accent/15 text-accent-soft"
-                : "text-ink-faint hover:bg-panel hover:text-ink-dim"
-            )}
-          >
-            {label}
-          </button>
-        ))}
-        <span className="ml-auto text-xs text-ink-faint">{t("count", { count: total })}</span>
+    <>
+    <aside className="side">
+      <div>
+        <p className="eyebrow side-label">{t("filterLabel")}</p>
+        <ul>
+          {(
+            [
+              ["all", t("filterAll")],
+              ["active", t("filterActive")],
+              ["expired", t("filterExpired")],
+            ] as const
+          ).map(([f, label]) => (
+            <li key={f}>
+              <button
+                type="button"
+                onClick={() => {
+                  setLoading(true);
+                  setFilter(f);
+                  setPage(1);
+                }}
+                aria-current={filter === f ? "true" : undefined}
+                className="side-item"
+              >
+                {label}
+                {filter === f && !loading && <small>{total}</small>}
+              </button>
+            </li>
+          ))}
+        </ul>
       </div>
+      <Link
+        href={lp("/")}
+        className="inline-flex items-center gap-2 self-start rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-[var(--on-accent)] transition-colors hover:bg-accent-soft"
+      >
+        <Plus className="size-4" />
+        {tNav("new")}
+      </Link>
+    </aside>
+    <div className="app-main space-y-4">
+      <p className="text-xs text-ink-faint">{t("count", { count: total })}</p>
 
       {loading ? (
         <Card className="p-10 text-center">
@@ -132,21 +149,21 @@ export function PushList() {
           {t("empty", { filter })}
         </Card>
       ) : (
-        <div className="space-y-2">
+        <div className="border-t border-line">
           {pushes.map((p) => {
             const Icon = KIND_ICON[p.kind] ?? FileText;
             return (
               <Link
                 key={p.id}
                 href={`/pushes/${p.slug}`}
-                className="flex items-center gap-4 rounded-2xl border border-line bg-panel/60 px-4 py-3.5 transition-colors hover:border-line-soft hover:bg-panel"
+                className="flex items-center gap-4 border-b border-line px-1 py-3.5 transition-colors hover:bg-ink/[0.03]"
               >
                 <span
                   className={cls(
-                    "grid size-10 shrink-0 place-items-center rounded-xl border",
+                    "grid size-10 shrink-0 place-items-center rounded-full border border-dashed",
                     p.expired
-                      ? "border-line bg-bg-soft text-ink-faint"
-                      : "border-accent/25 bg-accent/10 text-accent-soft"
+                      ? "border-line-soft text-ink-faint"
+                      : "border-accent/45 text-accent-soft"
                   )}
                 >
                   <Icon className="size-4.5" />
@@ -196,5 +213,6 @@ export function PushList() {
         </div>
       )}
     </div>
+    </>
   );
 }

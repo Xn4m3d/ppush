@@ -6,7 +6,7 @@ import { THEME_COOKIE, effectiveChoice } from "@/lib/themes";
 import { Header } from "@/components/header";
 import { AccountTabs } from "@/components/account-tabs";
 import { parseGenPrefs } from "@/lib/generator-prefs";
-import { MiniCloud } from "@/components/diffusion/mini-cloud";
+import { PageHead } from "@/components/page-head";
 
 export async function generateMetadata() {
   return {
@@ -18,6 +18,7 @@ export async function generateMetadata() {
 export default async function AccountPage() {
   const t = await getTranslations("account");
   const ts = await getTranslations("success");
+  const th = await getTranslations("pageHead");
   const user = await currentUser();
   if (!user) redirect("/login");
 
@@ -28,16 +29,20 @@ export default async function AccountPage() {
   return (
     <>
       <Header />
-      <main className="mx-auto w-full max-w-3xl flex-1 space-y-6 px-4 py-10 sm:px-6">
-        <div className="relative">
-          <MiniCloud className="absolute right-0 bottom-0 hidden sm:block" seed={23} />
-          <h1 className="text-3xl font-bold">{t("title")}</h1>
-          <p className="mt-1 text-sm text-ink-faint">
-            {user.name} · {user.email}
-            {user.role === "ADMIN" && ` · ${t("administrator")}`}
-          </p>
-        </div>
-
+      <main className="flex flex-1 flex-col">
+        <PageHead
+          eyebrow={th("account")}
+          title={t("title")}
+          meta={
+            <>
+              <span><b>{user.name}</b></span>
+              <span>{user.email}</span>
+              {user.role === "ADMIN" && <span>{t("administrator")}</span>}
+            </>
+          }
+          cap={th("accountCap")}
+        />
+        <div className="wrap pane glass app">
         <AccountTabs
           generator={parseGenPrefs(user.generatorPrefs, await getLocale())}
           defaults={{
@@ -66,6 +71,7 @@ export default async function AccountPage() {
           email={user.email}
           name={user.name}
         />
+        </div>
       </main>
     </>
   );

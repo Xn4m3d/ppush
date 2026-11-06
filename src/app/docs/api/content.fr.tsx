@@ -2,24 +2,28 @@ import Link from "next/link";
 import { Lock, TerminalSquare, AlertTriangle, BookOpenText } from "lucide-react";
 import { config } from "@/lib/config";
 import { Code, H2, Endpoint } from "./blocks";
-import { MiniCloud } from "@/components/diffusion/mini-cloud";
+import { PageHead } from "@/components/page-head";
+import { Doc } from "@/components/doc";
 
 /** Contenu français de la doc API. Miroir : content.en.tsx. */
 export function ApiDocsContentFr() {
   const base = config.baseUrl;
   return (
     <>
-      <div className="flex flex-col items-center gap-4 text-center">
-        <MiniCloud seed={11} />
-        <h1 className="text-4xl font-bold">Documentation API</h1>
-        <p className="max-w-xl text-ink-dim">
-          Créez des pushes par script — provisioning, onboarding, CI — tout en
-          conservant le chiffrement de bout en bout.
-        </p>
-      </div>
+      <PageHead
+        eyebrow="Développeurs · scripts et CI"
+        title="Documentation API"
+        path="/fr/docs/api"
+        lede={
+          <>
+            Créez des pushes par script — provisioning, onboarding, CI — tout en
+            conservant le chiffrement de bout en bout.
+          </>
+        }
+      />
 
-      <div className="mt-12 space-y-10">
-        <section className="space-y-4">
+      <Doc current="/docs/api">
+        <section className="sec space-y-4">
           <H2 id="auth">Authentification</H2>
           <p className="text-sm text-ink-dim">
             Générez un token personnel dans{" "}
@@ -40,7 +44,7 @@ export function ApiDocsContentFr() {
           </p>
         </section>
 
-        <section className="space-y-4">
+        <section className="sec space-y-4">
           <H2 id="cli">
             <span className="inline-flex items-center gap-2">
               <TerminalSquare className="size-5 text-accent-soft" />
@@ -72,7 +76,7 @@ ppush-cli.mjs --file dump.sql.gz --passphrase "sesame" --note "backup pour Bob"
           </p>
         </section>
 
-        <section className="space-y-4">
+        <section className="sec space-y-4">
           <H2 id="endpoints">Endpoints</H2>
 
           <Endpoint method="POST" path="/api/pushes" auth="Bearer ou session">
@@ -162,7 +166,7 @@ ppush-cli.mjs --file dump.sql.gz --passphrase "sesame" --note "backup pour Bob"
           </Endpoint>
         </section>
 
-        <section className="space-y-4">
+        <section className="sec space-y-4">
           <H2 id="crypto">
             <span className="inline-flex items-center gap-2">
               <Lock className="size-5 text-accent-soft" />
@@ -185,7 +189,7 @@ Fichiers (blob) : chunks de 8 Mio, chacun encadré :
   AAD du chunk i : "ppush:v1:<i>:<1 si dernier, sinon 0>"`}</Code>
         </section>
 
-        <section className="space-y-4">
+        <section className="sec space-y-4">
           <H2 id="errors">Limites & erreurs</H2>
           <ul className="list-inside list-disc space-y-1.5 text-sm text-ink-dim">
             <li>
@@ -234,7 +238,7 @@ Fichiers (blob) : chunks de 8 Mio, chacun encadré :
           </Link>
           .
         </p>
-      </div>
+      </Doc>
     </>
   );
 }

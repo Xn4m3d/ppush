@@ -185,7 +185,7 @@ export function AuthForm({
 
   if (pending) {
     return (
-      <Card className="w-full max-w-md p-8 text-center animate-fade-up">
+      <Card className="glass auth-pane text-center animate-fade-up">
         <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-ok/10 border border-ok/25">
           <ShieldCheck className="size-7 text-ok" />
         </div>
@@ -201,7 +201,7 @@ export function AuthForm({
 
   if (totpTicket) {
     return (
-      <Card className="w-full max-w-md p-8 animate-fade-up">
+      <Card className="glass auth-pane animate-fade-up">
         <div className="mx-auto grid size-12 place-items-center rounded-xl bg-accent/10 border border-accent/25">
           <KeyRound className="size-6 text-accent-soft" />
         </div>
@@ -230,11 +230,12 @@ export function AuthForm({
   }
 
   return (
-    <Card className="w-full max-w-md p-8 animate-fade-up">
-      <h1 className="text-xl font-semibold tracking-tight">
+    <div className="glass auth-pane animate-fade-up">
+      <p className="eyebrow ph-eyebrow mb-3">{t("eyebrow")}</p>
+      <h1 className="auth-title">
         {mode === "login" ? t("loginTitle") : t("registerTitle")}
       </h1>
-      <p className="mt-1 text-sm text-ink-faint">
+      <p className="mt-2 text-[1.05rem] text-ink-dim">
         {mode === "login" ? t("loginSubtitle") : t("registerSubtitle")}
       </p>
 
@@ -375,6 +376,6 @@ export function AuthForm({
           </Link>
         </p>
       )}
-    </Card>
+    </div>
   );
 }

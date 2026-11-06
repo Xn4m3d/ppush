@@ -13,17 +13,19 @@ import {
 import { config } from "@/lib/config";
 import { Section, Faq } from "./blocks";
 import { FlagFr } from "@/components/flag-fr";
-import { MiniCloud } from "@/components/diffusion/mini-cloud";
+import { PageHead } from "@/components/page-head";
+import { Doc } from "@/components/doc";
 
 /** English content of the About page. Mirror: content.fr.tsx. */
 export function AboutContentEn({ showRegister }: { showRegister: boolean }) {
   return (
     <>
-      <div className="flex flex-col items-center gap-6 text-center">
-        <div>
-          <MiniCloud className="mb-2" seed={5} />
-          <h1 className="text-4xl font-bold">About</h1>
-          <p className="mx-auto mt-3 max-w-xl text-ink-dim">
+      <PageHead
+        eyebrow="The service · how it is protected"
+        title="About"
+        path="/about"
+        lede={
+          <>
             ppush is a secure secret-sharing service operated by{" "}
             <strong className="text-ink">Alexandre</strong>{" "}
             <FlagFr className="inline h-3 w-auto rounded-[2px] align-baseline" />. It replaces sending
@@ -32,45 +34,11 @@ export function AboutContentEn({ showRegister }: { showRegister: boolean }) {
             <strong className="text-ink">Cloudflare</strong>, data{" "}
             <strong className="text-ink">hosted in France</strong>{" "}
             <FlagFr className="inline h-3 w-auto rounded-[2px] align-baseline" />.
-          </p>
-        </div>
-        <nav className="flex flex-wrap justify-center gap-2 text-xs">
-          {[
-            ["#fonctionnement", "How it works"],
-            ["#donnees", "Your data"],
-            ["#faq", "FAQ"],
-            ["#technique", "Technical"],
-          ].map(([href, label]) => (
-            <a
-              key={href}
-              href={href}
-              className="rounded-full border border-line px-3.5 py-1.5 text-ink-dim transition-colors hover:border-accent/40 hover:text-accent-soft"
-            >
-              {label}
-            </a>
-          ))}
-          <Link
-            href="/docs/api"
-            className="rounded-full border border-accent/30 bg-accent/10 px-3.5 py-1.5 text-accent-soft transition-colors hover:bg-accent/20"
-          >
-            API documentation →
-          </Link>
-          <Link
-            href="/legal"
-            className="rounded-full border border-line px-3.5 py-1.5 text-ink-dim transition-colors hover:border-accent/40 hover:text-accent-soft"
-          >
-            Legal notice
-          </Link>
-          <Link
-            href="/privacy"
-            className="rounded-full border border-line px-3.5 py-1.5 text-ink-dim transition-colors hover:border-accent/40 hover:text-accent-soft"
-          >
-            Privacy
-          </Link>
-        </nav>
-      </div>
+          </>
+        }
+      />
 
-      <div className="mt-14 space-y-12">
+      <Doc current="/about">
         <Section id="fonctionnement" icon={EyeOff} title="Zero-knowledge: the server cannot read your secrets">
           <p>
             When you create a link, your browser generates a random encryption
@@ -349,7 +317,7 @@ export function AboutContentEn({ showRegister }: { showRegister: boolean }) {
             )}
           </div>
         </Section>
-      </div>
+      </Doc>
     </>
   );
 }

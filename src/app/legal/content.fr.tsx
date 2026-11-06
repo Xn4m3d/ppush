@@ -2,16 +2,19 @@ import Link from "next/link";
 import { Scale } from "lucide-react";
 import { legal } from "@/lib/legal";
 import { LegalHeader, LegalSection } from "@/components/legal-blocks";
+import { Doc } from "@/components/doc";
 
 /** Mentions légales & CGU — français. Miroir : content.en.tsx. */
 export function LegalContentFr() {
   return (
     <>
       <LegalHeader
+        eyebrow="Légal · éditeur et conditions"
         icon={Scale}
         title="Mentions légales"
         updated={`Dernière mise à jour : ${legal.updatedFr}`}
       />
+      <Doc current="/legal">
 
       <LegalSection id="editeur" title="Éditeur du site">
         <p>
@@ -129,6 +132,7 @@ export function LegalContentFr() {
         </Link>
         .
       </p>
+      </Doc>
     </>
   );
 }

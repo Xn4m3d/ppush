@@ -31,34 +31,39 @@ export const HABIT_ICONS = {
   short: Hourglass,
 } satisfies Record<string, Icon>;
 
+/** Readable anchor taken from the title (contents, deep links). */
+function slug(s: string) {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
 export function Story({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section>
-      <h2 className="text-2xl font-semibold">{title}</h2>
-      <div className="mt-4 space-y-3 text-[0.9375rem] leading-relaxed text-ink-dim">{children}</div>
+    <section id={slug(title)} className="sec">
+      <h2 className="sec-title">{title}</h2>
+      <div className="sec-body">{children}</div>
     </section>
   );
 }
 
 export function Step({ n, title, children }: { n: number; title: string; children: ReactNode }) {
   return (
-    <li className="rounded-xl border border-line bg-panel/60 p-4">
+    <li className="step">
       <span className="font-mono text-xs text-accent-soft">0{n}</span>
-      <p className="mt-1 font-semibold text-ink">{title}</p>
-      <p className="mt-1 text-sm">{children}</p>
+      <p className="mt-1 text-lg font-semibold text-ink">{title}</p>
+      <p className="mt-1 text-[0.95rem]">{children}</p>
     </li>
   );
 }
 
 export function UseCase({ icon: Icon, title, children }: { icon: Icon; title: string; children: ReactNode }) {
   return (
-    <div className="flex gap-3 rounded-xl border border-line bg-panel/60 p-4 transition-colors hover:border-line-soft">
-      <span className="grid size-9 shrink-0 place-items-center rounded-xl border border-accent/25 bg-accent/10">
-        <Icon className="size-4.5 text-accent-soft" />
+    <div className="case">
+      <span className="case-ic">
+        <Icon className="size-4.5" />
       </span>
-      <div>
+      <div className="min-w-0">
         <p className="font-semibold text-ink">{title}</p>
-        <p className="mt-1 text-sm">{children}</p>
+        <p className="mt-1 text-[0.95rem]">{children}</p>
       </div>
     </div>
   );

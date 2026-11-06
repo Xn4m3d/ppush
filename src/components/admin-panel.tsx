@@ -80,7 +80,35 @@ export function AdminPanel({ selfId }: { selfId: string }) {
   ];
 
   return (
-    <div className="space-y-6">
+    <>
+    <aside className="side">
+      <div>
+        <p className="eyebrow side-label">{t("sideLabel")}</p>
+        <ul>
+          {tabs.map(([id, label, badge]) => (
+            <li key={id}>
+              <button
+                type="button"
+                onClick={() => {
+                  setTab(id);
+                  setUsersSeed(""); // manual navigation: forget the pre-filled search
+                }}
+                aria-current={tab === id ? "true" : undefined}
+                className="side-item"
+              >
+                {label}
+                {badge !== undefined && badge > 0 && (
+                  <span className="grid min-w-[1.25rem] place-items-center rounded-full bg-warn/20 px-1.5 text-[0.6875rem] font-semibold tabular-nums text-warn">
+                    {badge}
+                  </span>
+                )}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </aside>
+    <div className="app-main space-y-6">
       {stats && (
         <>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -121,30 +149,6 @@ export function AdminPanel({ selfId }: { selfId: string }) {
         </>
       )}
 
-      <div className="flex flex-wrap gap-1 border-b border-line">
-        {tabs.map(([id, label, badge]) => (
-          <button
-            key={id}
-            onClick={() => {
-              setTab(id);
-              setUsersSeed(""); // manual navigation: forget the pre-filled search
-            }}
-            className={cls(
-              "relative flex shrink-0 items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors cursor-pointer",
-              tab === id ? "text-ink" : "text-ink-faint hover:text-ink-dim"
-            )}
-          >
-            {label}
-            {badge !== undefined && badge > 0 && (
-              <span className="grid min-w-[1.25rem] place-items-center rounded-full bg-warn/20 px-1.5 text-[0.6875rem] font-semibold tabular-nums text-warn">
-                {badge}
-              </span>
-            )}
-            {tab === id && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-accent" />}
-          </button>
-        ))}
-      </div>
-
       {tab === "overview" && <OverviewTab refreshKey={refreshKey} />}
       {tab === "accounts" && (
         <UsersTab
@@ -163,6 +167,7 @@ export function AdminPanel({ selfId }: { selfId: string }) {
       {tab === "activity" && <ActivityTab refreshKey={refreshKey} />}
       {tab === "tips" && <TipsTab refreshKey={refreshKey} bump={bump} />}
     </div>
+    </>
   );
 }
 

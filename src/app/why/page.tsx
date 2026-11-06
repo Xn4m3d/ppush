@@ -1,5 +1,5 @@
 import { getLocale, getTranslations } from "next-intl/server";
-import { BackHome } from "@/components/back-home";
+import { Header } from "@/components/header";
 import type { Locale } from "@/i18n/locale";
 import { WhyContentEn } from "./content.en";
 import { WhyContentFr } from "./content.fr";
@@ -27,9 +27,11 @@ export default async function WhyPage() {
   const locale = (await getLocale()) as Locale;
   const Content = CONTENT[locale] ?? WhyContentEn;
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-12 sm:px-6">
-      <BackHome className="mb-6" />
-      <Content />
-    </main>
+    <>
+      <Header />
+      <main className="flex flex-1 flex-col">
+        <Content />
+      </main>
+    </>
   );
 }

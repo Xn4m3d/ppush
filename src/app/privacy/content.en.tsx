@@ -2,16 +2,19 @@ import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
 import { legal } from "@/lib/legal";
 import { LegalHeader, LegalSection } from "@/components/legal-blocks";
+import { Doc } from "@/components/doc";
 
 /** Privacy policy (GDPR) — English. Mirror: content.fr.tsx. */
 export function PrivacyContentEn() {
   return (
     <>
       <LegalHeader
+        eyebrow="GDPR · your data"
         icon={ShieldCheck}
         title="Privacy policy"
         updated={`Last updated: ${legal.privacyUpdatedEn}`}
       />
+      <Doc current="/privacy">
 
       <LegalSection id="responsable" title="Data controller">
         <p>
@@ -195,6 +198,7 @@ export function PrivacyContentEn() {
           .
         </p>
       </LegalSection>
+      </Doc>
     </>
   );
 }

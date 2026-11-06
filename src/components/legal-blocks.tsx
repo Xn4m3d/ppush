@@ -1,28 +1,21 @@
 import type { ComponentType, ReactNode } from "react";
 import type { LucideProps } from "lucide-react";
-import { MiniCloud } from "@/components/diffusion/mini-cloud";
+import { PageHead } from "./page-head";
 
 /** Common layout for the legal pages (/legal, /privacy). */
 
+/** The page head; `icon` stays in the signature, the eyebrow replaces it on screen. */
 export function LegalHeader({
-  icon: Icon,
+  eyebrow,
   title,
   updated,
 }: {
-  icon: ComponentType<LucideProps>;
+  eyebrow: string;
+  icon?: ComponentType<LucideProps>;
   title: string;
   updated: string;
 }) {
-  return (
-    <header className="flex flex-col items-center gap-3 text-center">
-      <span className="relative grid place-items-center">
-        <MiniCloud seed={title.length} />
-        <Icon className="absolute size-5 text-ink" />
-      </span>
-      <h1 className="text-3xl font-bold">{title}</h1>
-      <p className="text-xs text-ink-faint">{updated}</p>
-    </header>
-  );
+  return <PageHead eyebrow={eyebrow} title={title} meta={updated} />;
 }
 
 export function LegalSection({
@@ -35,13 +28,9 @@ export function LegalSection({
   children: ReactNode;
 }) {
   return (
-    <section id={id} className="scroll-mt-24 space-y-3">
-      <h2 className="border-b border-line pb-2 text-lg font-semibold tracking-tight text-ink">
-        {title}
-      </h2>
-      <div className="space-y-3 text-[0.9375rem] leading-relaxed text-ink-dim">
-        {children}
-      </div>
+    <section id={id} className="sec">
+      <h2 className="sec-title">{title}</h2>
+      <div className="sec-body">{children}</div>
     </section>
   );
 }

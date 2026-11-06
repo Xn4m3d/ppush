@@ -1,22 +1,26 @@
 import Link from "next/link";
-import { MiniCloud } from "@/components/diffusion/mini-cloud";
 import { Story, Step, UseCase, Habit, USE_CASE_ICONS, HABIT_ICONS } from "./blocks";
+import { PageHead } from "@/components/page-head";
+import { Doc } from "@/components/doc";
 
 /** Contenu français de « À quoi sert ce site ? ». Miroir : content.en.tsx. */
 export function WhyContentFr() {
   return (
     <>
-      <header className="text-center">
-        <MiniCloud className="mb-2" seed={11} />
-        <h1 className="text-4xl font-bold">À quoi sert ce site ?</h1>
-        <p className="mx-auto mt-4 max-w-xl text-lg text-ink-dim">
-          À transmettre une information confidentielle (un mot de passe, un code,
-          un document) <strong className="text-ink">sans qu’elle reste ensuite</strong>{" "}
-          dans vos e-mails ou vos conversations.
-        </p>
-      </header>
+      <PageHead
+        eyebrow="Guide · pour tout le monde"
+        title="À quoi sert ce site ?"
+        path="/fr/why"
+        lede={
+          <>
+            À transmettre une information confidentielle (un mot de passe, un code,
+            un document) <strong className="text-ink">sans qu’elle reste ensuite</strong>{" "}
+            dans vos e-mails ou vos conversations.
+          </>
+        }
+      />
 
-      <div className="mt-14 space-y-14">
+      <Doc current="/why">
         <Story title="Le problème, au quotidien">
           <p>
             Vous envoyez le code du Wi-Fi par SMS, un mot de passe par e-mail,
@@ -37,7 +41,7 @@ export function WhyContentFr() {
             puis s’efface. Ce qui reste dans la conversation n’est plus qu’un lien
             mort.
           </p>
-          <ol className="grid gap-3 pt-2 sm:grid-cols-3">
+          <ol className="steps">
             <Step n={1} title="Collez">
               Le mot de passe, le texte ou le fichier à transmettre.
             </Step>
@@ -56,7 +60,7 @@ export function WhyContentFr() {
         </Story>
 
         <Story title="Quelques exemples">
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="cases">
             <UseCase icon={USE_CASE_ICONS.wifi} title="Le Wi-Fi pour vos invités">
               Le code part, puis disparaît. Il ne traîne pas dans le groupe de
               discussion de la famille.
@@ -102,7 +106,7 @@ export function WhyContentFr() {
           </div>
         </Story>
 
-        <div className="flex flex-col items-center gap-4 border-t border-line/40 pt-10 text-center">
+        <div className="flex flex-col items-start gap-4 border-t border-line pt-10">
           <Link
             href="/fr"
             className="rounded-xl bg-accent px-6 py-3 font-semibold text-[var(--on-accent)] transition-colors hover:bg-accent-soft"
@@ -116,7 +120,7 @@ export function WhyContentFr() {
             </Link>
           </p>
         </div>
-      </div>
+      </Doc>
     </>
   );
 }

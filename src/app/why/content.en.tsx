@@ -1,22 +1,26 @@
 import Link from "next/link";
-import { MiniCloud } from "@/components/diffusion/mini-cloud";
 import { Story, Step, UseCase, Habit, USE_CASE_ICONS, HABIT_ICONS } from "./blocks";
+import { PageHead } from "@/components/page-head";
+import { Doc } from "@/components/doc";
 
 /** English content of "What is this site for?". Mirror: content.fr.tsx. */
 export function WhyContentEn() {
   return (
     <>
-      <header className="text-center">
-        <MiniCloud className="mb-2" seed={11} />
-        <h1 className="text-4xl font-bold">What is this site for?</h1>
-        <p className="mx-auto mt-4 max-w-xl text-lg text-ink-dim">
-          Passing on confidential information (a password, a code, a document){" "}
-          <strong className="text-ink">without it sticking around</strong> in your
-          email or your chats afterwards.
-        </p>
-      </header>
+      <PageHead
+        eyebrow="Guide · for everyone"
+        title="What is this site for?"
+        path="/why"
+        lede={
+          <>
+            Passing on confidential information (a password, a code, a document){" "}
+            <strong className="text-ink">without it sticking around</strong> in your
+            email or your chats afterwards.
+          </>
+        }
+      />
 
-      <div className="mt-14 space-y-14">
+      <Doc current="/why">
         <Story title="The everyday problem">
           <p>
             You text the Wi-Fi code, email a password, send a login over WhatsApp.
@@ -35,7 +39,7 @@ export function WhyContentEn() {
             then erases itself. All that is left in the conversation is a dead
             link.
           </p>
-          <ol className="grid gap-3 pt-2 sm:grid-cols-3">
+          <ol className="steps">
             <Step n={1} title="Paste">
               The password, text or file you want to pass on.
             </Step>
@@ -53,7 +57,7 @@ export function WhyContentEn() {
         </Story>
 
         <Story title="A few examples">
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="cases">
             <UseCase icon={USE_CASE_ICONS.wifi} title="Wi-Fi for your guests">
               The code arrives, then disappears. It doesn’t linger in the family
               group chat.
@@ -96,7 +100,7 @@ export function WhyContentEn() {
           </div>
         </Story>
 
-        <div className="flex flex-col items-center gap-4 border-t border-line/40 pt-10 text-center">
+        <div className="flex flex-col items-start gap-4 border-t border-line pt-10">
           <Link
             href="/"
             className="rounded-xl bg-accent px-6 py-3 font-semibold text-[var(--on-accent)] transition-colors hover:bg-accent-soft"
@@ -110,7 +114,7 @@ export function WhyContentEn() {
             </Link>
           </p>
         </div>
-      </div>
+      </Doc>
     </>
   );
 }

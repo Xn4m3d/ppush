@@ -10,7 +10,7 @@ import { ThemeSwitcher } from "@/components/theme-switcher";
 import { FlagFr } from "@/components/flag-fr";
 import { SourceLink } from "@/components/source-link";
 import { StructuredData } from "@/components/structured-data";
-import { Ambient } from "@/components/ambient";
+import { Space } from "@/components/space";
 import "./globals.css";
 import { localePath } from "@/i18n/locale";
 
@@ -96,13 +96,13 @@ export default async function RootLayout({
             __html: `(function(){try{var m=document.cookie.match(/(?:^|; )theme=([^;]+)/);var c=m?decodeURIComponent(m[1]):"";var u=${JSON.stringify(ut ?? "")};var re=/^(midnight|mecha|auto)$/;var p=re.test(c)?c:re.test(u)?u:"midnight";var h=new Date().getHours();var t=(p==="midnight"||p==="mecha")?p:((h>=${DAY_START}&&h<${DAY_END})?"mecha":"midnight");document.documentElement.dataset.theme=t;var f=document.querySelector("link[rel~='icon']");if(f)f.href=(t==='mecha')?'/icon-mecha.svg':'/icon-midnight.svg';}catch(e){}})();`,
           }}
         />
-        <Ambient />
+        <Space />
         <StructuredData />
         <NextIntlClientProvider>
           {children}
           {/* One line: links on the left, preferences on the right, the
               credits below. On mobile, everything wraps naturally. */}
-          <footer className="border-t border-line/60 text-xs text-ink-faint">
+          <footer className="border-t border-line/60 bg-bg/80 text-xs text-ink-faint">
             <div className="wrap flex flex-wrap items-center justify-between gap-x-8 gap-y-3 py-5">
               <nav className="flex flex-wrap items-center gap-x-5 gap-y-1.5">
                 <a href={localePath(locale, "/about")} className="text-ink-dim transition-colors hover:text-ink">

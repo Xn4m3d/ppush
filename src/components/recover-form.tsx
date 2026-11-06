@@ -62,7 +62,7 @@ export function RecoverForm({ turnstileSiteKey }: { turnstileSiteKey?: string })
 
   if (sent) {
     return (
-      <Card className="w-full max-w-md p-8 text-center animate-fade-up">
+      <Card className="glass auth-pane text-center animate-fade-up">
         <div className="mx-auto grid size-14 place-items-center rounded-2xl border border-ok/25 bg-ok/10">
           <CheckCircle2 className="size-7 text-ok" />
         </div>
@@ -80,16 +80,13 @@ export function RecoverForm({ turnstileSiteKey }: { turnstileSiteKey?: string })
   }
 
   return (
-    <Card className="w-full max-w-lg p-8 animate-fade-up">
-      <div className="flex items-center gap-3">
-        <span className="grid size-11 shrink-0 place-items-center rounded-xl border border-accent/25 bg-accent/10">
-          <LifeBuoy className="size-5.5 text-accent-soft" />
-        </span>
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">{t("title")}</h1>
-          <p className="text-sm text-ink-faint">{t("subtitle")}</p>
-        </div>
-      </div>
+    <Card className="glass auth-pane animate-fade-up">
+      <p className="eyebrow ph-eyebrow mb-3 flex items-center">
+        <LifeBuoy aria-hidden className="size-3.5" />
+        {t("eyebrow")}
+      </p>
+      <h1 className="auth-title">{t("title")}</h1>
+      <p className="mt-2 text-[1.05rem] text-ink-dim">{t("subtitle")}</p>
 
       {/* Procedure — we own the "no email" choice and explain it */}
       <div className="mt-6 space-y-2.5 rounded-xl border border-line bg-bg-soft/40 p-4 text-sm text-ink-dim">

@@ -358,7 +358,8 @@
     "reasonViews": "views exhausted",
     "reasonOwner": "deleted by you",
     "reasonViewer": "destroyed by the recipient",
-    "reasonExpired": "expired"
+    "reasonExpired": "expired",
+    "filterLabel": "Filter"
   },
   "pushDetail": {
     "back": "History",
@@ -751,7 +752,8 @@
     "guardTurnstileOff": "Turnstile missing: the shield can’t filter, only closures apply",
     "guardAlertsOn": "ntfy alerts on",
     "guardAlertsOff": "ntfy alerts not configured (logs only)",
-    "actReportStatus": "Report reviewed"
+    "actReportStatus": "Report reviewed",
+    "sideLabel": "Sections"
   },
   "auth": {
     "loginTitle": "Sign in",
@@ -794,7 +796,8 @@
     "perk2": "See who opened your secret, and when",
     "perk3": "Bigger files, longer expiry, more views",
     "perk4": "Passwordless sign-in with a passkey",
-    "perksFree": "Free, forever. No ads, no tracking."
+    "perksFree": "Free, forever. No ads, no tracking.",
+    "eyebrow": "Your account"
   },
   "api": {
     "internal": "Internal error",
@@ -934,7 +937,8 @@
     "successTitle": "Password updated",
     "successBody": "You can now sign in with your new password.",
     "toLogin": "Go to sign in",
-    "genericError": "Something went wrong. Please try again."
+    "genericError": "Something went wrong. Please try again.",
+    "eyebrow": "Your account"
   },
   "recover": {
     "title": "Trouble signing in?",
@@ -956,7 +960,8 @@
     "sentTitle": "Request sent",
     "sentBody": "An administrator will review it and verify your identity before getting back to you. There is no automatic email — you'll be contacted.",
     "sentReminder": "Keep your proof of identity ready, and don't create a duplicate request.",
-    "backToLogin": "Back to sign in"
+    "backToLogin": "Back to sign in",
+    "eyebrow": "Account recovery"
   },
   "strength": {
     "label": "Password strength",
@@ -990,5 +995,39 @@
     "sentTitle": "Thanks, we’ve got it.",
     "sentBody": "Your report will be reviewed quickly. Meanwhile, don’t open the link or enter any personal information.",
     "error": "The report couldn’t be sent. Please try again."
+  },
+  "doc": {
+    "onThisPage": "On this page",
+    "further": "Further reading",
+    "why": "What this site is for",
+    "whyHint": "the use",
+    "about": "About",
+    "aboutHint": "how it is protected",
+    "api": "API documentation",
+    "apiHint": "scripts",
+    "privacy": "Privacy",
+    "privacyHint": "GDPR",
+    "legal": "Legal notice",
+    "legalHint": "terms"
+  },
+  "authStage": {
+    "accountTitle": "Your links, and who <em>opened</em> them.",
+    "accountLede": "With an account, you keep the history of every link you create and see who opened your secret, and when. Bigger files, longer expiry, more views.",
+    "tagArgon": "Argon2id",
+    "tagPasskeys": "Passkeys",
+    "tag2fa": "2FA TOTP",
+    "tagSessions": "Hashed sessions",
+    "recoverTitle": "A human checks, <em>not an email</em>.",
+    "recoverLede": "No reset link is ever sent by email: your request is reviewed by the administrator, who checks it really comes from you before restoring access.",
+    "tagHuman": "Human verification",
+    "tagNoEmail": "No email link"
+  },
+  "pageHead": {
+    "account": "Your account",
+    "admin": "Running the service",
+    "links": "{count, plural, =0 {no links} one {<b>#</b> link} other {<b>#</b> links}}",
+    "active": "{count, plural, =0 {none active} one {<b>#</b> active} other {<b>#</b> active}}",
+    "historyCap": "encrypted in the browser · AES-256-GCM",
+    "accountCap": "Argon2id · WebAuthn · TOTP"
   }
 }

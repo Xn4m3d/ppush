@@ -2,16 +2,19 @@ import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
 import { legal } from "@/lib/legal";
 import { LegalHeader, LegalSection } from "@/components/legal-blocks";
+import { Doc } from "@/components/doc";
 
 /** Politique de confidentialité (RGPD) — français. Miroir : content.en.tsx. */
 export function PrivacyContentFr() {
   return (
     <>
       <LegalHeader
+        eyebrow="RGPD · vos données"
         icon={ShieldCheck}
         title="Politique de confidentialité"
         updated={`Dernière mise à jour : ${legal.privacyUpdatedFr}`}
       />
+      <Doc current="/privacy">
 
       <LegalSection id="responsable" title="Responsable de traitement">
         <p>
@@ -200,6 +203,7 @@ export function PrivacyContentFr() {
           .
         </p>
       </LegalSection>
+      </Doc>
     </>
   );
 }
