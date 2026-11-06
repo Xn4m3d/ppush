@@ -159,7 +159,6 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
 
   // ---- visualisation ----
   const hostRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const cloudRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const fieldRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
@@ -179,23 +178,14 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
   const seq = useRef(0);
   const ageTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const anchor = useCallback(
-    () => (kind === "FILE" ? dropRef.current : fieldRef.current),
-    [kind]
-  );
-  const anchorRef = useRef(anchor);
-  useEffect(() => { anchorRef.current = anchor; });
-
   useEffect(() => {
-    const host = hostRef.current, canvas = canvasRef.current;
-    if (!host || !canvas) return;
+    const host = hostRef.current;
+    if (!host) return;
+    // the cloud borrows its particles from the site's field; when the page is left, it bursts and gives them back
     const sc = new DiffusionScene({
       direction: "out",
       host,
-      canvas,
       cloud: () => cloudRef.current,
-      anchor: () => anchorRef.current(),
-      stackAnchor: () => formRef.current,
       stacked: () => !window.matchMedia(WIDE).matches,
     });
     scene.current = sc;
@@ -228,20 +218,14 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
     if (my !== seq.current || !scene.current) return;
     sc.layout();
     const el = fieldRef.current;
-    let span = null;
-    if (el && (kind === "PASSWORD" || kind === "URL" || kind === "TEXT")) {
-      span = sc.textSpan(el, kind === "PASSWORD" && !showSecret, emit === "caret");
-    } else if (dropRef.current) {
-      const r = sc.toHost(dropRef.current.getBoundingClientRect());
-      span = { x0: r.x + 20, x1: r.x + r.w - 20, y0: r.y + 20, y1: r.y + r.h - 20 };
-    }
-    sc.setBytes(out, span);
+    // password: the more bits, the more background particles the cloud attracts (otherwise: the ciphertext size)
+    sc.setBytes(out, kind === "PASSWORD" ? sc.countBits(lastBits.current || quickBits(new TextDecoder().decode(data))) : undefined);
     setCipherLen(out.length);
     if (emit === "caret" && el && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       el.classList.add("pulse-field");
       setTimeout(() => el.classList.remove("pulse-field"), 260);
     }
-  }, [kind, showSecret]);
+  }, [kind]);
 
   const changeSecret = (v: string) => {
     if (revealing) stopReveal();
@@ -260,6 +244,22 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
     return () => { live = false; };
   }, [typed]);
 
+  // cloud density: exact (generator) or estimated (zxcvbn) bits of the field's content; between two
+  // measures, the last known one (the cloud does not go back and forth on every keystroke)
+  const cloudBits =
+    kind !== "PASSWORD" || !texts.PASSWORD ? null
+    : generated && (revealing || generated.value === texts.PASSWORD) ? generated.bits
+    : estimate?.value === texts.PASSWORD ? estimate.bits
+    : null;
+  const lastBits = useRef(0);
+  useEffect(() => { if (!texts.PASSWORD) lastBits.current = 0; }, [texts.PASSWORD]);
+  useEffect(() => {
+    if (cloudBits === null) return;
+    lastBits.current = cloudBits;
+    const sc = scene.current;
+    if (sc) sc.want(sc.countBits(cloudBits));
+  }, [cloudBits]);
+
   // up-to-date preview during typing (the loop outlives intermediate renders)
   const previewRef = useRef(preview);
   useEffect(() => { previewRef.current = preview; });
@@ -273,16 +273,14 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
     lastGenerated.current = v;
     setGenerated({ value: v, bits: genBits(g) });
     setShowSecret(true);
-    scene.current?.clear();
     const enc = (t: string) => new TextEncoder().encode(t);
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setTexts((m) => ({ ...m, PASSWORD: v }));
       void previewRef.current(enc(v), "all");
       return;
     }
-    // letters appear quickly, like typing: particles leave
-    // from the caret on each letter instead of sweeping the whole text at once
-    // (~450 ms in total whatever the length, 30 ms per letter at most)
+    // the letters are typed fast, like keystrokes (~450 ms in total whatever
+    // the length, 30 ms per letter at most); each one sends its ripple through the cloud
     setRevealing(true);
     const chars = [...v];
     const step = Math.min(30, 450 / chars.length);
@@ -397,6 +395,8 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
         sc.settle();
       }
       setFormed(true);
+      // phone: once written, the link comes fully on screen, below the top bar
+      if (!window.matchMedia(WIDE).matches) linkRef.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "nearest" });
     })();
     return () => { live = false; };
   }, [created]);
@@ -576,11 +576,10 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
 
   return (
     <div ref={hostRef} className="wrap bench">
-      <canvas ref={canvasRef} aria-hidden className="pointer-events-none absolute inset-0 z-[3] h-full w-full" />
 
       {/* The hook talks about "this cloud": on desktop it sits above
-          it, and the left column starts with the action. H1 = what the site
-          does, with the words people search for; the slogan is only a paragraph. */}
+      it, and the left column starts with the action. H1 = what the site
+      does, with the words people search for; the slogan is only a paragraph. */}
       <div className="bench-hero flex flex-col gap-2.5 animate-fade-up">
         <h1 className="m-0 text-sm font-medium tracking-normal text-accent-soft">{th("kicker")}</h1>
         <p className="m-0 font-display text-[clamp(1.9rem,calc(0.6rem+2.4vw),4.4rem)] font-bold leading-[1.04] tracking-[-0.035em] text-balance">
@@ -592,8 +591,8 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
       </div>
 
       {/* Input order = reading order, at every size: content,
-          duration, reads, options, then the button. One frame (the secret) and
-          one filled button; the rest in text, hairlines, graduations and dots. */}
+      duration, reads, options, then the button. One frame (the secret) and
+      one filled button; the rest in text, hairlines, graduations and dots. */}
       <form id="pp-form" ref={formRef} onSubmit={submit} className="bench-ctrl flex flex-col gap-6 animate-fade-up">
         <fieldset disabled={sealed || busy} className={cls("flex min-w-0 flex-col gap-[1.6rem] transition-opacity", sealed && "opacity-55")}>
           <div className="flex flex-col gap-4">
@@ -639,7 +638,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
             </div>
 
             {/* The secret's content. The labels stay for screen readers:
-                the underlined tab right above already says what it is. */}
+            the underlined tab right above already says what it is. */}
             {kind === "PASSWORD" && (
               <div className="flex flex-col gap-2.5">
                 {/* one frame: the field on top, its generator below; the halo glows behind */}
@@ -799,8 +798,8 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
           </div>
 
           {/* Advanced options: a line between two hairlines, opening a native
-              modal (<dialog>: Escape, focus trap, backdrop). It
-              says how many options differ from the default. */}
+          modal (<dialog>: Escape, focus trap, backdrop). It
+          says how many options differ from the default. */}
           <button
             ref={advBtn}
             type="button"
@@ -859,7 +858,7 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
       </form>
 
       {/* The stage: what the server receives — then, once created, the link */}
-      <section ref={zoneRef} aria-label={sealed ? td("zoneLink") : td("zoneSend")} className="bench-stage">
+      <section ref={zoneRef} aria-label={sealed ? td("zoneLink") : td("zoneSend")} className="bench-stage scroll-mt-20">
         <div className="flex justify-between gap-3 eyebrow">
           <span>{sealed ? td("zoneLink") : age > 0.995 ? td("zoneGone") : td("zoneSend")}</span>
           <span className="text-accent">{td("algo")}</span>
@@ -879,8 +878,8 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
           {sealed && (
             <>
               {/* invisible copy of the link, in the middle of the cloud, where the particles
-                  write it before it glides into place: same width, same
-                  icon column, hence the same line breaks */}
+              write it before it glides into place: same width, same
+              icon column, hence the same line breaks */}
               {!formed && (
                 <div ref={ghostRef} aria-hidden className="link-text link-row pointer-events-none absolute inset-x-0 top-1/2 z-[1] -translate-y-1/2 text-transparent">
                   <span className="link-icon" />
@@ -1514,14 +1513,14 @@ function ShareCard({
   return (
     <div className="relative z-[2] flex flex-col gap-4 py-4">
       {/* the link copies on click. The clipboard icon has its column (two lines
-          tall at most, centred beyond), the same as its invisible copy in the cloud */}
+      tall at most, centred beyond), the same as its invisible copy in the cloud */}
       <button
         ref={linkRef}
         type="button"
         onClick={() => void copyLink()}
         aria-label={t("copyLink")}
         title={t("copyLink")}
-        className="link-text link-row group w-full cursor-pointer rounded-lg text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+        className="link-text link-row group w-full scroll-mt-20 cursor-pointer rounded-lg text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
       >
         <span
           aria-hidden
@@ -1534,8 +1533,8 @@ function ShareCard({
           {copied ? <ClipboardCheck strokeWidth={1.5} absoluteStrokeWidth /> : <Clipboard strokeWidth={1.5} absoluteStrokeWidth />}
         </span>
         <span ref={textRef}>
-          <span className={cls("transition-colors duration-700", formed ? "text-ink" : "text-transparent")}>{address}</span>
-          <span className={cls("transition-colors duration-700", formed ? "text-accent" : "text-transparent")}>{keyPart}</span>
+          <span className={cls("transition-colors duration-700", formed ? "link-glow-addr text-ink" : "text-transparent")}>{address}</span>
+          <span className={cls("transition-colors duration-700", formed ? "link-glow-key text-accent" : "text-transparent")}>{keyPart}</span>
         </span>
       </button>
       <span className="sr-only" aria-live="polite">{copied ? tc("copied") : ""}</span>
@@ -1598,4 +1597,14 @@ function ShareCard({
       </div>
     </div>
   );
+}
+
+/** Immediate bit estimate (before zxcvbn loads): length × log2 of the alphabet used, scaled down. */
+function quickBits(v: string) {
+  let pool = 0;
+  if (/[a-z]/.test(v)) pool += 26;
+  if (/[A-Z]/.test(v)) pool += 26;
+  if (/\d/.test(v)) pool += 10;
+  if (/[^a-zA-Z0-9]/.test(v)) pool += 20;
+  return [...v].length * Math.log2(Math.max(pool, 2)) * 0.62;
 }

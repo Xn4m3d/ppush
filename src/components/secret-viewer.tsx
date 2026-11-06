@@ -69,7 +69,6 @@ export function SecretViewer({ slug, autoOpen = false }: { slug: string; autoOpe
 
   // ---- visualisation ----
   const hostRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const cloudRef = useRef<HTMLDivElement>(null);
   const actionRef = useRef<HTMLButtonElement>(null);
   const textRef = useRef<HTMLElement | null>(null);
@@ -77,14 +76,13 @@ export function SecretViewer({ slug, autoOpen = false }: { slug: string; autoOpe
   const cipherRef = useRef<Uint8Array | null>(null);
 
   useEffect(() => {
-    const host = hostRef.current, canvas = canvasRef.current;
-    if (!host || !canvas) return;
+    const host = hostRef.current;
+    if (!host) return;
+    // the cloud forms with the background's particles; when the page is left, it bursts and gives them back
     const sc = new DiffusionScene({
       direction: "in",
       host,
-      canvas,
       cloud: () => cloudRef.current,
-      anchor: () => actionRef.current,
       stacked: () => !window.matchMedia(WIDE).matches,
     });
     scene.current = sc;
@@ -354,7 +352,6 @@ export function SecretViewer({ slug, autoOpen = false }: { slug: string; autoOpe
 
   return (
     <div ref={hostRef} className="wrap bench">
-      <canvas ref={canvasRef} aria-hidden className="pointer-events-none absolute inset-0 z-[6] h-full w-full" />
 
       {/* the state's header, set above the cloud it talks about */}
       {hero && (
@@ -398,7 +395,7 @@ export function SecretViewer({ slug, autoOpen = false }: { slug: string; autoOpe
           )}
         </div>
         {/* hidden without leaving the layout: if they vanished while the
-            secret forms, the stage would grow and the text would slide under its particles */}
+        secret forms, the stage would grow and the text would slide under its particles */}
         <div className={cls("hidden flex-wrap justify-between gap-x-4 gap-y-1 font-mono text-xs text-ink-faint lg:flex", serverEmpty && "invisible")}>
           <span>{tr("metaUnreadable")}</span>
           <span>{tr("metaKey")}</span>

@@ -53,7 +53,7 @@
   --fx-ink: #e4e9f0;
   --fx-accent: #ff7a59;
   --fx-line: rgba(228, 233, 240, 0.32);
-  --fx-cool: #7aa2ff;
+  --fx-cool: #6a92ff;
   /* space behind the site (src/components/space.tsx) and the panes' shadow */
   --space-op: 1;
   --pane-shadow: rgba(0, 0, 0, 0.7);
@@ -87,15 +87,15 @@ html[data-theme="mecha"] {
   --fx-ink: #1a2230;
   --fx-accent: #d9482a;
   --fx-line: rgba(15, 20, 28, 0.28);
-  --fx-cool: #3d64c8;
+  --fx-cool: #2f5bd6;
   --space-op: 0.55;
   --pane-shadow: rgba(15, 20, 28, 0.25);
 }
 
 html {
   /* Fluid scale: everything is in rem, and the rem follows the screen — 16 px up to
-     ~1,440 px wide, 18 px at 1,920, 20 px from ~2,400 on. Large
-     screens gain readability instead of leaving half of the screen empty. */
+  ~1,440 px wide, 18 px at 1,920, 20 px from ~2,400 on. Large
+  screens gain readability instead of leaving half of the screen empty. */
   font-size: clamp(16px, calc(10px + 0.42vw), 20px);
   color-scheme: dark;
   /* always reserve the scrollbar gutter: avoids a horizontal shift
@@ -131,7 +131,7 @@ headers, visualization captions). */
 }
 
 /* Space (src/components/space.tsx): one fixed backdrop behind every
-   page, that scrolling never moves. */
+page, that scrolling never moves. */
 .space {
   position: fixed;
   inset: 0;
@@ -183,7 +183,7 @@ between background and surface, not from a blur. */
 .pulse-field { box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 26%, transparent); }
 
 /* The secret's frame (home): the field on top, its generator below, one
-   single object; the sidereal halo glows behind it, the typing pulse surrounds it. */
+single object; the sidereal halo glows behind it, the typing pulse surrounds it. */
 .composer {
   position: relative;
   z-index: 1;
@@ -213,9 +213,9 @@ between background and surface, not from a blur. */
 .composer-field.pulse-field { box-shadow: none; }
 
 /* "Share another secret", once the link is in place: a coral ring
-   widens and fades, so it gets noticed next to "Copy link". It
-   stops on hover or focus, and does not pulse when animations are reduced
-   (the accent border stays). */
+widens and fades, so it gets noticed next to "Copy link". It
+stops on hover or focus, and does not pulse when animations are reduced
+(the accent border stays). */
 @keyframes pulse-ring {
   0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 45%, transparent); }
   70% { box-shadow: 0 0 0 0.65rem color-mix(in srgb, var(--color-accent) 0%, transparent); }
@@ -229,7 +229,7 @@ between background and surface, not from a blur. */
 @media (prefers-reduced-motion: reduce) { .pulse-cta { animation: none; } }
 
 /* The link, written by the particles: its invisible copy in the middle of the cloud has
-   the same font and the same width, hence the same line breaks. */
+the same font and the same width, hence the same line breaks. */
 .link-text {
   font-family: var(--font-mono);
   font-size: clamp(1rem, calc(0.5rem + 1vw), 1.6rem);
@@ -237,10 +237,32 @@ between background and surface, not from a blur. */
   word-break: break-all;
 }
 /* The link (it copies on click) and its invisible copy: a fixed column for
-   the clipboard icon, then the text. The column always has the same
-   width, otherwise the icon's size would change the line breaks. The icon
-   is as tall as the link up to two lines, and centres beyond that. */
+the clipboard icon, then the text. The column always has the same
+width, otherwise the icon's size would change the line breaks. The icon
+is as tall as the link up to two lines, and centres beyond that. */
 .link-row { display: flex; align-items: stretch; gap: 0.45em; }
+/* once written, the link keeps a light of its own: irregular pulses, like the cloud's */
+@keyframes link-key {
+  0%, 100% { text-shadow: 0 0 0.35em color-mix(in srgb, var(--color-accent) 35%, transparent); }
+  6% { text-shadow: 0 0 1.1em color-mix(in srgb, var(--color-accent) 85%, transparent); }
+  13% { text-shadow: 0 0 0.45em color-mix(in srgb, var(--color-accent) 40%, transparent); }
+  47% { text-shadow: 0 0 0.35em color-mix(in srgb, var(--color-accent) 35%, transparent); }
+  52% { text-shadow: 0 0 0.9em color-mix(in srgb, var(--color-accent) 70%, transparent); }
+  60% { text-shadow: 0 0 0.4em color-mix(in srgb, var(--color-accent) 38%, transparent); }
+  83% { text-shadow: 0 0 1.25em color-mix(in srgb, var(--color-accent) 90%, transparent); }
+  89% { text-shadow: 0 0 0.4em color-mix(in srgb, var(--color-accent) 38%, transparent); }
+}
+@keyframes link-addr {
+  0%, 100% { text-shadow: 0 0 0.3em color-mix(in srgb, var(--fx-cool) 20%, transparent); }
+  21% { text-shadow: 0 0 0.9em color-mix(in srgb, var(--fx-cool) 70%, transparent); }
+  29% { text-shadow: 0 0 0.35em color-mix(in srgb, var(--fx-cool) 25%, transparent); }
+  66% { text-shadow: 0 0 0.3em color-mix(in srgb, var(--fx-cool) 20%, transparent); }
+  71% { text-shadow: 0 0 1em color-mix(in srgb, var(--fx-cool) 75%, transparent); }
+  78% { text-shadow: 0 0 0.35em color-mix(in srgb, var(--fx-cool) 25%, transparent); }
+}
+.link-glow-key { animation: link-key 5.3s ease-in-out infinite; }
+.link-glow-addr { animation: link-addr 4.1s ease-in-out 1.3s infinite; }
+@media (prefers-reduced-motion: reduce) { .link-glow-key, .link-glow-addr { animation: none; } }
 .link-row > :last-child { min-width: 0; }
 .link-icon { flex: none; width: 2lh; display: flex; align-items: center; justify-content: flex-end; }
 .link-icon svg { height: min(2lh, 100%); width: auto; aspect-ratio: 1; }
