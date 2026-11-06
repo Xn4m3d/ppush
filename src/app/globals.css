@@ -205,6 +205,22 @@ between background and surface, not from a blur. */
 .composer-field::placeholder { font-family: var(--font-sans); font-size: 0.95rem; color: var(--color-ink-faint); }
 .composer-field.pulse-field { box-shadow: none; }
 
+/* "Share another secret", once the link is in place: a coral ring
+   widens and fades, so it gets noticed next to "Copy link". It
+   stops on hover or focus, and does not pulse when animations are reduced
+   (the accent border stays). */
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 45%, transparent); }
+  70% { box-shadow: 0 0 0 0.65rem color-mix(in srgb, var(--color-accent) 0%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 0%, transparent); }
+}
+.pulse-cta {
+  border-color: color-mix(in srgb, var(--color-accent) 55%, var(--color-line));
+  animation: pulse-ring 2.2s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+}
+.pulse-cta:hover, .pulse-cta:focus-visible { animation: none; }
+@media (prefers-reduced-motion: reduce) { .pulse-cta { animation: none; } }
+
 /* The link, written by the particles: its invisible copy in the middle of the cloud has
    the same font and the same width, hence the same line breaks. */
 .link-text {
@@ -213,6 +229,14 @@ between background and surface, not from a blur. */
   line-height: 1.7;
   word-break: break-all;
 }
+/* The link (it copies on click) and its invisible copy: a fixed column for
+   the clipboard icon, then the text. The column always has the same
+   width, otherwise the icon's size would change the line breaks. The icon
+   is as tall as the link up to two lines, and centres beyond that. */
+.link-row { display: flex; align-items: stretch; gap: 0.45em; }
+.link-row > :last-child { min-width: 0; }
+.link-icon { flex: none; width: 2lh; display: flex; align-items: center; justify-content: flex-end; }
+.link-icon svg { height: min(2lh, 100%); width: auto; aspect-ratio: 1; }
 
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-up, .condense-loader i { animation: none; }

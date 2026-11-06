@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import QRCode from "qrcode";
 import { useLocale, useTranslations } from "next-intl";
-import { KeyRound, FileText, FileUp, Link2, Eye, EyeOff, Dices, UploadCloud, Lock, Plus, ChevronRight, SlidersHorizontal } from "lucide-react";
+import { KeyRound, FileText, FileUp, Link2, Eye, EyeOff, Dices, UploadCloud, Lock, Plus, ChevronRight, SlidersHorizontal, Clipboard, ClipboardCheck } from "lucide-react";
 import {
   generateKey,
   encryptPayload,
@@ -165,10 +165,10 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
   const fieldRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
   const dropRef = useRef<HTMLDivElement>(null);
   // the link: invisible copy in the middle of the cloud (written by the particles), then its real place
-  const ghostRef = useRef<HTMLParagraphElement>(null);
+  const ghostRef = useRef<HTMLDivElement>(null);
   const ghostIdRef = useRef<HTMLSpanElement>(null);
   const ghostKeyRef = useRef<HTMLSpanElement>(null);
-  const linkRef = useRef<HTMLParagraphElement>(null);
+  const linkRef = useRef<HTMLButtonElement>(null);
   // nebula gathering started on click, awaited before writing the link
   const gathered = useRef<Promise<void> | null>(null);
   const zoneRef = useRef<HTMLElement>(null);
@@ -879,12 +879,16 @@ export function PushForm({ defaults }: { defaults: Defaults }) {
           {sealed && (
             <>
               {/* invisible copy of the link, in the middle of the cloud, where the particles
-                  write it before it glides into place (same width, same line breaks) */}
+                  write it before it glides into place: same width, same
+                  icon column, hence the same line breaks */}
               {!formed && (
-                <p ref={ghostRef} aria-hidden className="link-text pointer-events-none absolute inset-x-0 top-1/2 z-[1] m-0 -translate-y-1/2 text-transparent">
-                  <span ref={ghostIdRef}>{created!.url.slice(0, created!.url.indexOf("#"))}</span>
-                  <span ref={ghostKeyRef}>{created!.url.slice(created!.url.indexOf("#"))}</span>
-                </p>
+                <div ref={ghostRef} aria-hidden className="link-text link-row pointer-events-none absolute inset-x-0 top-1/2 z-[1] -translate-y-1/2 text-transparent">
+                  <span className="link-icon" />
+                  <span>
+                    <span ref={ghostIdRef}>{created!.url.slice(0, created!.url.indexOf("#"))}</span>
+                    <span ref={ghostKeyRef}>{created!.url.slice(created!.url.indexOf("#"))}</span>
+                  </span>
+                </div>
               )}
               <ShareCard
                 created={created!}
@@ -1449,13 +1453,18 @@ function ShareCard({
   onNew: () => void;
   tier: "anon" | "user";
   shareTemplate: string;
-  linkRef: React.RefObject<HTMLParagraphElement | null>;
+  linkRef: React.RefObject<HTMLButtonElement | null>;
   delayLabel: string;
 }) {
   const t = useTranslations("success");
+  const tc = useTranslations("common");
   const td = useTranslations("diffusion");
   const lp = useLocalePath();
   const [qr, setQr] = useState<string>("");
+  const [copied, setCopied] = useState(false);
+  const textRef = useRef<HTMLSpanElement>(null);
+  const copiedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (copiedTimer.current) clearTimeout(copiedTimer.current); }, []);
   const hash = created.url.indexOf("#");
   const address = created.url.slice(0, hash);
   const keyPart = created.url.slice(hash);
@@ -1480,16 +1489,56 @@ function ShareCard({
     }).then(setQr);
   }, [created.url]);
 
+  // clicking the link copies it; clipboard refused (old browser, embedded
+  // view): the text is selected so a manual copy is immediate
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(created.url);
+      setCopied(true);
+      if (copiedTimer.current) clearTimeout(copiedTimer.current);
+      copiedTimer.current = setTimeout(() => setCopied(false), 1800);
+    } catch {
+      const el = textRef.current, sel = window.getSelection();
+      if (!el || !sel) return;
+      const r = document.createRange();
+      r.selectNodeContents(el);
+      sel.removeAllRanges();
+      sel.addRange(r);
+    }
+  };
+
   const sum = [td("shareViews", { views: created.expireAfterViews }), hasPassphrase ? td("sharePass") : null, td("shareNoKey")]
     .filter(Boolean)
     .join(" · ");
 
   return (
     <div className="relative z-[2] flex flex-col gap-4 py-4">
-      <p ref={linkRef} className="link-text m-0">
-        <span className={cls("transition-colors duration-700", formed ? "text-ink" : "text-transparent")}>{address}</span>
-        <span className={cls("transition-colors duration-700", formed ? "text-accent" : "text-transparent")}>{keyPart}</span>
-      </p>
+      {/* the link copies on click. The clipboard icon has its column (two lines
+          tall at most, centred beyond), the same as its invisible copy in the cloud */}
+      <button
+        ref={linkRef}
+        type="button"
+        onClick={() => void copyLink()}
+        aria-label={t("copyLink")}
+        title={t("copyLink")}
+        className="link-text link-row group w-full cursor-pointer rounded-lg text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+      >
+        <span
+          aria-hidden
+          className={cls(
+            "link-icon transition-[opacity,color] duration-500",
+            formed ? "opacity-100" : "opacity-0",
+            copied ? "text-ok" : "text-ink-faint group-hover:text-accent"
+          )}
+        >
+          {copied ? <ClipboardCheck strokeWidth={1.5} absoluteStrokeWidth /> : <Clipboard strokeWidth={1.5} absoluteStrokeWidth />}
+        </span>
+        <span ref={textRef}>
+          <span className={cls("transition-colors duration-700", formed ? "text-ink" : "text-transparent")}>{address}</span>
+          <span className={cls("transition-colors duration-700", formed ? "text-accent" : "text-transparent")}>{keyPart}</span>
+        </span>
+      </button>
+      <span className="sr-only" aria-live="polite">{copied ? tc("copied") : ""}</span>
       <p className={cls("m-0 flex flex-wrap gap-x-6 gap-y-1.5 text-[0.85rem] text-ink-faint transition-opacity duration-500", formed ? "opacity-100" : "opacity-0")}>
         <span className="flex items-start gap-2"><i className="mt-[0.3rem] inline-block size-2 flex-none rounded-full bg-ink" /><span>{td("legendAddress")}</span></span>
         <span className="flex items-start gap-2">
@@ -1502,8 +1551,8 @@ function ShareCard({
         <div className="flex flex-wrap items-center gap-2.5">
           <CopyButton value={created.url} label={t("copyLink")} big className="min-h-12 px-6 max-sm:w-full" />
           {/* secondary action: a real button, at the end of the row, away from "Copy" */}
-          <Button variant="subtle" onClick={onNew} className="ml-auto min-h-12 px-5 max-sm:ml-0 max-sm:w-full">
-            <Plus className="size-4" />
+          <Button variant="subtle" onClick={onNew} className={cls("ml-auto min-h-12 px-5 max-sm:ml-0 max-sm:w-full", formed && "pulse-cta")}>
+            <Plus className="size-4 text-accent" />
             {t("newPush")}
           </Button>
         </div>
