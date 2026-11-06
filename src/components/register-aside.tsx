@@ -15,12 +15,12 @@ const PERKS = [
 export function RegisterAside({ tips }: { tips: string[] }) {
   const t = useTranslations("auth");
   return (
-    <aside className="w-full max-w-md space-y-5">
+    <div className="flex flex-1 flex-col justify-between gap-8">
       <div>
-        <h2 className="text-lg font-semibold tracking-tight">{t("perksTitle")}</h2>
-        <ul className="mt-3 space-y-2.5">
+        <h2 className="stage-title">{t("perksTitle")}</h2>
+        <ul className="mt-6 max-w-xl space-y-3">
           {PERKS.map(({ icon: Icon, key }) => (
-            <li key={key} className="flex items-start gap-2.5 text-sm text-ink-dim">
+            <li key={key} className="flex items-start gap-3 text-[1.02rem] text-ink-dim">
               <span className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-lg border border-accent/25 bg-accent/10">
                 <Icon className="size-3.5 text-accent-soft" />
               </span>
@@ -28,10 +28,10 @@ export function RegisterAside({ tips }: { tips: string[] }) {
             </li>
           ))}
         </ul>
-        <p className="mt-3 text-xs text-ink-faint">{t("perksFree")}</p>
+        <p className="mt-4 text-sm text-ink-faint">{t("perksFree")}</p>
       </div>
       <TipCard list={tips} />
-    </aside>
+    </div>
   );
 }
 
@@ -42,8 +42,8 @@ function TipCard({ list }: { list: string[] }) {
 
   useEffect(() => {
     if (list.length === 0) return;
-    // tirages dans des callbacks asynchrones : pas de mismatch d'hydratation ni
-    // de setState synchrone dans l'effet (lint react-hooks/set-state-in-effect).
+    // draws inside async callbacks: no hydration mismatch and no
+    // synchronous setState in the effect (lint react-hooks/set-state-in-effect).
     const pick = () =>
       setI((prev) => {
         let n = Math.floor(Math.random() * list.length);
@@ -59,7 +59,7 @@ function TipCard({ list }: { list: string[] }) {
   }, [list.length]);
 
   return (
-    <div className="rounded-2xl border border-line bg-panel/40 p-4">
+    <div className="max-w-xl rounded-2xl border border-line bg-bg/70 p-4">
       <p className="flex items-center gap-1.5 text-xs font-semibold text-accent-soft">
         <Lightbulb className="size-3.5" /> {t("label")}
       </p>

@@ -2,16 +2,19 @@ import Link from "next/link";
 import { Scale } from "lucide-react";
 import { legal } from "@/lib/legal";
 import { LegalHeader, LegalSection } from "@/components/legal-blocks";
+import { Doc } from "@/components/doc";
 
 /** Legal notice & Terms — English. Mirror: content.fr.tsx. */
 export function LegalContentEn() {
   return (
     <>
       <LegalHeader
+        eyebrow="Legal · publisher and terms"
         icon={Scale}
         title="Legal notice"
         updated={`Last updated: ${legal.updatedEn}`}
       />
+      <Doc current="/legal">
 
       <LegalSection id="editeur" title="Site publisher">
         <p>
@@ -125,6 +128,7 @@ export function LegalContentEn() {
         </Link>{" "}
         page.
       </p>
+      </Doc>
     </>
   );
 }

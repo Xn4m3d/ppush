@@ -1,6 +1,5 @@
 import { getLocale, getTranslations } from "next-intl/server";
-import { Logo } from "@/components/header";
-import { BackHome } from "@/components/back-home";
+import { Header } from "@/components/header";
 import type { Locale } from "@/i18n/locale";
 import { ApiDocsContentEn } from "./content.en";
 import { ApiDocsContentFr } from "./content.fr";
@@ -28,12 +27,11 @@ export default async function ApiDocsPage() {
   const locale = (await getLocale()) as Locale;
   const Content = CONTENT[locale] ?? ApiDocsContentEn;
   return (
-    <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-12 sm:px-6">
-      <BackHome className="mb-6" />
-      <div className="mb-4 flex justify-center">
-        <Logo />
-      </div>
-      <Content />
-    </main>
+    <>
+      <Header />
+      <main className="flex flex-1 flex-col">
+        <Content />
+      </main>
+    </>
   );
 }

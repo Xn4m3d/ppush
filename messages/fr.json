@@ -358,7 +358,8 @@
     "reasonViews": "vues épuisées",
     "reasonOwner": "supprimé par vous",
     "reasonViewer": "détruit par le destinataire",
-    "reasonExpired": "expiré"
+    "reasonExpired": "expiré",
+    "filterLabel": "Filtrer"
   },
   "pushDetail": {
     "back": "Historique",
@@ -751,7 +752,8 @@
     "guardTurnstileOff": "Turnstile absent : le bouclier ne peut pas filtrer, seules les fermetures s’appliquent",
     "guardAlertsOn": "Alertes ntfy actives",
     "guardAlertsOff": "Alertes ntfy non configurées (journaux seulement)",
-    "actReportStatus": "Signalement traité"
+    "actReportStatus": "Signalement traité",
+    "sideLabel": "Rubriques"
   },
   "auth": {
     "loginTitle": "Connexion",
@@ -794,7 +796,8 @@
     "perk2": "Voyez qui a ouvert votre secret, et quand",
     "perk3": "Fichiers plus gros, expiration plus longue, plus de vues",
     "perk4": "Connexion sans mot de passe avec une passkey",
-    "perksFree": "Gratuit, pour toujours. Sans pub, sans pistage."
+    "perksFree": "Gratuit, pour toujours. Sans pub, sans pistage.",
+    "eyebrow": "Votre compte"
   },
   "api": {
     "internal": "Erreur interne",
@@ -934,7 +937,8 @@
     "successTitle": "Mot de passe mis à jour",
     "successBody": "Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.",
     "toLogin": "Aller à la connexion",
-    "genericError": "Une erreur est survenue. Réessayez."
+    "genericError": "Une erreur est survenue. Réessayez.",
+    "eyebrow": "Votre compte"
   },
   "recover": {
     "title": "Difficultés pour vous reconnecter ?",
@@ -956,7 +960,8 @@
     "sentTitle": "Demande envoyée",
     "sentBody": "Un administrateur l'examinera et vérifiera votre identité avant de revenir vers vous. Il n'y a pas d'email automatique — vous serez recontacté.",
     "sentReminder": "Gardez vos preuves d'identité à portée, et ne créez pas de demande en double.",
-    "backToLogin": "Retour à la connexion"
+    "backToLogin": "Retour à la connexion",
+    "eyebrow": "Récupération d’accès"
   },
   "strength": {
     "label": "Force du mot de passe",
@@ -990,5 +995,39 @@
     "sentTitle": "Merci, c’est noté.",
     "sentBody": "Votre signalement sera examiné rapidement. En attendant, n’ouvrez pas le lien et ne saisissez aucune information personnelle.",
     "error": "Le signalement n’a pas pu être envoyé. Réessayez."
+  },
+  "doc": {
+    "onThisPage": "Sur cette page",
+    "further": "Aller plus loin",
+    "why": "À quoi sert ce site",
+    "whyHint": "l’usage",
+    "about": "À propos",
+    "aboutHint": "comment c’est protégé",
+    "api": "Documentation API",
+    "apiHint": "scripts",
+    "privacy": "Confidentialité",
+    "privacyHint": "RGPD",
+    "legal": "Mentions légales",
+    "legalHint": "CGU"
+  },
+  "authStage": {
+    "accountTitle": "Vos liens, et qui les a <em>ouverts</em>.",
+    "accountLede": "Avec un compte, vous gardez l’historique de chaque lien créé et voyez qui a ouvert votre secret, et quand. Fichiers plus gros, expiration plus longue, plus de vues.",
+    "tagArgon": "Argon2id",
+    "tagPasskeys": "Passkeys",
+    "tag2fa": "2FA TOTP",
+    "tagSessions": "Sessions hachées",
+    "recoverTitle": "Un humain vérifie, <em>pas un e-mail</em>.",
+    "recoverLede": "Aucun lien de réinitialisation n’est envoyé par e-mail : votre demande est examinée par l’administrateur, qui vérifie qu’elle vient bien de vous avant de rouvrir l’accès.",
+    "tagHuman": "Vérification humaine",
+    "tagNoEmail": "Aucun lien par e-mail"
+  },
+  "pageHead": {
+    "account": "Votre compte",
+    "admin": "Pilotage du service",
+    "links": "{count, plural, =0 {aucun lien} one {<b>#</b> lien} other {<b>#</b> liens}}",
+    "active": "{count, plural, =0 {aucun actif} one {<b>#</b> actif} other {<b>#</b> actifs}}",
+    "historyCap": "chiffré dans le navigateur · AES-256-GCM",
+    "accountCap": "Argon2id · WebAuthn · TOTP"
   }
 }

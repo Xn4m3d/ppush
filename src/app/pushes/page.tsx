@@ -3,7 +3,8 @@ import { getTranslations } from "next-intl/server";
 import { currentUser } from "@/lib/auth";
 import { Header } from "@/components/header";
 import { PushList } from "@/components/push-list";
-import { MiniCloud } from "@/components/diffusion/mini-cloud";
+import { PageHead } from "@/components/page-head";
+import { prisma } from "@/lib/db";
 
 export async function generateMetadata() {
   return {
@@ -14,18 +15,33 @@ export async function generateMetadata() {
 
 export default async function PushesPage() {
   const t = await getTranslations("pushes");
+  const th = await getTranslations("pageHead");
   const user = await currentUser();
   if (!user) redirect("/login");
+  // same criteria as the "active" filter of /api/pushes
+  const [total, active] = await Promise.all([
+    prisma.push.count({ where: { userId: user.id } }),
+    prisma.push.count({ where: { userId: user.id, payloadDeleted: false, expiresAt: { gt: new Date() } } }),
+  ]);
 
   return (
     <>
       <Header />
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
-        <div className="mb-6 flex items-end justify-between gap-6">
-          <h1 className="text-3xl font-bold">{t("title")}</h1>
-          <MiniCloud className="hidden sm:block" seed={17} />
+      <main className="flex flex-1 flex-col">
+        <PageHead
+          eyebrow={th("account")}
+          title={t("title")}
+          meta={
+            <>
+              <span>{th.rich("links", { count: total, b: (c) => <b>{c}</b> })}</span>
+              <span>{th.rich("active", { count: active, b: (c) => <b>{c}</b> })}</span>
+            </>
+          }
+          cap={th("historyCap")}
+        />
+        <div className="wrap pane glass app">
+          <PushList />
         </div>
-        <PushList />
       </main>
     </>
   );

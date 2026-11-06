@@ -71,7 +71,7 @@ export function ResetForm() {
   };
 
   return (
-    <Card className="p-6 sm:p-8">
+    <Card className="glass auth-pane">
       {state === "checking" && (
         <p className="text-center text-sm text-ink-dim">{t("checking")}</p>
       )}
@@ -86,10 +86,13 @@ export function ResetForm() {
 
       {state === "form" && (
         <form onSubmit={submit} className="space-y-4">
-          <div className="space-y-1 text-center">
-            <KeyRound className="mx-auto size-8 text-accent-soft" />
-            <h1 className="text-xl font-semibold tracking-tight">{t("title")}</h1>
-            <p className="text-sm text-ink-dim">
+          <div className="space-y-2">
+            <p className="eyebrow ph-eyebrow mb-3 flex items-center">
+              <KeyRound aria-hidden className="size-3.5" />
+              {t("eyebrow")}
+            </p>
+            <h1 className="auth-title">{t("title")}</h1>
+            <p className="text-[1.05rem] text-ink-dim">
               {email ? t("forAccount", { email }) : t("subtitle")}
             </p>
           </div>

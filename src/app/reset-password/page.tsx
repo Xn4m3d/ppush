@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
-import { Logo } from "@/components/header";
-import { BackHome } from "@/components/back-home";
+import { Header } from "@/components/header";
+import { AuthBench, AccountStage } from "@/components/auth-bench";
 import { ResetForm } from "@/components/reset-form";
 
 export async function generateMetadata() {
@@ -12,12 +12,13 @@ export async function generateMetadata() {
 
 export default function ResetPasswordPage() {
   return (
-    <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 py-12 sm:px-6">
-      <BackHome className="mb-6" />
-      <div className="mb-8 flex justify-center">
-        <Logo />
-      </div>
-      <ResetForm />
-    </main>
+    <>
+      <Header />
+      <main className="flex flex-1 flex-col">
+        <AuthBench stage={<AccountStage />}>
+          <ResetForm />
+        </AuthBench>
+      </main>
+    </>
   );
 }

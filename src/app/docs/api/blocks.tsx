@@ -20,7 +20,7 @@ export function Code({ children, copy }: { children: string; copy?: boolean }) {
 
 export function H2({ id, children }: { id: string; children: ReactNode }) {
   return (
-    <h2 id={id} className="scroll-mt-24 border-b border-line pb-2 text-xl font-semibold tracking-tight">
+    <h2 id={id} className="sec-title scroll-mt-24">
       {children}
     </h2>
   );

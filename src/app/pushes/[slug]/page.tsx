@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { currentUser } from "@/lib/auth";
 import { Header } from "@/components/header";
 import { PushDetail } from "@/components/push-detail";
+import { PageHead } from "@/components/page-head";
 
 export async function generateMetadata() {
   return {
@@ -19,12 +20,18 @@ export default async function PushDetailPage({
   const user = await currentUser();
   if (!user) redirect("/login");
   const { slug } = await params;
+  const th = await getTranslations("pageHead");
 
   return (
     <>
       <Header />
-      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-10 sm:px-6">
-        <PushDetail slug={slug} />
+      <main className="flex flex-1 flex-col">
+        <PageHead eyebrow={(await getTranslations("pushes"))("title")} title={(await getTranslations("meta"))("pushDetail")} cap={th("historyCap")} />
+        <div className="wrap pane glass app app-solo">
+          <div className="app-main">
+            <PushDetail slug={slug} />
+          </div>
+        </div>
       </main>
     </>
   );

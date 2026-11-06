@@ -3,39 +3,32 @@ import type { LucideProps } from "lucide-react";
 
 /** Building blocks shared by all languages of the About page. */
 
+/** `icon`: kept in the content's signature, the section number replaces it on screen. */
 export function Section({
   id,
-  icon: Icon,
   title,
   children,
 }: {
   id: string;
-  icon: ComponentType<LucideProps>;
+  icon?: ComponentType<LucideProps>;
   title: string;
   children: ReactNode;
 }) {
   return (
-    <section id={id} className="scroll-mt-24">
-      <h2 className="flex items-center gap-2.5 text-lg font-semibold tracking-tight">
-        <span className="grid size-9 place-items-center rounded-xl border border-accent/25 bg-accent/10">
-          <Icon className="size-4.5 text-accent-soft" />
-        </span>
-        {title}
-      </h2>
-      <div className="mt-4 space-y-3 text-[0.9375rem] leading-relaxed text-ink-dim">
-        {children}
-      </div>
+    <section id={id} className="sec">
+      <h2 className="sec-title">{title}</h2>
+      <div className="sec-body">{children}</div>
     </section>
   );
 }
 
 export function Faq({ q, children }: { q: string; children: ReactNode }) {
   return (
-    <details className="group rounded-xl border border-line bg-panel/60 transition-colors hover:border-line-soft">
-      <summary className="cursor-pointer select-none px-4 py-3 text-sm font-medium text-ink">
+    <details className="group max-w-[72ch] border-b border-line">
+      <summary className="cursor-pointer select-none py-3.5 font-medium text-ink transition-colors hover:text-accent-soft">
         {q}
       </summary>
-      <div className="space-y-2 border-t border-line px-4 py-3 text-sm text-ink-dim">
+      <div className="space-y-2 pb-4 text-[0.95rem] text-ink-dim">
         {children}
       </div>
     </details>

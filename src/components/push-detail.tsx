@@ -96,9 +96,9 @@ export function PushDetail({ slug }: { slug: string }) {
 
       <Card className="p-6 space-y-4">
         <div>
-          <h1 className="text-lg font-semibold">
+          <h2 className="text-lg font-semibold">
             {push.note || tTabs(push.kind as "PASSWORD")}
-          </h1>
+          </h2>
           <p className="mt-0.5 text-xs text-ink-faint">
             {t("meta", {
               kind: tTabs(push.kind as "PASSWORD"),
