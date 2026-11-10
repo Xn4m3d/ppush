@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import { blobDir, config } from "./config";
-import { alert } from "./alert";
+import { alert, resolve } from "./alert";
 
 /**
  * Global safeguards against flooding, on top of the per-IP limits of
@@ -65,16 +65,42 @@ export type Gate = "ok" | "captcha" | "closed" | "disk";
 
 const g = config.guard;
 
+/** Minutes until the end of the one-hour window (when creation reopens). */
+function minutesLeft(key: string): number {
+  return Math.max(1, Math.ceil((current(key).start + HOUR - Date.now()) / 60_000));
+}
+
+/**
+ * Alert ends: as soon as a request finds the disk and the ceilings back under
+ * their thresholds, the end is announced (once), which closes the alert on the
+ * operator's side. Without requests nobody is affected: it waits for the next one.
+ */
+function checkRecovered(free: number): void {
+  if (free >= g.diskMinFreeAnonMb) resolve("disk", "diskOk", { free: Math.round(free) });
+  if (
+    current("anon:push").count < g.closeAnonPushesPerHour &&
+    current("anon:blob").count < g.closeAnonBlobsPerHour &&
+    current("all:push").count < g.closeAllPushesPerHour
+  ) {
+    resolve("closed", "reopened");
+  }
+}
+
 /** Decision for a creation WITHOUT an account. Records nothing: call `accept` afterwards. */
 export function anonGate(kind: AnonKind, ip: string): Gate {
   const free = diskFreeMb();
+  checkRecovered(free);
   if (free < g.diskMinFreeAnonMb) {
-    alert("disk-anon", "low disk space", `${Math.round(free)} MB free: anonymous creation refused`);
+    alert("diskLow", { free: Math.round(free) }, "disk-anon", "disk");
     return "disk";
   }
   const close = kind === "push" ? g.closeAnonPushesPerHour : g.closeAnonBlobsPerHour;
-  if (current(`anon:${kind}`).count >= close || current("all:push").count >= g.closeAllPushesPerHour) {
-    alert(`closed-${kind}`, "anonymous creation closed", `hourly ceiling reached (${kind}: ${close})`);
+  if (current("all:push").count >= g.closeAllPushesPerHour) {
+    alert("closedAll", { limit: g.closeAllPushesPerHour, minutes: minutesLeft("all:push") }, "closed-all", "closed");
+    return "closed";
+  }
+  if (current(`anon:${kind}`).count >= close) {
+    alert("closedAnon", { kind, limit: close, minutes: minutesLeft(`anon:${kind}`) }, `closed-${kind}`, "closed");
     return "closed";
   }
   const now = Date.now();
@@ -87,12 +113,13 @@ export function anonGate(kind: AnonKind, ip: string): Gate {
 /** Decision for a creation WITH an account: only the disk and the global ceiling matter. */
 export function userGate(): Gate {
   const free = diskFreeMb();
+  checkRecovered(free);
   if (free < g.diskMinFreeMb) {
-    alert("disk-all", "disk almost full", `${Math.round(free)} MB free: all creation refused`);
+    alert("diskFull", { free: Math.round(free) }, "disk-all", "disk");
     return "disk";
   }
   if (current("all:push").count >= g.closeAllPushesPerHour) {
-    alert("closed-all", "all creation closed", `hourly ceiling reached (${g.closeAllPushesPerHour})`);
+    alert("closedAll", { limit: g.closeAllPushesPerHour, minutes: minutesLeft("all:push") }, "closed-all", "closed");
     return "closed";
   }
   return "ok";
@@ -115,7 +142,7 @@ export function accept(kind: AnonKind, anon: boolean): void {
     shieldUntil = now + g.shieldMinutes * 60_000;
     // IPs exempted during a previous shield go through Turnstile again
     cleared.clear();
-    alert("shield", "shield on", `${w.count} anonymous ${kind === "push" ? "links" : "files"} this hour: Turnstile required for ${g.shieldMinutes} min`);
+    alert("shield", { count: w.count, kind, minutes: g.shieldMinutes });
   }
 }
 
