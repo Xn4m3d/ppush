@@ -42,7 +42,7 @@ export async function POST(req: Request, { params }: Params) {
       await prisma.abuseReport.create({
         data: { slug, pushId: push.id, reason, comment: comment || null, ip: config.logIps ? ip : null },
       });
-      alert("abuse-report", "abuse report", `${reason} reported on /p/${slug}`);
+      alert("report", { reason, slug }, "abuse-report");
     }
     return json({ ok: true }, 201);
   } catch (err) {

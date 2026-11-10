@@ -52,6 +52,8 @@ export const config = {
     diskMinFreeMb: int("DISK_MIN_FREE_MB", 512),
     /** Notification d'alerte (topic ntfy, ex. https://ntfy.example/ppush). Vide = journaux seulement. */
     alertNtfyUrl: process.env.ALERT_NTFY_URL ?? "",
+    /** Alert language (fr | en): alerts go to the operator, not to visitors. */
+    alertLang: (process.env.ALERT_LANG ?? "en").toLowerCase(),
   },
 
   /** Session lifetime, in days. */
